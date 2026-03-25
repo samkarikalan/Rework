@@ -133,8 +133,20 @@ async function authAfterLogin(user) {
     return;
   }
 
-  // Check if already in a club
+  // Check if already in a club — verify player row still exists in DB
   var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+  if (club && club.id) {
+    try {
+      var playerCheck = await sbGet('players',
+        'club_id=eq.' + club.id + '&user_account_id=eq.' + user.id + '&select=nickname');
+      if (!playerCheck || !playerCheck.length) {
+        // Player was removed — clear club from localStorage
+        if (typeof clearMyClub === 'function') clearMyClub();
+        else { localStorage.removeItem('kbrr_my_club_id'); localStorage.removeItem('kbrr_my_club_name'); }
+        club = { id: null };
+      }
+    } catch(e) { /* offline — trust cached state */ }
+  }
   if (club && club.id) {
     // Already in club — go to app
     authHideOverlay();
@@ -224,4 +236,146 @@ function authDoLogout() {
   // Reset app state
   if (typeof ResetAll === 'function') ResetAll();
   authShowScreen('welcome');
+}
+
+/* ── Club search UI ── */
+var _searchTimeout = null;
+function authSearchClubsUI(query) {
+  clearTimeout(_searchTimeout);
+  var resultsEl = document.getElementById('joinClubResults');
+  var errorEl   = document.getElementById('joinClubError');
+  var pendingEl = document.getElementById('joinClubPending');
+  if (errorEl)   { errorEl.style.display = 'none'; }
+  if (pendingEl) { pendingEl.style.display = 'none'; }
+
+  if (!query || query.trim().length < 2) {
+    if (resultsEl) resultsEl.style.display = 'none';
+    return;
+  }
+
+  if (resultsEl) {
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = '<div class="auth-club-loading">Searching...</div>';
+  }
+
+  _searchTimeout = setTimeout(async function() {
+    var result = await authSearchClubs(query);
+    if (result.error) {
+      if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-empty">Search failed. Try again.</div>';
+      return;
+    }
+    if (!result.clubs || !result.clubs.length) {
+      if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-empty">No clubs found. Check the name.</div>';
+      return;
+    }
+    if (resultsEl) {
+      resultsEl.innerHTML = result.clubs.map(function(club) {
+        return '<div class="auth-club-item" onclick="authDoRequestJoin(\'' + club.id + '\',\'' + club.name.replace(/'/g, "\\'") + '\')">' +
+          '<div class="auth-club-item-name">🏢 ' + club.name + '</div>' +
+          '<div class="auth-club-item-btn">Request to Join ›</div>' +
+          '</div>';
+      }).join('');
+    }
+  }, 400);
+}
+
+/* ── Request to join a club ── */
+async function authDoRequestJoin(clubId, clubName) {
+  var resultsEl = document.getElementById('joinClubResults');
+  var errorEl   = document.getElementById('joinClubError');
+  var pendingEl = document.getElementById('joinClubPending');
+
+  if (errorEl) { errorEl.style.display = 'none'; }
+  if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-loading">Sending request...</div>';
+
+  var result = await authRequestJoin(clubId);
+
+  if (result.error) {
+    if (resultsEl) resultsEl.style.display = 'none';
+    if (errorEl) { errorEl.textContent = result.error; errorEl.style.display = 'block'; }
+    return;
+  }
+
+  if (result.alreadyMember) {
+    // Already member — go straight to app
+    authHideOverlay();
+    selectMode(sessionStorage.getItem('appMode') || 'viewer');
+    return;
+  }
+
+  // Show pending state
+  if (resultsEl) resultsEl.style.display = 'none';
+  if (pendingEl) pendingEl.style.display = 'flex';
+
+  // Store pending club info
+  localStorage.setItem('pending_club_id', clubId);
+  localStorage.setItem('pending_club_name', clubName);
+}
+
+/* ── Load join requests for admin (Vault Requests tab) ── */
+async function vaultLoadRequests() {
+  var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+  var listEl = document.getElementById('vaultRequestsList');
+  if (!listEl) return;
+
+  if (!club || !club.id) {
+    listEl.innerHTML = '<div class="profile-sessions-empty">Connect to a club first.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '<div class="profile-sessions-loading">Loading...</div>';
+  var result = await authGetJoinRequests(club.id);
+
+  if (result.error) {
+    listEl.innerHTML = '<div class="profile-sessions-empty">Failed to load requests.</div>';
+    return;
+  }
+
+  if (!result.requests || !result.requests.length) {
+    listEl.innerHTML = '<div class="profile-sessions-empty">No pending requests.</div>';
+    return;
+  }
+
+  listEl.innerHTML = result.requests.map(function(req) {
+    return '<div class="vault-request-card">' +
+      '<div class="vault-request-info">' +
+        '<div class="vault-request-name">' + req.nickname + '</div>' +
+        '<div class="vault-request-id">@' + req.userId + '</div>' +
+      '</div>' +
+      '<div class="vault-request-actions">' +
+        '<button class="vault-request-accept" onclick="vaultAcceptRequest(\'' + req.requestId + '\',\'' + req.userAccountId + '\',\'' + req.nickname.replace(/'/g, "\\'") + '\')">✓ Accept</button>' +
+        '<button class="vault-request-reject" onclick="vaultRejectRequest(\'' + req.requestId + '\')">✗ Reject</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ── Accept request ── */
+async function vaultAcceptRequest(requestId, userAccountId, nickname) {
+  var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+  if (!club || !club.id) return;
+
+  var result = await authAcceptRequest(requestId, club.id, userAccountId, nickname, 'Male');
+  if (result.error) {
+    alert('Failed: ' + result.error);
+    return;
+  }
+  // Refresh list
+  // Invalidate player cache and resync so organiser sees the new player immediately
+  localStorage.removeItem('kbrr_cache_players');
+  localStorage.removeItem('kbrr_cache_ts');
+  if (typeof syncToLocal === 'function') await syncToLocal();
+  vaultLoadRequests();
+  // Refresh players tile on home
+  if (typeof homeRefreshTiles === 'function') homeRefreshTiles();
+}
+
+/* ── Reject request ── */
+async function vaultRejectRequest(requestId) {
+  var result = await authRejectRequest(requestId);
+  if (result.error) {
+    alert('Failed: ' + result.error);
+    return;
+  }
+  vaultLoadRequests();
 }

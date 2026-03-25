@@ -6,7 +6,7 @@
    - Switch MOCK_MODE = false when Supabase tables are ready
    ============================================================ */
 
-var AUTH_MOCK_MODE = true; // ← set false when Supabase tables ready
+var AUTH_MOCK_MODE = false; // ← set false when Supabase tables ready
 
 /* ── Current session ── */
 var _authUser = null; // { id, userId, nickname, email }
@@ -95,7 +95,14 @@ async function authSignUp(userId, nickname, email, password) {
     var u = result[0];
     return { user: { id: u.id, userId: u.user_id, nickname: u.nickname, email: u.email } };
   } catch(e) {
-    return { error: e.message || 'Sign up failed. Please try again.' };
+    var msg = e.message || '';
+    if (msg.includes('user_accounts_email_key') || msg.includes('duplicate') && msg.includes('email'))
+      return { error: 'This email is already registered. Please use a different email.' };
+    if (msg.includes('user_accounts_user_id_key') || msg.includes('duplicate') && msg.includes('user_id'))
+      return { error: 'User ID already taken. Please choose another.' };
+    if (msg.includes('duplicate key') || msg.includes('unique constraint'))
+      return { error: 'Account already exists. Please try a different User ID or email.' };
+    return { error: 'Sign up failed. Please try again.' };
   }
 }
 
@@ -221,7 +228,7 @@ async function authJoinClub(inviteCode) {
     if (!clubRows || !clubRows.length) return { error: 'Invalid invite code.' };
     var club = clubRows[0];
 
-    await sbPost('club_members', { club_id: club.id, user_account_id: user.id });
+    // Club membership is tracked via players.club_id — no separate club_members insert needed
     setMyClub(club.id, club.name);
     return { success: true, club: { id: club.id, name: club.name } };
   } catch(e) {
@@ -247,6 +254,156 @@ function authGetPendingInvite() {
 /* ── Clear pending invite ── */
 function authClearPendingInvite() {
   localStorage.removeItem('pending_invite_code');
+}
+
+/* ── Search clubs by name ── */
+async function authSearchClubs(query) {
+  query = query.trim();
+  if (!query || query.length < 2) return { clubs: [] };
+
+  try {
+    var rows = await sbGet('clubs',
+      'name=ilike.' + encodeURIComponent('%' + query + '%') + '&select=id,name&limit=10');
+    return { clubs: rows || [] };
+  } catch(e) {
+    return { error: e.message || 'Search failed' };
+  }
+}
+
+/* ── Request to join a club ── */
+async function authRequestJoin(clubId, chosenNickname) {
+  var user = authGetUser();
+  if (!user) return { error: 'Please login first' };
+
+  // Use chosen nickname or fall back to account nickname
+  var nickname = (chosenNickname || user.nickname || '').trim();
+  if (!nickname) return { error: 'Please provide a nickname.' };
+
+  try {
+    // Check if already a member (by user_account_id)
+    var members = await sbGet('players',
+      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id + '&select=id');
+    if (members && members.length) {
+      var club = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name');
+      if (club && club.length) setMyClub(club[0].id, club[0].name);
+      return { alreadyMember: true };
+    }
+
+    // Check if already requested
+    var existing = await sbGet('club_join_requests',
+      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id);
+    if (existing && existing.length) {
+      var req = existing[0];
+      if (req.status === 'pending') return { pending: true, nickname: req.nickname };
+      if (req.status === 'rejected') return { error: 'Your request was rejected by the admin.' };
+      // Previously rejected — allow re-request with new nickname, delete old row
+      await sbDelete('club_join_requests', 'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id);
+    }
+
+    // Check nickname conflict in this club
+    var conflict = await sbGet('players',
+      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id');
+    if (conflict && conflict.length) {
+      return { nicknameConflict: true, conflictNickname: nickname };
+    }
+
+    // Create request with chosen nickname
+    await sbPost('club_join_requests', {
+      club_id:         clubId,
+      user_account_id: user.id,
+      nickname:        nickname,
+      status:          'pending'
+    });
+    return { success: true, nickname: nickname };
+  } catch(e) {
+    return { error: e.message || 'Failed to send request' };
+  }
+}
+
+/* ── Get pending join requests for a club (admin) ── */
+async function authGetJoinRequests(clubId) {
+  try {
+    var requests = await sbGet('club_join_requests',
+      'club_id=eq.' + clubId + '&status=eq.pending&select=id,user_account_id,nickname,requested_at');
+
+    // Get user details for each request
+    var result = [];
+    for (var i = 0; i < requests.length; i++) {
+      var req = requests[i];
+      try {
+        var users = await sbGet('user_accounts',
+          'id=eq.' + req.user_account_id + '&select=id,user_id,nickname,email');
+        if (users && users.length) {
+          result.push({
+            requestId:     req.id,
+            requestedAt:   req.requested_at,
+            userAccountId: req.user_account_id,
+            userId:        users[0].user_id,
+            nickname:      req.nickname || users[0].nickname,  // use chosen nickname first
+            email:         users[0].email
+          });
+        }
+      } catch(e) {}
+    }
+    return { requests: result };
+  } catch(e) {
+    return { error: e.message || 'Failed to load requests' };
+  }
+}
+
+/* ── Accept join request (admin) ── */
+async function authAcceptRequest(requestId, clubId, userAccountId, nickname, gender) {
+  try {
+    // Update request status
+    await sbPatch('club_join_requests', 'id=eq.' + requestId, {
+      status:      'accepted',
+      reviewed_at: new Date().toISOString()
+    });
+
+    // Create player row with club_id and user_account_id
+    await sbPost('players', {
+      club_id:         clubId,
+      user_account_id: userAccountId,
+      nickname:        nickname,
+      gender:          gender || 'Male',
+      rating:          1.0,
+      club_rating:     1.0,
+      wins:            0,
+      losses:          0
+    });
+
+    return { success: true };
+  } catch(e) {
+    return { error: e.message || 'Failed to accept request' };
+  }
+}
+
+/* ── Reject join request (admin) ── */
+async function authRejectRequest(requestId) {
+  try {
+    await sbPatch('club_join_requests', 'id=eq.' + requestId, {
+      status:      'rejected',
+      reviewed_at: new Date().toISOString()
+    });
+    return { success: true };
+  } catch(e) {
+    return { error: e.message || 'Failed to reject request' };
+  }
+}
+
+/* ── Check my request status ── */
+async function authCheckRequestStatus(clubId) {
+  var user = authGetUser();
+  if (!user) return { status: 'none' };
+
+  try {
+    var rows = await sbGet('club_join_requests',
+      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id + '&select=status');
+    if (!rows || !rows.length) return { status: 'none' };
+    return { status: rows[0].status };
+  } catch(e) {
+    return { status: 'none' };
+  }
 }
 
 // Check for invite link on load
