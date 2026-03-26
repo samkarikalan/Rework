@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="BRRStyle3.css">
   <link rel="stylesheet" href="HomeStyle.css">
   <link rel="stylesheet" href="HomeStyle-new.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
   <script src="supabase.js" defer></script>
   <script src="auth.js" defer></script>
   <script src="authUI.js" defer></script>
@@ -1335,5 +1335,15 @@
       });
     }
   </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    for (let reg of regs) reg.update();
+  });
+}
+console.log("BRR App Version v3 loaded");
+</script>
 </body>
+
 </html>
