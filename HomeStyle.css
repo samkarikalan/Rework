@@ -1618,3 +1618,174 @@ body.app-light .tile-pairs { background: rgba(45,206,137,0.12); }
   color: var(--text);
   box-shadow: 0 1px 4px rgba(0,0,0,0.18);
 }
+
+/* =============================================
+   UNIFIED MODE + CLUB SHEET (ums)
+   ============================================= */
+.ums-sheet {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 22px 22px 0 0;
+  padding: 8px 20px 40px;
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.22s cubic-bezier(.4,0,.2,1);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.ums-mode-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+.ums-mode-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.18s;
+  color: var(--text-dim);
+}
+.ums-mode-tab:hover { background: var(--bg); }
+.ums-mode-tab.active {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.1);
+  color: var(--text);
+}
+.ums-tab-icon { font-size: 1.3rem; }
+.ums-tab-label { font-size: 0.75rem; font-weight: 600; }
+.ums-divider {
+  height: 1px;
+  background: var(--border2);
+  margin: 14px 0 12px;
+}
+.ums-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+.ums-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+.ums-input:focus { outline: none; border-color: var(--accent); }
+.ums-feedback {
+  min-height: 18px;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+}
+.ums-feedback.ok { color: var(--green); }
+.ums-feedback.err { color: var(--red); }
+.ums-enter-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: opacity 0.18s;
+}
+.ums-enter-btn:active { opacity: 0.85; }
+.ums-viewer-note {
+  font-size: 0.84rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  padding: 10px 0 6px;
+}
+.ums-connected-club {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.ums-club-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ums-club-icon { font-size: 1.4rem; flex-shrink: 0; }
+.ums-club-name { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.ums-club-sub  { font-size: 0.75rem; color: var(--text-dim); margin-top: 1px; }
+.ums-role-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 20px;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.ums-role-tag.admin { background: rgba(245,158,11,0.15); color: var(--amber); }
+.ums-role-tag.user  { background: rgba(108,99,255,0.12); color: var(--accent); }
+.ums-switch-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 10px;
+  display: block;
+}
+.ums-create-link-row {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.ums-otp-hint {
+  font-size: 0.84rem;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* ── Single mode indicator + Switch Mode button ── */
+.home-mode-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.home-mode-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.switch-mode-btn {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background 0.15s;
+}
+.switch-mode-btn:active { background: var(--border2); }

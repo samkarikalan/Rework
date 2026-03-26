@@ -1,52 +1,55 @@
 /* =============================================
    CLUB Scheduler — Service Worker
-   Caches app shell for offline use
+   Relative paths — works from any host location
    ============================================= */
 
-const CACHE_NAME = 'club-scheduler-v18';
+const CACHE_NAME = 'club-scheduler-v19';
+
+// Base path derived from sw.js location — works wherever it's hosted
+const BASE = self.location.pathname.replace('sw.js', '');
 
 const ASSETS = [
-  '/SCSWork/KariBRRApp.html',
-  '/SCSWork/manifest.json',
-  '/SCSWork/BRRStyle1.css',
-  '/SCSWork/BRRStyle2.css',
-  '/SCSWork/BRRStyle3.css',
-  '/SCSWork/Export.css',
-  '/SCSWork/HomeStyle.css',
-  '/SCSWork/HomeStyle-new.css',
-  '/SCSWork/main.js',
-  '/SCSWork/HomeScreen.js',
-  '/SCSWork/auth.js',
-  '/SCSWork/authUI.js',
-  '/SCSWork/home.js',
-  '/SCSWork/settings.js',
-  '/SCSWork/players.js',
-  '/SCSWork/rounds.js',
-  '/SCSWork/games.js',
-  '/SCSWork/summary.js',
-  '/SCSWork/dashboard.js',
-  '/SCSWork/viewer.js',
-  '/SCSWork/profile.js',
-  '/SCSWork/supabase.js',
-  '/SCSWork/importPlayers.js',
-  '/SCSWork/competitive_algorithm.js',
-  '/SCSWork/engjap.js',
-  '/SCSWork/ExportCSS.js',
-  '/SCSWork/help.js',
-  '/SCSWork/male.png',
-  '/SCSWork/female.png',
-  '/SCSWork/win-cup.png',
-  '/SCSWork/lock.png',
-  '/SCSWork/unlock.png',
-  '/SCSWork/power.png',
-  '/SCSWork/cs.PNG',
-  '/SCSWork/timer.mp3',
-  '/SCSWork/help_en.json',
-  '/SCSWork/help_jp.json',
-  '/SCSWork/help_kr.json',
-  '/SCSWork/help_zh.json',
-  '/SCSWork/help_vi.json'
-];
+  'KariBRRApp.html',
+  'manifest.json',
+  'BRRStyle1.css',
+  'BRRStyle2.css',
+  'BRRStyle3.css',
+  'Export.css',
+  'HomeStyle.css',
+  'HomeStyle-new.css',
+  'main.js',
+  'HomeScreen.js',
+  'auth.js',
+  'authUI.js',
+  'home.js',
+  'settings.js',
+  'players.js',
+  'rounds.js',
+  'games.js',
+  'summary.js',
+  'dashboard.js',
+  'viewer.js',
+  'profile.js',
+  'supabase.js',
+  'importPlayers.js',
+  'competitive_algorithm.js',
+  'engjap.js',
+  'ExportCSS.js',
+  'help.js',
+  'male.png',
+  'female.png',
+  'win-cup.png',
+  'lock.png',
+  'unlock.png',
+  'power.png',
+  'cs.PNG',
+  'timer.mp3',
+  'help_en.json',
+  'help_jp.json',
+  'help_kr.json',
+  'help_zh.json',
+  'help_vi.json'
+].map(f => BASE + f);
 
 /* ── Install: cache all assets ── */
 self.addEventListener('install', function(event) {
@@ -82,7 +85,6 @@ self.addEventListener('fetch', function(event) {
     caches.match(event.request).then(function(cached) {
       if (cached) return cached;
       return fetch(event.request).then(function(response) {
-        // Cache new valid responses
         if (response && response.status === 200 && response.type === 'basic') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(function(cache) {
@@ -92,9 +94,9 @@ self.addEventListener('fetch', function(event) {
         return response;
       });
     }).catch(function() {
-      // Offline fallback — return cached HTML
+      // Offline fallback
       if (event.request.destination === 'document') {
-        return caches.match('/SCSWork/KariBRRApp.html');
+        return caches.match(BASE + 'KariBRRApp.html');
       }
     })
   );

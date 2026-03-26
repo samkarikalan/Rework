@@ -9,9 +9,6 @@ function selectMode(mode) {
   appMode = mode;
   sessionStorage.setItem('appMode', mode);
   localStorage.setItem('kbrr_app_mode', mode);
-  // Hide mode select overlay
-  var overlay = document.getElementById('modeSelectOverlay');
-  if (overlay) overlay.style.display = 'none';
   // Apply viewer/organiser body classes
   applyMode(mode);
   // Show home screen (defined in HomeScreen.js)
@@ -25,13 +22,13 @@ function applyMode(mode) {
   document.body.classList.toggle('organiser-tabs', mode === 'organiser');
   document.body.classList.toggle('vault-mode',     mode === 'vault');
 
-  // Sync home mode pill buttons (3 modes)
-  var hpv  = document.getElementById('homePillViewer');
-  var hpo  = document.getElementById('homePillOrganiser');
-  var hpvm = document.getElementById('homePillVault');
-  if (hpv)  hpv.classList.toggle('active',  mode === 'viewer');
-  if (hpo)  hpo.classList.toggle('active',  mode === 'organiser');
-  if (hpvm) hpvm.classList.toggle('active', mode === 'vault');
+  // Update current mode indicator
+  var modeMap = { viewer: {icon:'👁', label:'Viewer'}, organiser: {icon:'🏆', label:'Organiser'}, vault: {icon:'🔑', label:'Vault'} };
+  var mi = modeMap[mode] || modeMap['viewer'];
+  var iconEl  = document.getElementById('currentModeIcon');
+  var labelEl = document.getElementById('currentModeLabel');
+  if (iconEl)  iconEl.textContent  = mi.icon;
+  if (labelEl) labelEl.textContent = mi.label;
 
   // Apply viewer restrictions
   if (mode === 'viewer') {
@@ -76,89 +73,302 @@ function setViewerMode(isViewer) {
   });
 }
 
+/* ============================================================
+   UNIFIED MODE + CLUB SHEET
+   Single entry point for all mode switching and club login.
+   Opened by tapping any mode pill button.
+============================================================ */
+var _uSheetSelectedMode = null; // mode selected inside the sheet
+
 function openModeSwitcher() {
-  // Remove existing sheet if any
   const existing = document.getElementById('modeSheetOverlay');
   if (existing) { existing.remove(); return; }
 
-  const overlay = document.createElement('div');
-  overlay.className = 'mode-sheet-overlay';
-  overlay.id = 'modeSheetOverlay';
-  overlay.onclick = () => overlay.remove();
-
-  const sheet = document.createElement('div');
-  sheet.className = 'mode-switch-sheet';
-  sheet.innerHTML = `
-    <div class="mode-sheet-handle"></div>
-    <div class="mode-sheet-title">Switch Mode</div>
-    <div class="mode-sheet-options">
-      <button class="mode-sheet-btn viewer ${appMode === 'viewer' ? 'active-viewer' : ''}"
-              onclick="switchMode('viewer')">
-        <div class="mode-sheet-icon">👁</div>
-        <div class="mode-sheet-info">
-          <div class="mode-sheet-name">Viewer</div>
-          <div class="mode-sheet-desc">Watch live rounds &amp; scores</div>
-        </div>
-        ${appMode === 'viewer' ? '<span class="mode-sheet-check">✅</span>' : ''}
-      </button>
-      <button class="mode-sheet-btn organiser ${appMode === 'organiser' ? 'active-organiser' : ''}"
-              onclick="switchMode('organiser')">
-        <div class="mode-sheet-icon"><img src="win-cup.png" style="width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.25))"></div>
-        <div class="mode-sheet-info">
-          <div class="mode-sheet-name">Round Organiser</div>
-          <div class="mode-sheet-desc">Run session, score games, manage players</div>
-        </div>
-        ${appMode === 'organiser' ? '<span class="mode-sheet-check">✅</span>' : ''}
-      </button>
-      <button class="mode-sheet-btn vault ${appMode === 'vault' ? 'active-vault' : ''}"
-              onclick="requestVaultMode()">
-        <div class="mode-sheet-icon" style="background:rgba(245,158,11,0.18)">🔑</div>
-        <div class="mode-sheet-info">
-          <div class="mode-sheet-name">Vault Manager</div>
-          <div class="mode-sheet-desc">Club admin — players, requests, management</div>
-        </div>
-        ${appMode === 'vault' ? '<span class="mode-sheet-check">✅</span>' : ''}
-      </button>
-    </div>
-  `;
-  overlay.appendChild(sheet);
-  document.body.appendChild(overlay);
-  // Prevent sheet clicks from closing overlay
-  sheet.onclick = e => e.stopPropagation();
+  _uSheetSelectedMode = appMode || 'viewer';
+  _renderUnifiedSheet();
 }
 
-function switchMode(mode) {
-  const overlay = document.getElementById('modeSheetOverlay');
-  if (overlay) overlay.remove();
+function _renderUnifiedSheet() {
+  const existing = document.getElementById('modeSheetOverlay');
+  if (existing) existing.remove();
 
-  // Viewer needs no club
-  if (mode === 'viewer') {
-    appMode = mode;
-    sessionStorage.setItem('appMode', mode);
-    localStorage.setItem('kbrr_app_mode', mode);
-    applyMode(mode);
+  const club   = (typeof getMyClub === 'function') ? getMyClub() : null;
+  const hasClub = club && club.id;
+  const m = _uSheetSelectedMode;
+
+  // Club section — varies by mode
+  let clubSection = '';
+  if (m === 'viewer') {
+    clubSection = `<div class="ums-viewer-note">No club needed — just pick a player to follow in Viewer mode.</div>`;
+  } else if (hasClub) {
+    const isAdmin = (typeof isClubAdmin === 'function') ? isClubAdmin() : false;
+    const roleTag = isAdmin
+      ? `<span class="ums-role-tag admin">Admin</span>`
+      : `<span class="ums-role-tag user">User</span>`;
+    clubSection = `
+      <div class="ums-connected-club">
+        <div class="ums-club-row">
+          <span class="ums-club-icon">🏢</span>
+          <div class="ums-club-info">
+            <div class="ums-club-name">${club.name} ${roleTag}</div>
+            <div class="ums-club-sub">Connected club</div>
+          </div>
+        </div>
+        ${m === 'vault' && !isAdmin ? `
+          <div class="ums-section-label" style="margin-top:12px">Admin password required for Vault</div>
+          <input type="password" id="umsVaultPw" class="ums-input" placeholder="Admin password"
+                 onkeydown="if(event.key==='Enter')_umsEnter()">
+          <div id="umsFeedback" class="ums-feedback"></div>
+        ` : `<div id="umsFeedback" class="ums-feedback"></div>`}
+        <button class="ums-switch-link" onclick="_umsShowLogin()">Switch club ›</button>
+      </div>`;
+  } else {
+    // No club — show login form
+    clubSection = _umsLoginFormHTML(m);
+  }
+
+  const modes = [
+    { key:'viewer',    icon:'👁',  label:'Viewer',    desc:'Watch live rounds' },
+    { key:'organiser', icon:'🏆', label:'Organiser',  desc:'Run sessions' },
+    { key:'vault',     icon:'🔑', label:'Vault',      desc:'Club admin' },
+  ];
+
+  const modeTabs = modes.map(mo => `
+    <button class="ums-mode-tab ${_uSheetSelectedMode === mo.key ? 'active' : ''}"
+            onclick="_umsSelectMode('${mo.key}')">
+      <span class="ums-tab-icon">${mo.icon}</span>
+      <span class="ums-tab-label">${mo.label}</span>
+    </button>`).join('');
+
+  let enterLabel = m === 'viewer' ? 'Enter as Viewer'
+                 : m === 'vault'  ? 'Enter Vault'
+                 : 'Enter as Organiser';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modeSheetOverlay';
+  overlay.className = 'mode-sheet-overlay';
+  overlay.innerHTML = `
+    <div class="ums-sheet" id="umsSheet">
+      <div class="mode-sheet-handle"></div>
+      <div class="ums-mode-tabs">${modeTabs}</div>
+      <div class="ums-divider"></div>
+      <div class="ums-club-section" id="umsClubSection">${clubSection}</div>
+      <button class="ums-enter-btn" id="umsEnterBtn" onclick="_umsEnter()">${enterLabel} →</button>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  document.getElementById('umsSheet').addEventListener('click', e => e.stopPropagation());
+
+  // Auto-load clubs if login form is visible
+  if (document.getElementById('umsClubSelect')) _umsLoadClubs();
+}
+
+function _umsLoginFormHTML(mode) {
+  const isVault = mode === 'vault';
+  return `
+    <div class="ums-section-label">Club login</div>
+    <select id="umsClubSelect" class="ums-input">
+      <option value="">— Loading clubs… —</option>
+    </select>
+    <input type="password" id="umsPassword" class="ums-input"
+           placeholder="${isVault ? 'Admin password' : 'Club password'}"
+           onkeydown="if(event.key==='Enter')_umsEnter()">
+    <div id="umsFeedback" class="ums-feedback"></div>
+    <div class="ums-create-link-row">
+      New club? <button class="ums-switch-link" onclick="_umsShowCreate()">Create one ›</button>
+    </div>`;
+}
+
+function _umsShowLogin() {
+  // Show login form even when club connected (switch club)
+  const section = document.getElementById('umsClubSection');
+  if (section) {
+    section.innerHTML = _umsLoginFormHTML(_uSheetSelectedMode);
+    _umsLoadClubs();
+  }
+}
+
+function _umsShowCreate() {
+  const section = document.getElementById('umsClubSection');
+  if (!section) return;
+  section.innerHTML = `
+    <div class="ums-section-label">Create a new club</div>
+    <input type="text"     id="umsCreateName"    class="ums-input" placeholder="Club name">
+    <input type="email"    id="umsCreateEmail"   class="ums-input" placeholder="Your email (OTP verification)">
+    <input type="password" id="umsCreateUserPw"  class="ums-input" placeholder="User password">
+    <input type="password" id="umsCreateAdminPw" class="ums-input" placeholder="Admin password">
+    <div id="umsFeedback" class="ums-feedback"></div>
+    <div class="ums-create-link-row">
+      <button class="ums-switch-link" onclick="_umsShowLogin()">‹ Back to join</button>
+    </div>`;
+  const enterBtn = document.getElementById('umsEnterBtn');
+  if (enterBtn) { enterBtn.textContent = '📧 Send OTP →'; enterBtn.onclick = _umsSendOtp; }
+}
+
+function _umsSelectMode(mode) {
+  _uSheetSelectedMode = mode;
+  _renderUnifiedSheet();
+  // Load clubs if showing login form
+  const sel = document.getElementById('umsClubSelect');
+  if (sel) _umsLoadClubs();
+}
+
+async function _umsLoadClubs() {
+  const sel = document.getElementById('umsClubSelect');
+  if (!sel) return;
+  try {
+    const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
+    sel.innerHTML = '<option value="">— Select club —</option>';
+    clubs.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.name;
+      sel.appendChild(o);
+    });
+  } catch(e) {
+    sel.innerHTML = '<option value="">— Could not load clubs —</option>';
+  }
+}
+
+function _setUmsFb(msg, ok) {
+  const fb = document.getElementById('umsFeedback');
+  if (fb) { fb.textContent = msg; fb.className = 'ums-feedback ' + (ok ? 'ok' : 'err'); }
+}
+
+async function _umsEnter() {
+  const m = _uSheetSelectedMode;
+
+  // Viewer — no club needed
+  if (m === 'viewer') {
+    document.getElementById('modeSheetOverlay')?.remove();
+    appMode = 'viewer';
+    sessionStorage.setItem('appMode', 'viewer');
+    localStorage.setItem('kbrr_app_mode', 'viewer');
+    applyMode('viewer');
     if (typeof showHomeScreen === 'function') showHomeScreen();
     return;
   }
 
-  // Organiser / Vault — check club first
-  var club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (!club || !club.id) {
-    _showClubSetupSheet(mode);
+  const club = (typeof getMyClub === 'function') ? getMyClub() : null;
+  const hasClub = club && club.id;
+  const isAdmin = (typeof isClubAdmin === 'function') ? isClubAdmin() : false;
+
+  // Already connected to club
+  if (hasClub) {
+    if (m === 'vault' && !isAdmin) {
+      // Need admin pw
+      const pw = document.getElementById('umsVaultPw')?.value.trim();
+      if (!pw) { _setUmsFb('Enter admin password.', false); return; }
+      _setUmsFb('Checking…', true);
+      try {
+        const rows = await sbGet('clubs', `id=eq.${club.id}&select=admin_password`);
+        if (!rows?.length || rows[0].admin_password !== pw) {
+          _setUmsFb('Wrong admin password.', false); return;
+        }
+        localStorage.setItem('kbrr_club_mode', 'admin');
+      } catch(e) { _setUmsFb('Error: ' + e.message, false); return; }
+    }
+    _umsFinishEnter(m);
     return;
   }
 
-  // Vault — also needs admin auth
-  if (mode === 'vault') {
-    requestVaultMode();
-    return;
-  }
+  // No club — need to log in via form
+  const sel = document.getElementById('umsClubSelect');
+  const pwInput = document.getElementById('umsPassword');
+  if (!sel || !pwInput) return; // create flow uses its own button
 
+  if (!sel.value) { _setUmsFb('Please select a club.', false); return; }
+  const pw = pwInput.value.trim();
+  if (!pw) { _setUmsFb('Enter the club password.', false); return; }
+
+  _setUmsFb('Checking…', true);
+  try {
+    const clubs = await sbGet('clubs', `id=eq.${sel.value}&select=id,name,select_password,admin_password`);
+    if (!clubs.length) throw new Error('Club not found.');
+
+    let role = 'user';
+    if (pw === clubs[0].admin_password)       { role = 'admin'; }
+    else if (pw !== clubs[0].select_password) { throw new Error('Wrong password.'); }
+
+    if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
+    localStorage.setItem('kbrr_club_mode', role);
+    localStorage.setItem('kbrr_rating_field', 'club_ratings');
+    pwInput.value = '';
+
+    // Vault needs admin role
+    if (m === 'vault' && role !== 'admin') {
+      _setUmsFb('Vault requires admin password.', false); return;
+    }
+
+    _setUmsFb(role === 'admin' ? '✅ Joined as Admin' : '✅ Joined!', true);
+    setTimeout(() => _umsFinishEnter(m), 700);
+  } catch(e) { _setUmsFb('❌ ' + e.message, false); }
+}
+
+function _umsFinishEnter(mode) {
+  document.getElementById('modeSheetOverlay')?.remove();
+  if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
+  if (typeof syncToLocal === 'function') syncToLocal();
   appMode = mode;
   sessionStorage.setItem('appMode', mode);
   localStorage.setItem('kbrr_app_mode', mode);
   applyMode(mode);
   if (typeof showHomeScreen === 'function') showHomeScreen();
+}
+
+// OTP create-club flow (called from sheet's send OTP button)
+var _umsCreateEmail = '';
+async function _umsSendOtp() {
+  const name    = document.getElementById('umsCreateName')?.value.trim();
+  const email   = document.getElementById('umsCreateEmail')?.value.trim();
+  const userPw  = document.getElementById('umsCreateUserPw')?.value.trim();
+  const adminPw = document.getElementById('umsCreateAdminPw')?.value.trim();
+  if (!name)                        { _setUmsFb('Enter club name.', false); return; }
+  if (!email || !email.includes('@')){ _setUmsFb('Enter a valid email.', false); return; }
+  if (!userPw)                      { _setUmsFb('Enter user password.', false); return; }
+  if (!adminPw)                     { _setUmsFb('Enter admin password.', false); return; }
+  _setUmsFb('Sending OTP…', true);
+  try {
+    // Cache values for step 2
+    document.getElementById('umsCreateName')._sv    = name;
+    document.getElementById('umsCreateUserPw')._sv  = userPw;
+    document.getElementById('umsCreateAdminPw')._sv = adminPw;
+    await dbSendOtp(email);
+    _umsCreateEmail = email;
+    const maskedEmail = email.replace(/(.{2}).+(@.+)/, '$1…$2');
+    const section = document.getElementById('umsClubSection');
+    if (section) section.innerHTML = `
+      <div class="ums-section-label">Verify OTP</div>
+      <div class="ums-otp-hint">OTP sent to <strong>${maskedEmail}</strong></div>
+      <input type="text" id="umsOtp" class="ums-input" placeholder="8-digit OTP" maxlength="8"
+             onkeydown="if(event.key==='Enter')_umsVerifyOtp()">
+      <div id="umsFeedback" class="ums-feedback"></div>`;
+    const btn = document.getElementById('umsEnterBtn');
+    if (btn) { btn.textContent = 'Create Club →'; btn.onclick = _umsVerifyOtp; }
+  } catch(e) { _setUmsFb('❌ ' + e.message, false); }
+}
+
+async function _umsVerifyOtp() {
+  const otp     = document.getElementById('umsOtp')?.value.trim();
+  const name    = document.getElementById('umsCreateName')?._sv;
+  const userPw  = document.getElementById('umsCreateUserPw')?._sv;
+  const adminPw = document.getElementById('umsCreateAdminPw')?._sv;
+  if (!otp || otp.length < 6) { _setUmsFb('Enter the OTP.', false); return; }
+  _setUmsFb('Creating club…', true);
+  try {
+    await dbVerifyOtp(_umsCreateEmail, otp);
+    const club = await dbAddClub(name, userPw, adminPw, _umsCreateEmail);
+    if (typeof setMyClub === 'function') setMyClub(club.id, club.name);
+    localStorage.setItem('kbrr_club_mode', 'admin');
+    localStorage.setItem('kbrr_rating_field', 'club_ratings');
+    _setUmsFb(`✅ Club "${club.name}" created!`, true);
+    setTimeout(() => _umsFinishEnter(_uSheetSelectedMode), 800);
+  } catch(e) { _setUmsFb('❌ ' + e.message, false); }
+}
+
+function switchMode(mode) {
+  // Route everything through the unified sheet
+  _uSheetSelectedMode = mode || appMode || 'viewer';
+  openModeSwitcher();
 }
 
 function initModeOnLoad() {
@@ -179,12 +389,11 @@ async function initAppFlow() {
     return;
   }
 
-  // ── Step 2: Show mode select if no saved mode ──
+  // ── Step 2: No saved mode — open unified sheet (viewer pre-selected) ──
   var savedMode = localStorage.getItem('kbrr_app_mode') || sessionStorage.getItem('appMode') || '';
   if (!savedMode) {
-    // First launch — show mode select screen
-    var overlay = document.getElementById('modeSelectOverlay');
-    if (overlay) overlay.style.display = 'flex';
+    _uSheetSelectedMode = 'viewer';
+    _renderUnifiedSheet();
     return;
   }
 
@@ -201,8 +410,10 @@ async function initAppFlow() {
       selectMode('viewer');
       return;
     }
-    // Organiser or vault without club — show club setup
-    _showClubSetupSheet(savedMode);
+    // Organiser or vault without club — open unified sheet
+    _uSheetSelectedMode = savedMode;
+    _renderUnifiedSheet();
+    _umsLoadClubs();
     return;
   }
 
@@ -233,9 +444,6 @@ function showOnboardingOverlay(reason) {
     // Hide home overlay if visible
     var homeEl = document.getElementById('homePageOverlay');
     if (homeEl) homeEl.style.display = 'none';
-    // Hide mode select if visible
-    var modeEl = document.getElementById('modeSelectOverlay');
-    if (modeEl) modeEl.style.display = 'none';
     // Show vault page
     showPage('vaultPage', null);
   };
@@ -742,338 +950,15 @@ function restoreSyncIndicator() {
    VAULT MODE — Admin password gate
 ============================================================= */
 function requestVaultMode() {
-  const overlay = document.getElementById('modeSheetOverlay');
-  if (overlay) overlay.remove();
-
-  if (appMode === 'vault') { switchMode('vault'); return; }
-
-  // Check club first
-  var club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (!club || !club.id) {
-    _showClubSetupSheet('vault');
-    return;
-  }
-
-  // Already authenticated as admin this session
-  if (localStorage.getItem('kbrr_club_mode') === 'admin') {
-    appMode = 'vault';
-    sessionStorage.setItem('appMode', 'vault');
-    localStorage.setItem('kbrr_app_mode', 'vault');
-    applyMode('vault');
-    if (typeof showHomeScreen === 'function') showHomeScreen();
-    return;
-  }
-  _showVaultPasswordPrompt();
+  _uSheetSelectedMode = 'vault';
+  openModeSwitcher();
 }
 
 /* =============================================================
-   CLUB SETUP SHEET — shown when entering Organiser or Vault without a club
-   Provides: Join existing club | Create new club
+   LEGACY STUBS — replaced by unified sheet (_umsEnter etc.)
 ============================================================= */
-var _clubSetupTargetMode = null; // mode to enter after club is set up
-var _clubSetupCreateEmail = '';  // email during create-club OTP flow
-
-function _showClubSetupSheet(targetMode) {
-  _clubSetupTargetMode = targetMode;
-  const existing = document.getElementById('clubSetupSheetOverlay');
-  if (existing) existing.remove();
-
-  const modeLabel = targetMode === 'vault' ? '🔑 Vault Manager' : '🏆 Round Organiser';
-
-  const overlay = document.createElement('div');
-  overlay.id = 'clubSetupSheetOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
-  overlay.innerHTML = `
-    <div class="club-setup-sheet" id="clubSetupSheet">
-      <div class="mode-sheet-handle"></div>
-      <div class="mode-sheet-title">${modeLabel}</div>
-      <p style="font-size:0.84rem;color:var(--text-dim);margin-bottom:16px;line-height:1.5">
-        You need to be connected to a club. Join an existing club or create a new one.
-      </p>
-
-      <!-- TAB SWITCHER -->
-      <div class="club-setup-tabs" id="clubSetupTabs">
-        <button class="club-setup-tab active" id="clubSetupTabJoin" onclick="_clubSetupShowTab('join')">Join Club</button>
-        <button class="club-setup-tab" id="clubSetupTabCreate" onclick="_clubSetupShowTab('create')">Create Club</button>
-      </div>
-
-      <!-- JOIN PANEL -->
-      <div id="clubSetupPanelJoin" style="margin-top:14px">
-        <select id="csJoinClubSelect" class="auth-input" style="margin-bottom:10px">
-          <option value="">— Loading clubs… —</option>
-        </select>
-        <input type="password" id="csJoinPassword" class="auth-input" placeholder="Club password" style="margin-bottom:10px">
-        <div id="csJoinFeedback" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
-        <div style="display:flex;gap:10px">
-          <button class="admin-modal-cancel" style="flex:1" onclick="document.getElementById('clubSetupSheetOverlay').remove()">Cancel</button>
-          <button class="admin-modal-ok" style="flex:1" onclick="_clubSetupJoin()">Join</button>
-        </div>
-      </div>
-
-      <!-- CREATE PANEL -->
-      <div id="clubSetupPanelCreate" style="display:none;margin-top:14px">
-        <div id="clubSetupCreateStep1">
-          <input type="text"     id="csCreateName"    class="auth-input" placeholder="Club name"       style="margin-bottom:8px">
-          <input type="email"    id="csCreateEmail"   class="auth-input" placeholder="Your email (OTP)" style="margin-bottom:8px">
-          <input type="password" id="csCreateUserPw"  class="auth-input" placeholder="User password"   style="margin-bottom:8px">
-          <input type="password" id="csCreateAdminPw" class="auth-input" placeholder="Admin password"  style="margin-bottom:10px">
-          <div id="csCreateFeedback" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
-          <div style="display:flex;gap:10px">
-            <button class="admin-modal-cancel" style="flex:1" onclick="document.getElementById('clubSetupSheetOverlay').remove()">Cancel</button>
-            <button class="admin-modal-ok" style="flex:1" onclick="_clubSetupCreateSendOtp()">📧 Send OTP</button>
-          </div>
-        </div>
-        <div id="clubSetupCreateStep2" style="display:none">
-          <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:10px">
-            OTP sent to <strong id="csCreateEmailMasked"></strong>
-            · <button class="link-btn" onclick="_clubSetupCreateResend()">Resend</button>
-          </p>
-          <input type="text" id="csCreateOtp" class="auth-input" placeholder="Enter 8-digit OTP" maxlength="8"
-                 onkeydown="if(event.key==='Enter')_clubSetupCreateVerify()" style="margin-bottom:10px">
-          <div id="csCreateFeedback2" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
-          <div style="display:flex;gap:10px">
-            <button class="admin-modal-cancel" style="flex:1" onclick="_clubSetupShowTab('create')">Back</button>
-            <button class="admin-modal-ok" style="flex:1" onclick="_clubSetupCreateVerify()">Create Club</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-  document.getElementById('clubSetupSheet').addEventListener('click', e => e.stopPropagation());
-
-  // Load clubs for join dropdown
-  _clubSetupLoadClubs();
-}
-
-function _clubSetupShowTab(tab) {
-  document.getElementById('clubSetupTabJoin').classList.toggle('active', tab === 'join');
-  document.getElementById('clubSetupTabCreate').classList.toggle('active', tab === 'create');
-  document.getElementById('clubSetupPanelJoin').style.display   = tab === 'join'   ? '' : 'none';
-  document.getElementById('clubSetupPanelCreate').style.display = tab === 'create' ? '' : 'none';
-  // Reset create steps
-  if (tab === 'create') {
-    document.getElementById('clubSetupCreateStep1').style.display = '';
-    document.getElementById('clubSetupCreateStep2').style.display = 'none';
-    _clubSetupCreateEmail = '';
-  }
-}
-
-async function _clubSetupLoadClubs() {
-  const select = document.getElementById('csJoinClubSelect');
-  if (!select) return;
-  try {
-    const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
-    select.innerHTML = '<option value="">— Select club —</option>';
-    clubs.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id; opt.textContent = c.name;
-      select.appendChild(opt);
-    });
-  } catch(e) {
-    select.innerHTML = '<option value="">— Could not load clubs —</option>';
-  }
-}
-
-async function _clubSetupJoin() {
-  const select = document.getElementById('csJoinClubSelect');
-  const pwInput = document.getElementById('csJoinPassword');
-  const fb = document.getElementById('csJoinFeedback');
-  const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
-
-  if (!select || !select.value) { setFb('Please select a club.', false); return; }
-  const pw = pwInput ? pwInput.value.trim() : '';
-  if (!pw) { setFb('Enter the club password.', false); return; }
-
-  setFb('Checking…', true);
-  try {
-    const isVault = _clubSetupTargetMode === 'vault';
-    const fields = isVault ? 'id,name,select_password,admin_password' : 'id,name,select_password,admin_password';
-    const clubs = await sbGet('clubs', `id=eq.${select.value}&select=${fields}`);
-    if (!clubs.length) throw new Error('Club not found.');
-
-    let role = 'user';
-    if (pw === clubs[0].admin_password) {
-      role = 'admin';
-    } else if (pw !== clubs[0].select_password) {
-      throw new Error('Wrong password.');
-    }
-
-    if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
-    localStorage.setItem('kbrr_club_mode', role);
-    localStorage.setItem('kbrr_rating_field', 'club_rating');
-    if (pwInput) pwInput.value = '';
-
-    setFb(role === 'admin' ? '✅ Joined as Admin' : '✅ Joined successfully', true);
-
-    // Small delay so user sees success, then enter the mode
-    setTimeout(() => {
-      const ov = document.getElementById('clubSetupSheetOverlay');
-      if (ov) ov.remove();
-      if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
-      if (typeof syncToLocal === 'function') syncToLocal();
-
-      const mode = _clubSetupTargetMode;
-      if (mode === 'vault') {
-        // Vault: if admin just joined as admin, go straight in; else ask for admin pw
-        if (role === 'admin') {
-          appMode = 'vault';
-          sessionStorage.setItem('appMode', 'vault');
-          localStorage.setItem('kbrr_app_mode', 'vault');
-          applyMode('vault');
-          if (typeof showHomeScreen === 'function') showHomeScreen();
-        } else {
-          _showVaultPasswordPrompt();
-        }
-      } else {
-        appMode = mode;
-        sessionStorage.setItem('appMode', mode);
-        localStorage.setItem('kbrr_app_mode', mode);
-        applyMode(mode);
-        if (typeof showHomeScreen === 'function') showHomeScreen();
-      }
-    }, 700);
-  } catch(e) { setFb('❌ ' + e.message, false); }
-}
-
-async function _clubSetupCreateSendOtp() {
-  const name    = document.getElementById('csCreateName')?.value.trim();
-  const email   = document.getElementById('csCreateEmail')?.value.trim();
-  const userPw  = document.getElementById('csCreateUserPw')?.value.trim();
-  const adminPw = document.getElementById('csCreateAdminPw')?.value.trim();
-  const fb      = document.getElementById('csCreateFeedback');
-  const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
-
-  if (!name)    { setFb('Enter club name.', false); return; }
-  if (!email || !email.includes('@')) { setFb('Enter a valid email.', false); return; }
-  if (!userPw)  { setFb('Enter user password.', false); return; }
-  if (!adminPw) { setFb('Enter admin password.', false); return; }
-
-  setFb('Sending OTP…', true);
-  try {
-    // Store form values so they survive the step switch
-    document.getElementById('csCreateName')._savedVal    = name;
-    document.getElementById('csCreateUserPw')._savedVal  = userPw;
-    document.getElementById('csCreateAdminPw')._savedVal = adminPw;
-
-    await dbSendOtp(email);
-    _clubSetupCreateEmail = email;
-
-    const masked = document.getElementById('csCreateEmailMasked');
-    if (masked) masked.textContent = maskEmail ? maskEmail(email) : email.replace(/(.{2}).+(@.+)/, '$1…$2');
-
-    document.getElementById('clubSetupCreateStep1').style.display = 'none';
-    document.getElementById('clubSetupCreateStep2').style.display = '';
-    document.getElementById('csCreateOtp').value = '';
-    document.getElementById('csCreateOtp').focus();
-    setFb('OTP sent! Check your email.', true);
-  } catch(e) { setFb('❌ ' + e.message, false); }
-}
-
-async function _clubSetupCreateResend() {
-  if (!_clubSetupCreateEmail) return;
-  try {
-    await dbSendOtp(_clubSetupCreateEmail);
-    const fb2 = document.getElementById('csCreateFeedback2');
-    if (fb2) { fb2.textContent = 'OTP resent.'; fb2.style.color = '#2dce89'; }
-  } catch(e) {}
-}
-
-async function _clubSetupCreateVerify() {
-  const otp     = document.getElementById('csCreateOtp')?.value.trim();
-  const name    = document.getElementById('csCreateName')?._savedVal    || document.getElementById('csCreateName')?.value.trim();
-  const userPw  = document.getElementById('csCreateUserPw')?._savedVal  || document.getElementById('csCreateUserPw')?.value.trim();
-  const adminPw = document.getElementById('csCreateAdminPw')?._savedVal || document.getElementById('csCreateAdminPw')?.value.trim();
-  const fb      = document.getElementById('csCreateFeedback2');
-  const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
-
-  if (!otp || otp.length < 8) { setFb('Enter the 8-digit OTP.', false); return; }
-  setFb('Creating club…', true);
-  try {
-    await dbVerifyOtp(_clubSetupCreateEmail, otp);
-    const club = await dbAddClub(name, userPw, adminPw, _clubSetupCreateEmail);
-    if (typeof setMyClub === 'function') setMyClub(club.id, club.name);
-    localStorage.setItem('kbrr_club_mode', 'admin');
-    localStorage.setItem('kbrr_rating_field', 'club_rating');
-    setFb(`✅ Club "${club.name}" created! You are now Admin.`, true);
-    _clubSetupCreateEmail = '';
-
-    setTimeout(() => {
-      const ov = document.getElementById('clubSetupSheetOverlay');
-      if (ov) ov.remove();
-      if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
-      if (typeof syncToLocal === 'function') syncToLocal();
-
-      const mode = _clubSetupTargetMode;
-      // Creator is always admin — go straight into requested mode
-      appMode = mode;
-      sessionStorage.setItem('appMode', mode);
-      localStorage.setItem('kbrr_app_mode', mode);
-      applyMode(mode);
-      if (typeof showHomeScreen === 'function') showHomeScreen();
-    }, 1000);
-  } catch(e) { setFb('❌ ' + e.message, false); }
-}
-
-function _showVaultPasswordPrompt() {
-  const existing = document.getElementById('vaultPromptOverlay');
-  if (existing) existing.remove();
-
-  const overlay = document.createElement('div');
-  overlay.id = 'vaultPromptOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
-  overlay.innerHTML = `
-    <div class="vault-pw-sheet" id="vaultPwSheet">
-      <div class="mode-sheet-handle"></div>
-      <div class="mode-sheet-title">🔑 Vault Manager</div>
-      <p style="font-size:0.84rem;color:var(--text-dim);margin-bottom:16px;line-height:1.5">
-        Enter the club admin password to access Vault Manager.
-      </p>
-      <input type="password" id="vaultPwInput" class="admin-password-input"
-             placeholder="Admin password"
-             onkeydown="if(event.key==='Enter')verifyVaultPassword()"
-             style="margin-bottom:12px;width:100%">
-      <div id="vaultPwError" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:12px"></div>
-      <div style="display:flex;gap:10px">
-        <button class="admin-modal-cancel" style="flex:1"
-                onclick="document.getElementById('vaultPromptOverlay').remove()">Cancel</button>
-        <button class="admin-modal-ok" style="flex:1"
-                onclick="verifyVaultPassword()">Enter Vault</button>
-      </div>
-    </div>
-  `;
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-  document.getElementById('vaultPwSheet').addEventListener('click', e => e.stopPropagation());
-  setTimeout(() => document.getElementById('vaultPwInput')?.focus(), 100);
-}
-
-async function verifyVaultPassword() {
-  const input = document.getElementById('vaultPwInput');
-  const errEl = document.getElementById('vaultPwError');
-  const pw    = (input ? input.value : '').trim();
-  if (!pw) { if (errEl) errEl.textContent = 'Enter the admin password'; return; }
-
-  const club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (!club || !club.id) { if (errEl) errEl.textContent = 'No club selected'; return; }
-
-  if (errEl) errEl.textContent = 'Checking...';
-  try {
-    const rows = await sbGet('clubs', `id=eq.${club.id}&select=admin_password`);
-    if (!rows || !rows.length || rows[0].admin_password !== pw) {
-      if (errEl) errEl.textContent = 'Wrong admin password';
-      if (input) input.value = '';
-      return;
-    }
-    localStorage.setItem('kbrr_club_mode', 'admin');
-    const ov = document.getElementById('vaultPromptOverlay');
-    if (ov) ov.remove();
-    switchMode('vault');
-  } catch(e) {
-    if (errEl) errEl.textContent = 'Error: ' + e.message;
-  }
-}
+var _clubSetupTargetMode = null;
+var _clubSetupCreateEmail = '';
 
 /* =============================================================
    POWER BUTTON — End Session
