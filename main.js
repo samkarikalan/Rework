@@ -101,7 +101,7 @@ function _renderUnifiedSheet() {
   if (m === 'viewer') {
     clubSection = `<div class="ums-viewer-note">No club needed — just pick a player to follow in Viewer mode.</div>`;
   } else if (hasClub) {
-    const isAdmin = (typeof isClubAdmin === 'function') ? isClubAdmin() : false;
+    const isAdmin = (typeof getClubMode === 'function') ? getClubMode() === 'admin' : localStorage.getItem('kbrr_club_mode') === 'admin';
     const roleTag = isAdmin
       ? `<span class="ums-role-tag admin">Admin</span>`
       : `<span class="ums-role-tag user">User</span>`;
@@ -250,18 +250,18 @@ async function _umsEnter() {
 
   const club = (typeof getMyClub === 'function') ? getMyClub() : null;
   const hasClub = club && club.id;
-  const isAdmin = (typeof isClubAdmin === 'function') ? isClubAdmin() : false;
+  const isAdmin = (typeof getClubMode === 'function') ? getClubMode() === 'admin' : localStorage.getItem('kbrr_club_mode') === 'admin';
 
   // Already connected to club
   if (hasClub) {
     if (m === 'vault' && !isAdmin) {
-      // Need admin pw
+      // Need admin pw — filter by password server-side (avoids RLS issue reading admin_password column)
       const pw = document.getElementById('umsVaultPw')?.value.trim();
       if (!pw) { _setUmsFb('Enter admin password.', false); return; }
       _setUmsFb('Checking…', true);
       try {
-        const rows = await sbGet('clubs', `id=eq.${club.id}&select=admin_password`);
-        if (!rows?.length || rows[0].admin_password !== pw) {
+        const rows = await sbGet('clubs', `id=eq.${club.id}&admin_password=eq.${encodeURIComponent(pw)}&select=id`);
+        if (!rows?.length) {
           _setUmsFb('Wrong admin password.', false); return;
         }
         localStorage.setItem('kbrr_club_mode', 'admin');
