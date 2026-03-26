@@ -1131,15 +1131,3 @@ document.addEventListener("click", function(e) {
   }
 });
 
-
-
-// Helper: remove duplicate players
-function removeDuplicates(players) {
-  const seen = new Set();
-  return players.filter(p => {
-    const key = (p.name || "").trim().toLowerCase() + "_" + (p.gender || "");
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
