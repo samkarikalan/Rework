@@ -126,11 +126,17 @@ async function authLogin(userId, password) {
 
   // ── Real Supabase ──
   try {
+    // Filter by both user_id and password_hash server-side (avoids RLS blocking column read)
     var rows = await sbGet('user_accounts',
       'user_id=eq.' + encodeURIComponent(userId) +
       '&password_hash=eq.' + encodeURIComponent(password) +
       '&select=id,user_id,nickname,email');
-    if (!rows || !rows.length) return { error: 'Invalid User ID or password' };
+    if (!rows || !rows.length) {
+      // Check if user exists at all (to give better error message)
+      var exists = await sbGet('user_accounts', 'user_id=eq.' + encodeURIComponent(userId) + '&select=id').catch(() => []);
+      if (!exists || !exists.length) return { error: 'User ID not found' };
+      return { error: 'Invalid User ID or password' };
+    }
     var u = rows[0];
     var authUser = { id: u.id, userId: u.user_id, nickname: u.nickname, email: u.email };
     _authUser = authUser;
@@ -280,13 +286,16 @@ async function authRequestJoin(clubId, chosenNickname) {
   if (!nickname) return { error: 'Please provide a nickname.' };
 
   try {
-    // Check if already a member (by user_account_id)
-    var members = await sbGet('players',
-      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id + '&select=id');
-    if (members && members.length) {
-      var club = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name');
-      if (club && club.length) setMyClub(club[0].id, club[0].name);
-      return { alreadyMember: true };
+    // Check if already a member via user_account_id on players + club_members
+    var playerRows = await sbGet('players', 'user_account_id=eq.' + user.id + '&select=id').catch(() => []);
+    if (playerRows && playerRows.length) {
+      var pid = playerRows[0].id;
+      var memberCheck = await sbGet('club_members', 'player_id=eq.' + pid + '&club_id=eq.' + clubId + '&select=id').catch(() => []);
+      if (memberCheck && memberCheck.length) {
+        var club = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name').catch(() => []);
+        if (club && club.length) setMyClub(club[0].id, club[0].name);
+        return { alreadyMember: true };
+      }
     }
 
     // Check if already requested
@@ -360,17 +369,27 @@ async function authAcceptRequest(requestId, clubId, userAccountId, nickname, gen
       reviewed_at: new Date().toISOString()
     });
 
-    // Create player row with club_id and user_account_id
-    await sbPost('players', {
-      club_id:         clubId,
-      user_account_id: userAccountId,
-      nickname:        nickname,
-      gender:          gender || 'Male',
-      rating:          1.0,
-      club_rating:     1.0,
-      wins:            0,
-      losses:          0
-    });
+    // Check if player already exists globally
+    var existing = await sbGet('players', 'nickname=ilike.' + encodeURIComponent(nickname) + '&select=id').catch(() => []);
+    var playerId;
+    if (existing && existing.length) {
+      playerId = existing[0].id;
+    } else {
+      // Create new global player
+      var created = await sbPost('players', {
+        name:            nickname,
+        nickname:        nickname,
+        user_account_id: userAccountId,
+        gender:          gender || 'Male',
+        rating:          1.0,
+        club_rating:     1.0,
+        wins:            0,
+        losses:          0
+      });
+      playerId = created[0].id;
+    }
+    // Link player to club via club_members
+    await sbPost('club_members', { club_id: clubId, player_id: playerId }).catch(() => {});
 
     return { success: true };
   } catch(e) {

@@ -130,7 +130,7 @@ async function dbGetPlayers(forceFresh = false) {
       const members = await sbGet("club_members", `club_id=eq.${club.id}&select=player_id`);
       const ids = members.map(m => m.player_id);
       if (!ids.length) return [];
-      const inList = `(${ids.map(id => `"${id}"`).join(",")})`;
+      const inList = `(${ids.join(",")})`;
       players = await sbGet("players", `id=in.${inList}&order=name.asc&select=id,name,gender,rating,registered_date,club_ratings`);
     } else {
       players = await sbGet("players", "order=name.asc&select=id,name,gender,rating,registered_date,club_ratings");
@@ -775,7 +775,7 @@ async function dbGetLiveSessions() {
       if (!myPlayer) return [];
       const clubIds = await dbGetPlayerClubs(myPlayer.name);
       if (!clubIds.length) return [];
-      const inList = '(' + clubIds.map(id => '"' + id + '"').join(',') + ')';
+      const inList = '(' + clubIds.join(',') + ')';
       const rows = await sbGet('sessions',
         `club_id=in.${inList}&status=eq.live&order=created_at.asc&select=id,rounds_data,started_by,updated_at,club_id`
       );
@@ -804,7 +804,7 @@ async function dbGetPastSessions() {
       if (!myPlayer) return [];
       const clubIds = await dbGetPlayerClubs(myPlayer.name);
       if (!clubIds.length) return [];
-      const inList = '(' + clubIds.map(id => '"' + id + '"').join(',') + ')';
+      const inList = '(' + clubIds.join(',') + ')';
       const rows = await sbGet('sessions',
         `club_id=in.${inList}&status=eq.completed&order=updated_at.desc&limit=5&select=id,date,started_by,players,rounds_data,updated_at,club_id`
       );
