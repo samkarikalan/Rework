@@ -775,7 +775,7 @@ async function dbGetLiveSessions() {
       if (!myPlayer) return [];
       const clubIds = await dbGetPlayerClubs(myPlayer.name);
       if (!clubIds.length) return [];
-      const inList = '(' + clubIds.join(',') + ')';
+      const inList = '(' + clubIds.map(id => '"' + id + '"').join(',') + ')';
       const rows = await sbGet('sessions',
         `club_id=in.${inList}&status=eq.live&order=created_at.asc&select=id,rounds_data,started_by,updated_at,club_id`
       );
@@ -804,7 +804,7 @@ async function dbGetPastSessions() {
       if (!myPlayer) return [];
       const clubIds = await dbGetPlayerClubs(myPlayer.name);
       if (!clubIds.length) return [];
-      const inList = '(' + clubIds.join(',') + ')';
+      const inList = '(' + clubIds.map(id => '"' + id + '"').join(',') + ')';
       const rows = await sbGet('sessions',
         `club_id=in.${inList}&status=eq.completed&order=updated_at.desc&limit=5&select=id,date,started_by,players,rounds_data,updated_at,club_id`
       );
