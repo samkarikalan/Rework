@@ -352,7 +352,7 @@ async function _umsVerifyOtp() {
   const name    = document.getElementById('umsCreateName')?._sv;
   const userPw  = document.getElementById('umsCreateUserPw')?._sv;
   const adminPw = document.getElementById('umsCreateAdminPw')?._sv;
-  if (!otp || otp.length < 6) { _setUmsFb('Enter the OTP.', false); return; }
+  if (!otp || otp.length < 8) { _setUmsFb('Enter the OTP.', false); return; }
   _setUmsFb('Creating club…', true);
   try {
     await dbVerifyOtp(_umsCreateEmail, otp);
