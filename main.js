@@ -194,15 +194,14 @@ function _umsShowCreate() {
   section.innerHTML = `
     <div class="ums-section-label">Create a new club</div>
     <input type="text"     id="umsCreateName"    class="ums-input" placeholder="Club name">
-    <input type="email"    id="umsCreateEmail"   class="ums-input" placeholder="Your email (OTP verification)">
-    <input type="password" id="umsCreateUserPw"  class="ums-input" placeholder="User password">
+    <input type="password" id="umsCreateUserPw"  class="ums-input" placeholder="Member password">
     <input type="password" id="umsCreateAdminPw" class="ums-input" placeholder="Admin password">
     <div id="umsFeedback" class="ums-feedback"></div>
     <div class="ums-create-link-row">
       <button class="ums-switch-link" onclick="_umsShowLogin()">‹ Back to join</button>
     </div>`;
   const enterBtn = document.getElementById('umsEnterBtn');
-  if (enterBtn) { enterBtn.textContent = '📧 Send OTP →'; enterBtn.onclick = _umsSendOtp; }
+  if (enterBtn) { enterBtn.textContent = 'Create Club →'; enterBtn.onclick = _umsCreateClub; }
 }
 
 function _umsSelectMode(mode) {
@@ -316,47 +315,18 @@ function _umsFinishEnter(mode) {
 }
 
 // OTP create-club flow (called from sheet's send OTP button)
-var _umsCreateEmail = '';
-async function _umsSendOtp() {
+// Create club directly — no OTP needed, auth is handled by Supabase Auth
+async function _umsCreateClub() {
   const name    = document.getElementById('umsCreateName')?.value.trim();
-  const email   = document.getElementById('umsCreateEmail')?.value.trim();
   const userPw  = document.getElementById('umsCreateUserPw')?.value.trim();
   const adminPw = document.getElementById('umsCreateAdminPw')?.value.trim();
-  if (!name)                        { _setUmsFb('Enter club name.', false); return; }
-  if (!email || !email.includes('@')){ _setUmsFb('Enter a valid email.', false); return; }
-  if (!userPw)                      { _setUmsFb('Enter user password.', false); return; }
-  if (!adminPw)                     { _setUmsFb('Enter admin password.', false); return; }
-  _setUmsFb('Sending OTP…', true);
-  try {
-    // Cache values for step 2
-    document.getElementById('umsCreateName')._sv    = name;
-    document.getElementById('umsCreateUserPw')._sv  = userPw;
-    document.getElementById('umsCreateAdminPw')._sv = adminPw;
-    await dbSendOtp(email);
-    _umsCreateEmail = email;
-    const maskedEmail = email.replace(/(.{2}).+(@.+)/, '$1…$2');
-    const section = document.getElementById('umsClubSection');
-    if (section) section.innerHTML = `
-      <div class="ums-section-label">Verify OTP</div>
-      <div class="ums-otp-hint">OTP sent to <strong>${maskedEmail}</strong></div>
-      <input type="text" id="umsOtp" class="ums-input" placeholder="8-digit OTP" maxlength="8"
-             onkeydown="if(event.key==='Enter')_umsVerifyOtp()">
-      <div id="umsFeedback" class="ums-feedback"></div>`;
-    const btn = document.getElementById('umsEnterBtn');
-    if (btn) { btn.textContent = 'Create Club →'; btn.onclick = _umsVerifyOtp; }
-  } catch(e) { _setUmsFb('❌ ' + e.message, false); }
-}
-
-async function _umsVerifyOtp() {
-  const otp     = document.getElementById('umsOtp')?.value.trim();
-  const name    = document.getElementById('umsCreateName')?._sv;
-  const userPw  = document.getElementById('umsCreateUserPw')?._sv;
-  const adminPw = document.getElementById('umsCreateAdminPw')?._sv;
-  if (!otp || otp.length < 8) { _setUmsFb('Enter the OTP.', false); return; }
+  if (!name)    { _setUmsFb('Enter club name.', false); return; }
+  if (!userPw)  { _setUmsFb('Enter member password.', false); return; }
+  if (!adminPw) { _setUmsFb('Enter admin password.', false); return; }
+  if (userPw === adminPw) { _setUmsFb('Member and admin passwords must be different.', false); return; }
   _setUmsFb('Creating club…', true);
   try {
-    await dbVerifyOtp(_umsCreateEmail, otp);
-    const club = await dbAddClub(name, userPw, adminPw, _umsCreateEmail);
+    const club = await dbAddClub(name, userPw, adminPw);
     if (typeof setMyClub === 'function') setMyClub(club.id, club.name);
     localStorage.setItem('kbrr_club_mode', 'admin');
     localStorage.setItem('kbrr_rating_field', 'club_ratings');
@@ -383,9 +353,18 @@ async function initAppFlow() {
   // Always show mode select on fresh load
   localStorage.removeItem('kbrr_app_mode');
   sessionStorage.removeItem('appMode');
-  // ── Step 1: Check auth ──
-  if (typeof authIsLoggedIn === 'function' && !authIsLoggedIn()) {
-    authShowScreen('welcome');
+
+  // ── Step 1: Init auth — refresh JWT if needed ──
+  if (typeof authInit === 'function') {
+    const loggedIn = await authInit();
+    if (!loggedIn) {
+      if (typeof authShowScreen === 'function') authShowScreen('welcome');
+      return;
+    }
+    // Update SB_HEADERS with fresh JWT
+    if (typeof _updateSbHeaders === 'function') _updateSbHeaders();
+  } else if (typeof authIsLoggedIn === 'function' && !authIsLoggedIn()) {
+    if (typeof authShowScreen === 'function') authShowScreen('welcome');
     return;
   }
 
@@ -509,16 +488,14 @@ document.addEventListener('DOMContentLoaded', () => {
       allRounds.some(r => (r.games || r).some(g => g.winner));
     if (!hasGames) return;
 
-    // Check last round update time from live_sessions
+    // Check last round update time from sessions table
     try {
-      const club = (typeof getMyClub === "function") ? getMyClub() : { id: null };
-      if (!club.id) return;
-      const today = new Date().toISOString().split("T")[0];
-      const rows  = await sbGet("live_sessions",
-        `club_id=eq.${club.id}&date=eq.${today}&order=updated_at.desc&limit=1`);
+      const sessionId = (typeof getMySessionId === 'function') ? getMySessionId() : null;
+      if (!sessionId) return;
+      const rows = await sbGet('sessions', `id=eq.${sessionId}&select=id,started_at`);
       if (!rows || !rows.length) return;
 
-      const lastUpdate = new Date(rows[0].updated_at).getTime();
+      const lastUpdate = new Date(rows[0].started_at).getTime();
       if (Date.now() - lastUpdate < AUTO_END_MS) return;
 
       // 1hr idle — silently end session
@@ -968,9 +945,6 @@ async function endSession(fromProfile = false) {
 
   // Mark session completed in sessions table
   if (typeof dbCompleteSession === 'function') await dbCompleteSession();
-
-  // Flush live_sessions → players.sessions, then delete temp rows
-  if (typeof flushLiveSession === 'function') await flushLiveSession();
 
   // Release session slots
   if (typeof dbReleaseMySession === 'function') await dbReleaseMySession();

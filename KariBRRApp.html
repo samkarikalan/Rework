@@ -50,18 +50,18 @@
   <!-- ============================= -->
   <div id="authOverlay" class="auth-overlay" style="display:none;">
 
-    <!-- WELCOME screen -->
+    <!-- WELCOME -->
     <div id="authWelcome" class="auth-screen">
       <div class="auth-logo">🏸</div>
-      <div class="auth-app-name">Sports Club Scheduler</div>
-      <div class="auth-tagline">Badminton &amp; Pickleball</div>
+      <div class="auth-app-name">Club Scheduler</div>
+      <div class="auth-tagline">Badminton · Pickleball · Racket Sports</div>
       <div class="auth-welcome-btns">
         <button class="auth-btn-primary" onclick="authShowScreen('login')">Login</button>
         <button class="auth-btn-secondary" onclick="authShowScreen('signup')">Create Account</button>
       </div>
     </div>
 
-    <!-- LOGIN screen -->
+    <!-- LOGIN -->
     <div id="authLogin" class="auth-screen" style="display:none;">
       <div class="auth-back-row">
         <button class="auth-back-btn" onclick="authShowScreen('welcome')">&#8249;</button>
@@ -69,20 +69,24 @@
       </div>
       <div class="auth-form">
         <div class="auth-field">
-          <label class="auth-label">User ID</label>
-          <input type="text" id="loginUserId" class="auth-input" placeholder="e.g. kari123" autocapitalize="none">
+          <label class="auth-label">Email</label>
+          <input type="email" id="loginEmail" class="auth-input" placeholder="your@email.com"
+                 autocapitalize="none" autocomplete="email"
+                 onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
         </div>
         <div class="auth-field">
           <label class="auth-label">Password</label>
-          <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+          <input type="password" id="loginPassword" class="auth-input" placeholder="Password"
+                 autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter')authDoLogin()">
         </div>
-        <div id="loginError" class="auth-error" style="display:none;"></div>
-        <button class="auth-btn-primary" onclick="authDoLogin()">Login</button>
+        <div id="loginError" class="auth-error-msg" style="display:none;"></div>
+        <button id="loginBtn" class="auth-btn-primary" onclick="authDoLogin()">Login</button>
         <button class="auth-btn-link" onclick="authShowScreen('forgot')">Forgot password?</button>
       </div>
     </div>
 
-    <!-- SIGN UP screen -->
+    <!-- SIGN UP -->
     <div id="authSignup" class="auth-screen" style="display:none;">
       <div class="auth-back-row">
         <button class="auth-back-btn" onclick="authShowScreen('welcome')">&#8249;</button>
@@ -90,84 +94,52 @@
       </div>
       <div class="auth-form">
         <div class="auth-field">
-          <label class="auth-label">User ID <span class="auth-hint">unique, e.g. kari123</span></label>
-          <input type="text" id="signupUserId" class="auth-input" placeholder="kari123" autocapitalize="none">
+          <label class="auth-label">Email</label>
+          <input type="email" id="signupEmail" class="auth-input" placeholder="your@email.com"
+                 autocapitalize="none" autocomplete="email">
         </div>
         <div class="auth-field">
-          <label class="auth-label">Nickname <span class="auth-hint">shown to others</span></label>
-          <input type="text" id="signupNickname" class="auth-input" placeholder="Kari">
+          <label class="auth-label">Display Name <span class="auth-hint">your real name or alias</span></label>
+          <input type="text" id="signupDisplayName" class="auth-input" placeholder="e.g. Sam">
         </div>
         <div class="auth-field">
-          <label class="auth-label">Email <span class="auth-hint">for password recovery</span></label>
-          <input type="email" id="signupEmail" class="auth-input" placeholder="kari@email.com">
+          <label class="auth-label">Gender</label>
+          <select id="signupGender" class="auth-input">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
         </div>
         <div class="auth-field">
-          <label class="auth-label">Password</label>
-          <input type="password" id="signupPassword" class="auth-input" placeholder="Min 6 characters">
+          <label class="auth-label">Password <span class="auth-hint">min 6 characters</span></label>
+          <input type="password" id="signupPassword" class="auth-input" placeholder="Password"
+                 autocomplete="new-password">
         </div>
         <div class="auth-field">
           <label class="auth-label">Confirm Password</label>
-          <input type="password" id="signupConfirm" class="auth-input" placeholder="Repeat password">
+          <input type="password" id="signupConfirm" class="auth-input" placeholder="Repeat password"
+                 autocomplete="new-password"
+                 onkeydown="if(event.key==='Enter')authDoSignup()">
         </div>
-        <div id="signupError" class="auth-error" style="display:none;"></div>
-        <button class="auth-btn-primary" onclick="authDoSignup()">Create Account</button>
+        <div id="signupError" class="auth-error-msg" style="display:none;"></div>
+        <button id="signupBtn" class="auth-btn-primary" onclick="authDoSignup()">Create Account</button>
       </div>
     </div>
 
-    <!-- FORGOT PASSWORD screen -->
+    <!-- FORGOT PASSWORD -->
     <div id="authForgot" class="auth-screen" style="display:none;">
       <div class="auth-back-row">
         <button class="auth-back-btn" onclick="authShowScreen('login')">&#8249;</button>
         <span class="auth-screen-title">Reset Password</span>
       </div>
       <div class="auth-form">
-        <!-- Step 1: Email -->
-        <div id="forgotStep1">
-          <div class="auth-field">
-            <label class="auth-label">Email address</label>
-            <input type="email" id="forgotEmail" class="auth-input" placeholder="your@email.com">
-          </div>
-          <div id="forgotError" class="auth-error" style="display:none;"></div>
-          <button class="auth-btn-primary" onclick="authDoForgotSend()">Send OTP</button>
-        </div>
-        <!-- Step 2: OTP + new password -->
-        <div id="forgotStep2" style="display:none;">
-          <div class="auth-field">
-            <label class="auth-label">OTP Code</label>
-            <input type="text" id="forgotOtp" class="auth-input" placeholder="6-digit code" maxlength="6">
-          </div>
-          <div class="auth-field">
-            <label class="auth-label">New Password</label>
-            <input type="password" id="forgotNewPw" class="auth-input" placeholder="Min 6 characters">
-          </div>
-          <div id="forgotError2" class="auth-error" style="display:none;"></div>
-          <button class="auth-btn-primary" onclick="authDoForgotVerify()">Reset Password</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- JOIN CLUB screen -->
-    <div id="authJoinClub" class="auth-screen" style="display:none;">
-      <div class="auth-back-row">
-        <div style="flex:1"></div>
-        <button class="auth-btn-link" onclick="authSkipJoin()">Skip</button>
-      </div>
-      <div class="auth-logo" style="font-size:2.5rem;">🏢</div>
-      <div class="auth-screen-title" style="margin-bottom:6px;">Find Your Club</div>
-      <div class="auth-tagline">Search by club name and request to join</div>
-      <div class="auth-form" style="margin-top:24px;">
         <div class="auth-field">
-          <label class="auth-label">Search Club</label>
-          <input type="text" id="joinClubSearch" class="auth-input"
-            placeholder="Type club name..."
-            oninput="authSearchClubsUI(this.value)">
+          <label class="auth-label">Email address</label>
+          <input type="email" id="forgotEmail" class="auth-input" placeholder="your@email.com"
+                 onkeydown="if(event.key==='Enter')authDoForgotSend()">
         </div>
-        <div id="joinClubResults" class="auth-club-results" style="display:none;"></div>
-        <div id="joinClubError" class="auth-error" style="display:none;"></div>
-        <div id="joinClubPending" class="auth-pending" style="display:none;">
-          <div class="auth-pending-icon">⏳</div>
-          <div class="auth-pending-text">Request sent! Waiting for admin approval.</div>
-        </div>
+        <div id="forgotError" class="auth-error-msg" style="display:none;"></div>
+        <button id="forgotBtn" class="auth-btn-primary" onclick="authDoForgotSend()">Send Reset Link</button>
+        <p class="auth-hint-block">A reset link will be sent to your email. Requires email to be configured.</p>
       </div>
     </div>
 

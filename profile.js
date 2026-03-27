@@ -8,8 +8,21 @@ let _profileSwitching = false; // true while user is mid-switch
 let _previousPlayer   = null;  // saved before switch so cancel can restore
 
 function getMyPlayer() {
-  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || null; }
-  catch { return null; }
+  try {
+    const p = JSON.parse(localStorage.getItem(PROFILE_KEY));
+    if (!p) return null;
+    // Normalize fields for compatibility
+    if (p.display_name && !p.displayName) p.displayName = p.display_name;
+    if (p.displayName && !p.name) p.name = p.displayName;
+    // Ensure id — fall back to auth user
+    if (!p.id) {
+      try {
+        const u = JSON.parse(localStorage.getItem('kbrr_auth_user') || 'null');
+        if (u?.id) p.id = u.id;
+      } catch(e) {}
+    }
+    return p.id ? p : null;
+  } catch(e) { return null; }
 }
 
 function setMyPlayer(playerObj) {
@@ -68,13 +81,13 @@ async function updateProfileBtn() {
 
   if (tileAvatar) { tileAvatar.src = src; tileAvatar.style.display = 'block'; }
   if (tileIcon)   tileIcon.style.display = 'none';
-  if (tileName)   tileName.textContent = player.name;
+  if (tileName)   tileName.textContent = player.displayName || player.name || '';
   if (tileRating) tileRating.textContent = 'Loading...';
 
   try {
     const master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
     const hp = master.find(function(h) {
-      return h.displayName && h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase();
+      return h.displayName && h.displayName.trim().toLowerCase() === (player.displayName || player.name || '').trim().toLowerCase();
     });
     const clubRating = parseFloat(hp && hp.clubRating) || 1.0;
 
@@ -83,8 +96,8 @@ async function updateProfileBtn() {
     let wins = 0, losses = 0, hasSession = false;
 
     if (club.id) {
-      const liveRows = await sbGet('live_sessions',
-        'player_name=ilike.' + encodeURIComponent(player.name) + '&club_id=eq.' + club.id + '&date=eq.' + today);
+      // live_sessions removed — match data now in sessions.rounds_data
+      const liveRows = []; // live_sessions removed — match data now in sessions.rounds_data
       if (liveRows && liveRows.length) {
         const matches = typeof liveRows[0].matches === 'string'
           ? JSON.parse(liveRows[0].matches) : (liveRows[0].matches || []);
@@ -102,7 +115,7 @@ async function updateProfileBtn() {
   } catch(e) {
     const master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
     const hp = master.find(function(h) {
-      return h.displayName && h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase();
+      return h.displayName && h.displayName.trim().toLowerCase() === (player.displayName || player.name || '').trim().toLowerCase();
     });
     const clubRating = parseFloat(hp && hp.clubRating) || 1.0;
     if (tileRating) tileRating.textContent = 'Club ' + clubRating.toFixed(1);
@@ -118,7 +131,25 @@ async function openProfileDrawer() {
   overlay.classList.remove('hidden');
   drawer.classList.add('open');
 
-  const player = getMyPlayer();
+  let player = getMyPlayer();
+
+  // If no player stored but user is logged in via auth — use auth user directly
+  if (!player) {
+    try {
+      const authUser = JSON.parse(localStorage.getItem('kbrr_auth_user') || 'null');
+      if (authUser?.id) {
+        player = {
+          id:          authUser.id,
+          name:        authUser.displayName || authUser.email?.split('@')[0] || 'Player',
+          displayName: authUser.displayName || authUser.email?.split('@')[0] || 'Player',
+          gender:      authUser.gender || 'Male',
+          email:       authUser.email
+        };
+        setMyPlayer(player);
+      }
+    } catch(e) {}
+  }
+
   if (player) {
     showProfileCard(player);
   } else {
@@ -161,15 +192,20 @@ function showProfilePicker() {
   const searchEl = document.getElementById('profileSearch');
   if (searchEl) searchEl.value = '';
 
-  // Load ALL players from server (no club filter)
-  sbGet('players', 'order=name.asc&select=id,name,gender,rating,club_ratings,pin,recovery_word').then(players => {
-    _pickerAllPlayers = (players || []).map(p => ({
-      name:          p.name,
-      gender:        p.gender || 'Male',
-      rating:        p.rating || 1.0,
-      club_ratings:  p.club_ratings || {},
-      pin:           p.pin || null,
-      recovery_word: p.recovery_word || null
+  // Load club players via memberships
+  const _pickerClub = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+  const _pickerQuery = _pickerClub.id
+    ? sbGet('memberships', 'club_id=eq.' + _pickerClub.id + '&select=nickname,club_rating,players(id,gender,pin,recovery_word)&order=nickname.asc')
+    : sbGet('players', 'order=display_name.asc&select=id,display_name,gender,pin,recovery_word');
+
+  _pickerQuery.then(rows => {
+    _pickerAllPlayers = (rows || []).map(p => ({
+      name:          _pickerClub.id ? p.nickname : (p.display_name || p.nickname),
+      gender:        _pickerClub.id ? (p.players?.gender || 'Male') : (p.gender || 'Male'),
+      rating:        _pickerClub.id ? (parseFloat(p.club_rating) || 1.0) : 1.0,
+      club_ratings:  {},
+      pin:           _pickerClub.id ? (p.players?.pin || null) : (p.pin || null),
+      recovery_word: _pickerClub.id ? (p.players?.recovery_word || null) : (p.recovery_word || null)
     }));
     renderPickerList(_pickerAllPlayers);
   }).catch(() => {
@@ -264,9 +300,14 @@ async function confirmPinSetup(name) {
 
   err.textContent = '⏳ Saving...';
   try {
-    await sbPatch('players', `name=ilike.${encodeURIComponent(name)}`, {
-      pin, recovery_word: recovery
-    });
+    // pin and recovery_word are on players table
+    const _club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    if (_club.id) {
+      const _mrows = await sbGet('memberships', 'club_id=eq.' + _club.id + '&nickname=ilike.' + encodeURIComponent(name) + '&select=player_id').catch(() => []);
+      if (_mrows.length) {
+        await sbPatch('players', 'id=eq.' + _mrows[0].player_id, { pin, recovery_word: recovery });
+      }
+    }
     const p = _pickerAllPlayers.find(x => x.name === name);
     if (p) { p.pin = pin; p.recovery_word = recovery; }
     err.textContent = '';
@@ -337,7 +378,9 @@ async function confirmPinRecovery(name) {
 
   err.textContent = '⏳ Saving...';
   try {
-    await sbPatch('players', `name=ilike.${encodeURIComponent(name)}`, { pin: newPin });
+    // pin stored on players table via player id
+    const _pinPlayer = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
+    if (_pinPlayer?.id) await sbPatch('players', `id=eq.${_pinPlayer.id}`, { pin: newPin });
     p.pin = newPin;
     err.textContent = '';
     _completeProfileSelection(name);
@@ -393,15 +436,33 @@ async function showProfileCard(player) {
     player.gender === 'Female' ? 'female.png' : 'male.png';
 
   // Name
-  document.getElementById('pcName').textContent = player.name;
+  document.getElementById('pcName').textContent = player.displayName || player.name || '';
 
-  // Single gate — sync first, then read both raw values from cache
-  await syncToLocal();
-  const master       = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
-  const hp           = master.find(h => h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase());
-  const globalRating = parseFloat(hp && hp.rating)      || 1.0;  // players.rating — only updated in global mode
-  const clubRating   = parseFloat(hp && hp.clubRating)  || 1.0;  // club_ratings[clubId] — only updated in local mode
-  const activeRating = parseFloat(hp && hp.activeRating)|| 1.0;  // what session uses
+  // Get ratings — use player's own data from DB if available
+  let globalRating = parseFloat(player.global_rating || player.globalRating) || 1.0;
+  let clubRating   = parseFloat(player.club_rating   || player.clubRating)   || 1.0;
+
+  // Try to get fresh data from DB using player id
+  if (player.id) {
+    try {
+      const _prows = await sbGet('players', 'id=eq.' + player.id + '&select=global_rating,global_points').catch(() => []);
+      if (_prows.length) globalRating = parseFloat(_prows[0].global_rating) || globalRating;
+
+      const _club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+      if (_club.id) {
+        const _mrows2 = await sbGet('memberships', 'player_id=eq.' + player.id + '&club_id=eq.' + _club.id + '&select=club_rating,club_points').catch(() => []);
+        if (_mrows2.length) clubRating = parseFloat(_mrows2[0].club_rating) || clubRating;
+      }
+    } catch(e) {}
+  } else {
+    // Fallback to local cache
+    const master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
+    const hp = master.find(h => h.displayName && h.displayName.trim().toLowerCase() === (player.displayName || player.name || '').trim().toLowerCase());
+    globalRating = parseFloat(hp && hp.rating)     || globalRating;
+    clubRating   = parseFloat(hp && hp.clubRating) || clubRating;
+  }
+
+  const activeRating = clubRating;
   const tier         = ratingTierLabel(activeRating);
 
   document.getElementById('pcRating').textContent     = globalRating.toFixed(1);
@@ -410,19 +471,27 @@ async function showProfileCard(player) {
   document.getElementById('pcTier').style.background  = tier.color + '22';
   document.getElementById('pcTier').style.color       = tier.color;
 
-  // Fetch wins/losses only
+  // Fetch wins/losses from matches table
   document.getElementById('pcWins').textContent   = '…';
   document.getElementById('pcLosses').textContent = '…';
   try {
-    const playerRows = await sbGet('players',
-      `name=ilike.${encodeURIComponent(player.name)}&select=wins,losses`);
-    if (playerRows && playerRows.length) {
-      document.getElementById('pcWins').textContent   = (playerRows[0].wins   || 0);
-      document.getElementById('pcLosses').textContent = (playerRows[0].losses || 0);
-    } else {
-      document.getElementById('pcWins').textContent   = '—';
-      document.getElementById('pcLosses').textContent = '—';
+    const _club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    let _w = 0, _l = 0;
+    const _pid = player.id; // use player id directly
+    if (_pid) {
+      const _q = _club.id
+        ? 'club_id=eq.' + _club.id + '&select=winner_pair,pair1_player1,pair1_player2,pair2_player1,pair2_player2'
+        : 'select=winner_pair,pair1_player1,pair1_player2,pair2_player1,pair2_player2';
+      const _matches = await sbGet('matches', _q).catch(() => []);
+      for (const _m of _matches) {
+        const _in1 = _m.pair1_player1 === _pid || _m.pair1_player2 === _pid;
+        const _in2 = _m.pair2_player1 === _pid || _m.pair2_player2 === _pid;
+        if (!_in1 && !_in2) continue;
+        if ((_in1 && _m.winner_pair === 'pair1') || (_in2 && _m.winner_pair === 'pair2')) _w++; else _l++;
+      }
     }
+    document.getElementById('pcWins').textContent   = _w || '—';
+    document.getElementById('pcLosses').textContent = _l || '—';
   } catch(e) {
     document.getElementById('pcWins').textContent   = '—';
     document.getElementById('pcLosses').textContent = '—';
@@ -498,12 +567,12 @@ async function renderMyCard() {
   const avatar = document.getElementById('mcAvatar');
   if (avatar) avatar.src = player.gender === 'Female' ? 'female.png' : 'male.png';
   const nameEl = document.getElementById('mcName');
-  if (nameEl) nameEl.textContent = player.name;
+  if (nameEl) nameEl.textContent = player.displayName || player.name || '';
 
   // Ratings from local cache
   await syncToLocal();
   const master       = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
-  const hp           = master.find(h => h.displayName && h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase());
+  const hp           = master.find(h => h.displayName && h.displayName.trim().toLowerCase() === (player.displayName || player.name || '').trim().toLowerCase());
   const globalRating = parseFloat(hp && hp.rating)       || 1.0;
   const clubRating   = parseFloat(hp && hp.clubRating)   || 1.0;
   const activeRating = parseFloat(hp && hp.activeRating) || 1.0;
@@ -528,37 +597,43 @@ async function renderMyCard() {
     const club  = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
     const today = new Date().toISOString().split('T')[0];
 
-    const [playerRows, liveRows] = await Promise.all([
-      sbGet('players', `name=ilike.${encodeURIComponent(player.name)}&select=wins,losses,sessions`),
-      club.id
-        ? sbGet('live_sessions',
-            `player_name=ilike.${encodeURIComponent(player.name)}&club_id=eq.${club.id}&date=eq.${today}`)
-        : Promise.resolve([])
-    ]);
+    // Get wins/losses from matches table for this player in this club
+    const playerName = player.displayName || player.name || '';
+    let totalWins = 0, totalLosses = 0;
 
-    const lsKey         = `kbrr_sessions_${player.name.toLowerCase().replace(/\s+/g, '_')}`;
-    const localSessions = JSON.parse(localStorage.getItem(lsKey) || '[]');
-    const liveRow       = liveRows && liveRows.length ? liveRows[0] : null;
-    const liveMatches   = liveRow
-      ? (typeof liveRow.matches === 'string' ? JSON.parse(liveRow.matches) : (liveRow.matches || []))
-      : null;
+    if (club.id && playerName) {
+      const memberRows = await sbGet('memberships',
+        'club_id=eq.' + club.id + '&nickname=ilike.' + encodeURIComponent(playerName) + '&select=player_id'
+      ).catch(() => []);
 
-    let sessions = localSessions;
-    if (playerRows && playerRows.length) {
-      const data = playerRows[0];
-      sessions   = mergeSessions(localSessions, data.sessions || []);
-      if (winsEl)   winsEl.textContent   = (data.wins   || 0);
-      if (lossesEl) lossesEl.textContent = (data.losses || 0);
-    } else {
-      if (winsEl)   winsEl.textContent   = '—';
-      if (lossesEl) lossesEl.textContent = '—';
+      if (memberRows.length) {
+        const pid = memberRows[0].player_id;
+        const matchRows = await sbGet('matches',
+          'club_id=eq.' + club.id + '&select=winner_pair,pair1_player1,pair1_player2,pair2_player1,pair2_player2'
+        ).catch(() => []);
+
+        for (const m of matchRows) {
+          const inPair1 = m.pair1_player1 === pid || m.pair1_player2 === pid;
+          const inPair2 = m.pair2_player1 === pid || m.pair2_player2 === pid;
+          if (!inPair1 && !inPair2) continue;
+          const won = (inPair1 && m.winner_pair === 'pair1') || (inPair2 && m.winner_pair === 'pair2');
+          if (won) totalWins++; else totalLosses++;
+        }
+      }
     }
 
-    // Render sessions into mcSessions using a temp swap
+    if (winsEl)   winsEl.textContent   = totalWins;
+    if (lossesEl) lossesEl.textContent = totalLosses;
+
+    const lsKey         = 'kbrr_sessions_' + playerName.toLowerCase().replace(/\s+/g, '_');
+    const localSessions = JSON.parse(localStorage.getItem(lsKey) || '[]');
+    const liveMatches   = null;
+    const sessions      = localSessions;
+
     if (sessEl) {
       const prev = sessEl.id;
       sessEl.id  = 'pcSessions';
-      renderSessions(sessions, player.name, liveMatches);
+      renderSessions(sessions, playerName, liveMatches);
       sessEl.id  = prev;
     }
 

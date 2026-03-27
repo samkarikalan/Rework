@@ -6,6 +6,7 @@
 const SUPABASE_URL = "https://hplkoxdorbfjhwbvqatn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwbGtveGRvcmJmamh3YnZxYXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MTcyOTgsImV4cCI6MjA5MDE5MzI5OH0.G-04VeYkUGMF93qw61ryTaQ0Q7xK3dOAHLDvG6l31vc";
 
+// SB_HEADERS starts with anon key — updated to JWT after login via auth.js _updateSbHeaders()
 const SB_HEADERS = {
   "apikey":        SUPABASE_KEY,
   "Authorization": `Bearer ${SUPABASE_KEY}`,
@@ -108,7 +109,20 @@ function clearMyClub() {
 function getMyPlayer() {
   try {
     const raw = localStorage.getItem("kbrr_my_player");
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (!p) return null;
+    // Normalize display_name → displayName for legacy code compatibility
+    if (p.display_name && !p.displayName) p.displayName = p.display_name;
+    if (p.displayName && !p.name) p.name = p.displayName;
+    // Ensure id is always set — fall back to auth user id
+    if (!p.id) {
+      try {
+        const authUser = JSON.parse(localStorage.getItem("kbrr_auth_user") || "null");
+        if (authUser?.id) p.id = authUser.id;
+      } catch(e) {}
+    }
+    return p.id ? p : null; // never return a player without id
   } catch(e) { return null; }
 }
 function setMyPlayer(player) {
@@ -143,24 +157,19 @@ async function dbSendOtp(email) {
 }
 
 async function dbVerifyOtp(email, token) {
-  // Try both types — 'magiclink' for /auth/v1/otp flow, 'email' for signup confirmation
-  const types = ["magiclink", "email"];
-  let lastErr = "Invalid or expired OTP";
-  for (const type of types) {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
-      body: JSON.stringify({
-        email: email.trim().toLowerCase(),
-        token: token.trim(),
-        type
-      })
-    });
-    if (res.ok) return true;
-    const err = await res.json().catch(() => ({}));
-    lastErr = err.msg || err.message || lastErr;
-  }
-  throw new Error(lastErr);
+  // Use 'magiclink' type — correct for /auth/v1/otp endpoint
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+    body: JSON.stringify({
+      email: email.trim().toLowerCase(),
+      token: token.trim(),
+      type:  "magiclink"
+    })
+  });
+  if (res.ok) return true;
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.msg || err.message || "Invalid or expired OTP");
 }
 
 async function dbGetOrCreatePlayer(email, displayName, gender) {
@@ -724,3 +733,15 @@ function getClubMode()  { return localStorage.getItem("kbrr_club_mode") || null;
 // Legacy alias — old code calls getMyPlayer expecting {name, ...}
 // New code stores player with display_name — bridge here
 const _origGetMyPlayer = getMyPlayer;
+
+/* ── dbGetPlayerClubs — get all club IDs for a player ── */
+async function dbGetPlayerClubs(playerNameOrId) {
+  try {
+    const player = getMyPlayer();
+    const pid = player?.id;
+    if (!pid) return [];
+    const rows = await sbGet('memberships', 'player_id=eq.' + pid + '&select=club_id');
+    return (rows || []).map(m => m.club_id);
+  } catch(e) { return []; }
+}
+

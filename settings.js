@@ -286,15 +286,15 @@ async function playerPlayingRenderList() {
     let rows;
     if (club.id) {
       // Get only players belonging to this club
-      const members = await sbGet('club_members', `club_id=eq.${club.id}&select=player_id`);
-      if (!members || !members.length) {
+      rows = await sbGet('memberships',
+        `club_id=eq.${club.id}&is_playing=eq.true&select=nickname,players(gender)&order=nickname.asc`
+      );
+      if (!rows || !rows.length) {
         container.innerHTML = '<p class="player-mgmt-empty">No players currently locked.</p>';
         return;
       }
-      const idList = '(' + members.map(m => m.player_id).join(',') + ')';
-      rows = await sbGet('players',
-        `id=in.${idList}&is_playing=eq.true&select=name,gender,session_id,session_started_at&order=name.asc`
-      );
+      // Normalize to expected shape
+      rows = rows.map(m => ({ name: m.nickname, gender: m.players?.gender || 'Male' }));
     } else {
       // No club logged in — show nothing
       container.innerHTML = '<p class="player-mgmt-empty">Join a club to view playing players.</p>';
@@ -324,9 +324,7 @@ async function playerPlayingRenderList() {
     rows.forEach(function(p) {
       const row = document.createElement('div');
       row.className = 'player-mgmt-row';
-      const started = p.session_started_at
-        ? new Date(p.session_started_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
-        : '—';
+      const started = ''; // session time tracking removed
 
       const img = document.createElement('img');
       img.src = p.gender === 'Female' ? 'female.png' : 'male.png';
@@ -366,9 +364,12 @@ async function playerPlayingRenderList() {
 async function playerPlayingRelease(name) {
   if (!confirm('Release "' + name + '" from active session?')) return;
   try {
-    await sbPatch('players', 'name=ilike.' + encodeURIComponent(name), {
-      is_playing: false, session_id: null, session_started_at: null
-    });
+    const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    if (club.id) {
+      await sbPatch('memberships', `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}`, {
+        is_playing: false
+      });
+    }
     playerPlayingRenderList();
   } catch(e) { alert('Failed to release: ' + e.message); }
 }
@@ -378,11 +379,8 @@ async function playerPlayingReleaseAll() {
   try {
     const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
     if (!club.id) { alert('No club logged in.'); return; }
-    const members = await sbGet('club_members', `club_id=eq.${club.id}&select=player_id`);
-    if (!members || !members.length) return;
-    const idList = '(' + members.map(m => m.player_id).join(',') + ')';
-    await sbPatch('players', `id=in.${idList}&is_playing=eq.true`, {
-      is_playing: false, session_id: null, session_started_at: null
+    await sbPatch('memberships', `club_id=eq.${club.id}&is_playing=eq.true`, {
+      is_playing: false
     });
     playerPlayingRenderList();
   } catch(e) { alert('Failed: ' + e.message); }
@@ -448,7 +446,14 @@ async function playerMgmtToggleGender(displayName) {
   localStorage.setItem("newImportHistory", JSON.stringify(newImportState.historyPlayers));
   // Sync gender to Supabase
   try {
-    await sbPatch("players", `name=ilike.${encodeURIComponent(displayName.trim())}`, { gender: hp.gender });
+    // Update gender via memberships (nickname lookup)
+    const _gc = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    if (_gc.id) {
+      await sbPatch('memberships', `club_id=eq.${_gc.id}&nickname=ilike.${encodeURIComponent(displayName.trim())}`, { /* gender stored on players row */ });
+      // Also update players table via player id
+      const _pr = await sbGet('memberships', `club_id=eq.${_gc.id}&nickname=ilike.${encodeURIComponent(displayName.trim())}&select=player_id`).catch(()=>[]);
+      if (_pr.length) await sbPatch('players', `id=eq.${_pr[0].player_id}`, { gender: hp.gender });
+    }
   } catch(e) { /* silent */ }
   syncPlayersFromMaster();
   updatePlayerList();
@@ -460,12 +465,11 @@ async function playerMgmtDelete(displayName) {
   if (!confirm(`Remove "${displayName}" from this club?`)) return;
   const key = displayName.trim().toLowerCase();
 
-  // Remove from Supabase club_members
+  // Remove from Supabase memberships
   try {
-    const players = await sbGet("players", `name=ilike.${encodeURIComponent(displayName.trim())}&select=id`);
-    if (players.length) {
-      const club = getMyClub();
-      await sbDelete("club_members", `player_id=eq.${players[0].id}&club_id=eq.${club.id}`);
+    const club = getMyClub();
+    if (club.id) {
+      await sbDelete('memberships', `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(displayName.trim())}`);
     }
   } catch(e) { /* silent */ }
 
@@ -599,24 +603,16 @@ async function vaultRenderModify() {
   container.innerHTML = '<p class="player-mgmt-empty"><span class="vm-spinner"></span> Loading…</p>';
 
   try {
-    const [clubPlayers, userAccounts] = await Promise.all([
-      dbGetPlayers(true),
-      sbGet('user_accounts', 'select=id,user_id,password_hash').catch(() => [])
-    ]);
-
-    const userMap = {};
-    (userAccounts || []).forEach(u => { userMap[u.id] = { userId: u.user_id, password: u.password_hash }; });
+    const clubPlayers = await dbGetPlayers(true);
 
     _vmAllPlayers = (clubPlayers || []).map(p => ({
-      id:            p.id,
+      id:            p.membershipId || p.id,
+      playerId:      p.id,
       displayName:   p.name,
       gender:        p.gender || 'Male',
       rating:        parseFloat(p.clubRating) || parseFloat(p.rating) || 1.0,
-      wins:          p.wins   || 0,
-      losses:        p.losses || 0,
-      userAccountId: p.userAccountId || null,
-      userId:        p.userAccountId && userMap[p.userAccountId] ? userMap[p.userAccountId].userId : null,
-      password:      p.userAccountId && userMap[p.userAccountId] ? userMap[p.userAccountId].password : null,
+      wins:          0,
+      losses:        0,
     })).sort((a, b) => a.displayName.localeCompare(b.displayName));
 
     vaultModifyFilter();
@@ -715,26 +711,22 @@ async function vmSaveEdit() {
 
   setFb('Saving…', true);
   try {
-    // 1. Update player row (using id — no schema change needed)
-    await sbPatch('players', `id=eq.${playerId}`, {
-      name:        name,
-      gender,
-      club_ratings: { [getMyClub()?.id || 'default']: Math.round(rating * 10) / 10 },
-      rating:      Math.round(rating * 10) / 10,
-      wins,
-      losses
-    });
+    // 1. Update membership (nickname + club_rating)
+    const _club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    if (_club.id) {
+      await sbPatch('memberships', `id=eq.${playerId}`, {
+        nickname:    name,
+        club_rating: Math.round(rating * 10) / 10
+      });
+    }
+    // 2. Update player display_name + gender
+    const _p = _vmAllPlayers.find(x => x.id === playerId);
+    if (_p?.playerId) {
+      await sbPatch('players', `id=eq.${_p.playerId}`, { display_name: name, gender });
+    }
 
     // 2. Update user_account if exists
-    if (userAcctId) {
-      const acctPatch = {};
-      if (newUserId)   acctPatch.user_id      = newUserId;
-      if (newPassword) acctPatch.password_hash = newPassword;
-      if (newUserId)   acctPatch.nickname       = name;
-      if (Object.keys(acctPatch).length) {
-        await sbPatch('user_accounts', `id=eq.${userAcctId}`, acctPatch);
-      }
-    }
+    // Password changes handled via Supabase Auth — no user_accounts table
 
     // 3. Update local state
     const hp = (newImportState.historyPlayers || []).find(
@@ -763,10 +755,10 @@ async function vmSaveEdit() {
 async function vmDeletePlayer(playerId, displayName) {
   if (!confirm(`Remove "${displayName}" from this club?`)) return;
   try {
-    const p = _vmAllPlayers.find(x => x.id === playerId);
-    await sbDelete('players', `id=eq.${playerId}`);
-    if (p && p.userAccountId) {
-      await sbDelete('user_accounts', `id=eq.${p.userAccountId}`).catch(() => {});
+    // Remove from club — delete membership only, keep global player record
+    const _dclub = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    if (_dclub.id) {
+      await sbDelete('memberships', `id=eq.${playerId}&club_id=eq.${_dclub.id}`);
     }
     _vmAllPlayers = _vmAllPlayers.filter(x => x.id !== playerId);
     if (newImportState && newImportState.historyPlayers) {
@@ -1077,22 +1069,27 @@ async function showPlayerStats(name) {
   modal.style.display = "flex";
 
   try {
-    const rows = await sbGet(
-      "players",
-      `name=ilike.${encodeURIComponent(name)}&select=name,gender,wins,losses,sessions`
-    );
+    // Query via memberships to get club-specific data
+    const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    let rows = [];
+    if (club.id) {
+      rows = await sbGet('memberships',
+        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}&select=nickname,club_rating,club_points,players(gender,global_rating,global_points)`
+      );
+    }
     if (!rows || !rows.length) {
       content.innerHTML = "<div class='stats-loading'>Player not found.</div>";
       return;
     }
-    const p      = rows[0];
-    const gender = p.gender || "Male";
+    const m      = rows[0];
+    const p      = { name: m.nickname, gender: m.players?.gender || 'Male', rating: m.club_rating, wins: 0, losses: 0 };
+    const gender = p.gender;
     // Single gate — sync first, then read activeRating
     await syncToLocal();
     const rating = getActiveRating(name).toFixed(1);
-    const wins     = p.wins   || 0;
-    const losses   = p.losses || 0;
-    const sessions = Array.isArray(p.sessions) ? p.sessions : [];
+    const wins     = 0; // calculated from matches table
+    const losses   = 0;
+    const sessions = [];
     const genderImg = gender === "Female" ? "female.png" : "male.png";
     const total    = wins + losses;
     const winPct   = total > 0 ? Math.round((wins / total) * 100) : 0;

@@ -23,7 +23,8 @@ function dashboardStartPoll() {
       if (isViewer) {
         const myPlayer = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
         if (!myPlayer) return;
-        const clubIds = await dbGetPlayerClubs(myPlayer.name);
+        const _membs = await sbGet('memberships', 'player_id=eq.' + myPlayer.id + '&select=club_id').catch(() => []);
+        const clubIds = _membs.map(m => m.club_id);
         if (!clubIds.length) return;
         const inList = '(' + clubIds.join(',') + ')';
         const rows = await sbGet('sessions',
@@ -203,7 +204,7 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
   card.className = 'dash-session-card' + (isLive ? ' live' : '');
 
   const myPlayer = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
-  const myName   = myPlayer ? myPlayer.name.toLowerCase() : '';
+  const myName   = myPlayer ? (myPlayer.displayName || myPlayer.name || '').toLowerCase() : '';
   const dateLabel = isLive ? 'Today' : _formatDate(date || updatedAt);
   // Show club name on card (useful when viewer sees multiple clubs)
   const displayClub = clubName || '';
