@@ -139,15 +139,9 @@ async function homeRefreshTiles() {
       vctName.textContent = club.name;
       if (vctDot) vctDot.style.background = '#2dce89';
       if (vctBadge) {
-        if (isAdmin) {
-          vctBadge.textContent = 'ADMIN';
-          vctBadge.style.background = '#2dce89';
-          vctBadge.style.color = '#000';
-        } else {
-          vctBadge.textContent = 'USER';
-          vctBadge.style.background = '#6c8cff';
-          vctBadge.style.color = '#fff';
-        }
+        vctBadge.textContent = 'ADMIN';
+        vctBadge.style.background = '#2dce89';
+        vctBadge.style.color = '#000';
         vctBadge.style.display = '';
       }
     } else {
