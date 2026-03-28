@@ -939,15 +939,16 @@
   <!--          ROUNDS PAGE          -->
   <!-- ============================= -->
   <div id="roundsPage" class="page" style="display:none;">
-  <div class="page-back-bar"><button class="page-back-btn" onclick="showHomeScreen()">‹ Home</button><span class="page-back-title">🏸 Rounds</span></div>
 
-    <!-- Session live bar — only shown when session is active -->
-    <div id="sessionLiveBar" style="display:none;">
-      <div class="slb-live">
-        <div class="slb-dot"></div>
-        <span class="slb-text">LIVE</span>
+    <!-- Single tight top bar -->
+    <div class="rounds-top-bar">
+      <button class="rtb-back" onclick="showHomeScreen()">‹ Home</button>
+      <div class="rtb-spacer"></div>
+      <div class="rtb-live" id="sessionLiveBar" style="display:none;">
+        <div class="rtb-dot"></div>
+        <span class="rtb-live-txt">LIVE</span>
+        <button class="rtb-end" onclick="endSession()">End</button>
       </div>
-      <button class="slb-end" onclick="endSession()">End Session</button>
     </div>
 
     <div class="title-card">
