@@ -168,9 +168,11 @@ function goToRounds() {
     if (!existingSessionId && typeof dbStartSession === 'function') {
       dbStartSession().then(() => {
         if (typeof saveRoundsToDb === 'function') saveRoundsToDb();
+        if (typeof updateSessionLiveBar === 'function') updateSessionLiveBar();
       });
     } else {
       if (typeof saveRoundsToDb === 'function') saveRoundsToDb();
+      if (typeof updateSessionLiveBar === 'function') updateSessionLiveBar();
     }
   } else {   
       schedulerState.numCourts = numCourts;      

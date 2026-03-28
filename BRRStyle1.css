@@ -1240,3 +1240,49 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
   padding: 8px 16px; font-size: 0.82rem; font-weight: 600;
   cursor: pointer; white-space: nowrap; flex-shrink: 0;
 }
+
+/* ── Session Live Bar (Rounds page) ── */
+#sessionLiveBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px;
+  background: var(--surface2, #13131f);
+  border-bottom: 1px solid var(--border, #2a2a40);
+}
+.slb-live {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.slb-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #2dce89;
+  box-shadow: 0 0 6px #2dce89;
+  animation: slbPulse 1.5s infinite;
+}
+.slb-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2dce89;
+  letter-spacing: 0.06em;
+}
+.slb-end {
+  background: none;
+  border: 1px solid rgba(230,55,87,0.4);
+  color: #e63757;
+  border-radius: 7px;
+  padding: 4px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.slb-end:active {
+  background: rgba(230,55,87,0.1);
+}
+@keyframes slbPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}

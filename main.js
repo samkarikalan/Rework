@@ -537,6 +537,7 @@ function showPage(pageID, el) {
         goToRounds();
       }
     }
+    updateSessionLiveBar();
   }
 
   if (pageID === "summaryPage") {
@@ -734,6 +735,17 @@ function restoreSyncIndicator() {
 }
 
 
+
+/* =============================================================
+   SESSION LIVE BAR
+============================================================= */
+function updateSessionLiveBar() {
+  const bar = document.getElementById('sessionLiveBar');
+  if (!bar) return;
+  const sessionId = (typeof getMySessionId === 'function') ? getMySessionId() : null;
+  const hasRounds = typeof allRounds !== 'undefined' && allRounds.length > 0;
+  bar.style.display = (sessionId || hasRounds) ? 'flex' : 'none';
+}
 
 /* =============================================================
    VAULT MODE — Admin password gate
