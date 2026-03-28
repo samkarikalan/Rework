@@ -498,74 +498,100 @@ async function renderMyCard() {
   const avatar = document.getElementById('mcAvatar');
   if (avatar) avatar.src = player.gender === 'Female' ? 'female.png' : 'male.png';
   const nameEl = document.getElementById('mcName');
-  if (nameEl) nameEl.textContent = player.name;
+  if (nameEl) nameEl.textContent = player.displayName || player.name || '';
 
-  // Ratings from local cache
-  await syncToLocal();
-  const master       = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
-  const hp           = master.find(h => h.displayName && h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase());
-  const globalRating = parseFloat(hp && hp.rating)       || 1.0;
-  const clubRating   = parseFloat(hp && hp.clubRating)   || 1.0;
-  const activeRating = parseFloat(hp && hp.activeRating) || 1.0;
-  const tier         = ratingTierLabel(activeRating);
-
-  const grEl = document.getElementById('mcGlobalRating');
-  const crEl = document.getElementById('mcClubRating');
-  const tierEl = document.getElementById('mcTier');
-  if (grEl)   grEl.textContent  = globalRating.toFixed(1);
-  if (crEl)   crEl.textContent  = clubRating.toFixed(1);
-  if (tierEl) { tierEl.textContent = tier.label; tierEl.style.background = tier.color + '22'; tierEl.style.color = tier.color; }
-
-  // Wins / Losses + Sessions from DB
-  const winsEl   = document.getElementById('mcWins');
-  const lossesEl = document.getElementById('mcLosses');
-  const sessEl   = document.getElementById('mcSessions');
-  if (winsEl)   winsEl.textContent   = '…';
-  if (lossesEl) lossesEl.textContent = '…';
-  if (sessEl)   sessEl.innerHTML     = '<div class="profile-sessions-loading">Loading...</div>';
+  const sessEl = document.getElementById('mcSessions');
+  if (sessEl) sessEl.innerHTML = '<div class="profile-sessions-loading">Loading...</div>';
 
   try {
-    const club  = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    const today = new Date().toISOString().split('T')[0];
+    const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+    const pid  = player.id;
 
-    const [playerRows, liveRows] = await Promise.all([
-      sbGet('players', `club_id=eq.${(getMyClub&&getMyClub()||{}).id||''}&nickname=ilike.${encodeURIComponent(player.name)}&select=wins,losses,sessions`),
-      club.id
-        ? sbGet('live_sessions',
-            `player_name=ilike.${encodeURIComponent(player.name)}&club_id=eq.${club.id}&date=eq.${today}`)
-        : Promise.resolve([])
-    ]);
+    // 1. Fetch player global data
+    let globalRating = 1.0, globalPoints = 0, totalWins = 0, totalLosses = 0;
+    let sessions = [];
 
-    const lsKey         = `kbrr_sessions_${player.name.toLowerCase().replace(/\s+/g, '_')}`;
-    const localSessions = JSON.parse(localStorage.getItem(lsKey) || '[]');
-    const liveRow       = liveRows && liveRows.length ? liveRows[0] : null;
-    const liveMatches   = liveRow
-      ? (typeof liveRow.matches === 'string' ? JSON.parse(liveRow.matches) : (liveRow.matches || []))
-      : null;
-
-    let sessions = localSessions;
-    if (playerRows && playerRows.length) {
-      const data = playerRows[0];
-      sessions   = mergeSessions(localSessions, data.sessions || []);
-      if (winsEl)   winsEl.textContent   = (data.wins   || 0);
-      if (lossesEl) lossesEl.textContent = (data.losses || 0);
-    } else {
-      if (winsEl)   winsEl.textContent   = '—';
-      if (lossesEl) lossesEl.textContent = '—';
+    if (pid) {
+      const prows = await sbGet('players', `id=eq.${pid}&select=global_rating,global_points,wins,losses,sessions`).catch(() => []);
+      if (prows.length) {
+        globalRating  = parseFloat(prows[0].global_rating) || 1.0;
+        globalPoints  = parseFloat(prows[0].global_points) || 0;
+        totalWins     = prows[0].wins   || 0;
+        totalLosses   = prows[0].losses || 0;
+        sessions      = prows[0].sessions || [];
+      }
     }
 
-    // Render sessions into mcSessions using a temp swap
+    // 2. Fetch club-specific data
+    let clubRating = 1.0, clubPoints = 0;
+    if (pid && club.id) {
+      const mrows = await sbGet('memberships', `player_id=eq.${pid}&club_id=eq.${club.id}&select=club_rating,club_points`).catch(() => []);
+      if (mrows.length) {
+        clubRating = parseFloat(mrows[0].club_rating) || 1.0;
+        clubPoints = parseFloat(mrows[0].club_points) || 0;
+      }
+    }
+
+    // 3. Tier
+    const tier = ratingTierLabel(clubRating || globalRating);
+
+    // 4. Update ratings + points
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('mcGlobalRating', globalRating.toFixed(1));
+    setEl('mcClubRating',   clubRating.toFixed(1));
+    setEl('mcGlobalPoints', globalPoints.toFixed(1));
+    setEl('mcClubPoints',   clubPoints.toFixed(1));
+    setEl('mcWins',         totalWins);
+    setEl('mcLosses',       totalLosses);
+
+    const tierEl = document.getElementById('mcTier');
+    if (tierEl) { tierEl.textContent = tier.label; tierEl.style.background = tier.color + '22'; tierEl.style.color = tier.color; }
+
+    // 5. Period stats from sessions jsonb
+    const now       = new Date();
+    const startOfWeek  = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear  = new Date(now.getFullYear(), 0, 1);
+
+    let wW=0,lW=0,pW=0, wM=0,lM=0,pM=0, wY=0,lY=0,pY=0;
+    (sessions || []).forEach(s => {
+      const d = new Date(s.date);
+      const w = s.wins || 0, l = s.losses || 0, p = parseFloat(s.points_earned) || 0;
+      if (d >= startOfYear)  { wY += w; lY += l; pY += p; }
+      if (d >= startOfMonth) { wM += w; lM += l; pM += p; }
+      if (d >= startOfWeek)  { wW += w; lW += l; pW += p; }
+    });
+
+    setEl('mcWeekWins',    wW); setEl('mcWeekLosses',    lW); setEl('mcWeekPoints',    pW.toFixed(1));
+    setEl('mcMonthWins',   wM); setEl('mcMonthLosses',   lM); setEl('mcMonthPoints',   pM.toFixed(1));
+    setEl('mcYearWins',    wY); setEl('mcYearLosses',    lY); setEl('mcYearPoints',    pY.toFixed(1));
+
+    // 6. Render sessions list
     if (sessEl) {
-      const prev = sessEl.id;
-      sessEl.id  = 'pcSessions';
-      renderSessions(sessions, player.name, liveMatches);
-      sessEl.id  = prev;
+      if (sessions.length) {
+        sessEl.innerHTML = sessions.slice(0, 10).map(s => {
+          const d    = new Date(s.date).toLocaleDateString(undefined, { month:'short', day:'numeric' });
+          const w    = s.wins   || 0;
+          const l    = s.losses || 0;
+          const pts  = parseFloat(s.points_earned || 0).toFixed(1);
+          return `<div class="mc-session-row">
+            <span class="mc-session-date">${d}</span>
+            <span class="mc-session-stat wins">${w}W</span>
+            <span class="mc-session-stat losses">${l}L</span>
+            <span class="mc-session-stat points">${pts}pts</span>
+          </div>`;
+        }).join('');
+      } else {
+        sessEl.innerHTML = '<div class="profile-sessions-empty">No sessions yet.</div>';
+      }
     }
 
   } catch(e) {
-    if (winsEl)   winsEl.textContent   = '—';
-    if (lossesEl) lossesEl.textContent = '—';
-    if (sessEl)   sessEl.innerHTML     = '<div class="profile-sessions-empty">Could not load sessions.</div>';
+    console.error('renderMyCard error:', e);
+    ['mcWins','mcLosses','mcGlobalRating','mcClubRating','mcGlobalPoints','mcClubPoints'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.textContent = '—';
+    });
+    if (sessEl) sessEl.innerHTML = '<div class="profile-sessions-empty">Could not load data.</div>';
   }
 }
 

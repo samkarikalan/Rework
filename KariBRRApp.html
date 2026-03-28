@@ -1084,7 +1084,7 @@
         </div>
       </div>
 
-      <!-- Ratings -->
+      <!-- Ratings + Points -->
       <div class="mycard-ratings">
         <div class="mycard-rating-box">
           <div class="mycard-rating-value" id="mcGlobalRating">—</div>
@@ -1096,9 +1096,20 @@
           <div class="mycard-rating-label">Club Rating</div>
         </div>
       </div>
+      <div class="mycard-ratings" style="margin-top:8px;">
+        <div class="mycard-rating-box">
+          <div class="mycard-rating-value" id="mcGlobalPoints" style="color:var(--accent)">—</div>
+          <div class="mycard-rating-label">Global Points</div>
+        </div>
+        <div class="mycard-rating-divider"></div>
+        <div class="mycard-rating-box">
+          <div class="mycard-rating-value club" id="mcClubPoints" style="color:#f5a623">—</div>
+          <div class="mycard-rating-label">Club Points</div>
+        </div>
+      </div>
 
-      <!-- Stats -->
-      <div class="profile-stats-row" style="margin:0 16px 14px;">
+      <!-- All-time Wins/Losses -->
+      <div class="profile-stats-row" style="margin:12px 16px 8px;">
         <div class="profile-stat-box">
           <div id="mcWins" class="profile-stat-value wins">—</div>
           <div class="profile-stat-label">All-time Wins</div>
@@ -1110,8 +1121,36 @@
         </div>
       </div>
 
+      <!-- Period Stats -->
+      <div class="mc-period-stats" id="mcPeriodStats">
+        <div class="mc-period-box">
+          <div class="mc-period-title">This Week</div>
+          <div class="mc-period-row">
+            <span class="mc-period-val wins" id="mcWeekWins">—</span>W
+            <span class="mc-period-val losses" id="mcWeekLosses">—</span>L
+            <span class="mc-period-val points" id="mcWeekPoints">—</span>pts
+          </div>
+        </div>
+        <div class="mc-period-box">
+          <div class="mc-period-title">This Month</div>
+          <div class="mc-period-row">
+            <span class="mc-period-val wins" id="mcMonthWins">—</span>W
+            <span class="mc-period-val losses" id="mcMonthLosses">—</span>L
+            <span class="mc-period-val points" id="mcMonthPoints">—</span>pts
+          </div>
+        </div>
+        <div class="mc-period-box">
+          <div class="mc-period-title">This Year</div>
+          <div class="mc-period-row">
+            <span class="mc-period-val wins" id="mcYearWins">—</span>W
+            <span class="mc-period-val losses" id="mcYearLosses">—</span>L
+            <span class="mc-period-val points" id="mcYearPoints">—</span>pts
+          </div>
+        </div>
+      </div>
+
       <!-- Sessions -->
-      <div class="profile-sessions-title" style="padding:0 16px 8px;">Sessions</div>
+      <div class="profile-sessions-title" style="padding:8px 16px;">Sessions</div>
       <div id="mcSessions" class="profile-sessions-list" style="padding:0 16px 32px;">
         <div class="profile-sessions-loading">Loading...</div>
       </div>

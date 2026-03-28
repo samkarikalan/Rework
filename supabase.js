@@ -697,6 +697,10 @@ async function dbCleanupStaleSessions() {
           status:     'completed',
           updated_at: new Date().toISOString()
         }).catch(() => {});
+        // Also release players
+        await sbPatch('memberships', `club_id=eq.${club.id}&is_playing=eq.true`, {
+          is_playing: false
+        }).catch(() => {});
       }
     }
   } catch (e) { /* silent */ }
@@ -705,13 +709,20 @@ async function dbCleanupStaleSessions() {
 /* Force complete any session by ID — for ending stale/other-device sessions */
 async function dbForceCompleteSession(sessionId) {
   try {
+    // 1. Mark session completed
     await sbPatch('sessions', `id=eq.${sessionId}`, {
       status:     'completed',
       updated_at: new Date().toISOString()
     });
-    // Keep only last 3 completed per club
+
+    // 2. Release all playing players in this club
     const club = getMyClub();
     if (club.id) {
+      await sbPatch('memberships', `club_id=eq.${club.id}&is_playing=eq.true`, {
+        is_playing: false
+      }).catch(() => {});
+
+      // 3. Keep only last 3 completed per club
       const all = await sbGet('sessions',
         `club_id=eq.${club.id}&status=eq.completed&order=updated_at.desc&select=id`
       );

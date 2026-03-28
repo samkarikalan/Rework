@@ -533,9 +533,8 @@ function showPage(pageID, el) {
     if (allRounds.length <= 1) {
       resetRounds();
     } else {
-      if (lastPage === "playersPage") {
-        goToRounds();
-      }
+      // Session in progress — just re-render current round, never regenerate
+      if (typeof showRound === 'function') showRound(currentRoundIndex);
     }
     updateSessionLiveBar();
   }
