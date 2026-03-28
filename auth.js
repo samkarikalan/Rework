@@ -411,17 +411,31 @@ async function authAcceptRequest(requestId, clubId, userAccountId, nickname, gen
       reviewed_at: new Date().toISOString()
     });
 
-    // Create player row with club_id and user_account_id
-    await sbPost('players', {
-      club_id:         clubId,
-      user_account_id: userAccountId,
-      nickname:        nickname,
-      gender:          gender || 'Male',
-      rating:          1.0,
-      club_rating:     1.0,
-      wins:            0,
-      losses:          0
-    });
+    // Find existing membership by club + nickname and link user_account
+    var memberships = await sbGet('memberships',
+      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id'
+    ).catch(() => []);
+
+    if (memberships && memberships.length) {
+      // Link existing membership to user account
+      await sbPatch('memberships', 'id=eq.' + memberships[0].id, { user_account_id: userAccountId });
+    } else {
+      // Create player + membership (player not pre-registered)
+      var created = await sbPost('players', {
+        name:          nickname,
+        gender:        gender || 'Male',
+        global_rating: 1.0,
+        global_points: 0
+      });
+      await sbPost('memberships', {
+        player_id:       created[0].id,
+        club_id:         clubId,
+        nickname:        nickname,
+        club_rating:     1.0,
+        club_points:     0,
+        user_account_id: userAccountId
+      });
+    }
 
     return { success: true };
   } catch(e) {
