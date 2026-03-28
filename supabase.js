@@ -729,12 +729,18 @@ async function dbForceCompleteSession(sessionId) {
 
 // Fetch ALL live sessions for this club (multiple halls)
 /* ── Get all club IDs a player belongs to ── */
-async function dbGetPlayerClubs(playerName) {
+async function dbGetPlayerClubs(playerNameOrId) {
   try {
-    if (!playerName) return [];
-    // Use memberships to find clubs by nickname
+    if (!playerNameOrId) return [];
+    // Try by player id first (more reliable)
+    const myPlayer = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
+    if (myPlayer && myPlayer.id) {
+      const rows = await sbGet('memberships', `player_id=eq.${myPlayer.id}&select=club_id`);
+      if (rows && rows.length) return rows.map(r => r.club_id).filter(Boolean);
+    }
+    // Fallback: search by nickname
     const rows = await sbGet('memberships',
-      `nickname=ilike.${encodeURIComponent(playerName)}&select=club_id`
+      `nickname=ilike.${encodeURIComponent(playerNameOrId)}&select=club_id`
     );
     return (rows || []).map(r => r.club_id).filter(Boolean);
   } catch (e) {
@@ -754,13 +760,13 @@ async function dbGetLiveSessions() {
       if (!clubIds.length) return [];
       const inList = '(' + clubIds.join(',') + ')';
       return await sbGet('sessions',
-        `club_id=in.${inList}&status=eq.live&order=started_at.asc&select=id,rounds_data,started_by,updated_at,club_id`
+        `club_id=in.${inList}&status=eq.live&order=created_at.asc&select=id,rounds_data,started_by,updated_at,club_id`
       ) || [];
     } else {
       const club = getMyClub();
       if (!club.id) return [];
       return await sbGet('sessions',
-        `club_id=eq.${club.id}&status=eq.live&order=started_at.asc&select=id,rounds_data,started_by,updated_at`
+        `club_id=eq.${club.id}&status=eq.live&order=created_at.asc&select=id,rounds_data,started_by,updated_at`
       ) || [];
     }
   } catch (e) {
