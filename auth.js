@@ -42,102 +42,102 @@ function authIsLoggedIn() {
 }
 
 /* ── Sign up ── */
-async function authSignUp(userId, nickname, email, password) {
-  userId   = userId.trim().toLowerCase();
-  nickname = nickname.trim();
-  email    = email.trim().toLowerCase();
+async function authSignUp(email, password, displayName, gender, recoveryWord) {
+  email       = email.trim().toLowerCase();
+  displayName = (displayName || '').trim();
+  gender      = gender || 'Male';
 
-  // Validate
-  if (!userId || userId.length < 3)
-    return { error: 'User ID must be at least 3 characters' };
-  if (!/^[a-z0-9_]+$/.test(userId))
-    return { error: 'User ID can only contain letters, numbers and underscore' };
-  if (!nickname || nickname.length < 2)
-    return { error: 'Nickname must be at least 2 characters' };
   if (!email || !email.includes('@'))
     return { error: 'Please enter a valid email' };
+  if (!displayName || displayName.length < 2)
+    return { error: 'Display name must be at least 2 characters' };
   if (!password || password.length < 6)
     return { error: 'Password must be at least 6 characters' };
-
-  if (AUTH_MOCK_MODE) {
-    // Check duplicate userId
-    if (_mockUsers.find(function(u) { return u.userId === userId; }))
-      return { error: 'User ID already taken. Try another.' };
-    // Check duplicate email
-    if (_mockUsers.find(function(u) { return u.email === email; }))
-      return { error: 'Email already registered.' };
-
-    var user = {
-      id:       'mock_' + Date.now(),
-      userId:   userId,
-      nickname: nickname,
-      email:    email,
-      password: password, // plain text for mock only
-      createdAt: new Date().toISOString()
-    };
-    _mockUsers.push(user);
-    _saveMockUsers();
-    return { user: { id: user.id, userId: user.userId, nickname: user.nickname, email: user.email } };
-  }
+  if (!recoveryWord || recoveryWord.trim().length < 3)
+    return { error: 'Recovery keyword must be at least 3 characters' };
 
   // ── Real Supabase ──
   try {
-    // Check userId exists
-    var existing = await sbGet('user_accounts', 'user_id=eq.' + encodeURIComponent(userId) + '&select=id');
-    if (existing && existing.length) return { error: 'User ID already taken. Try another.' };
+    // Check email exists
+    var existing = await sbGet('user_accounts', 'email=eq.' + encodeURIComponent(email) + '&select=id');
+    if (existing && existing.length) return { error: 'Email already registered. Please login.' };
 
     var result = await sbPost('user_accounts', {
-      user_id:       userId,
-      nickname:      nickname,
+      user_id:       email,
+      nickname:      displayName,
       email:         email,
-      password_hash: password // TODO: hash in production
+      password_hash: password,
+      recovery_word: (recoveryWord || '').trim().toLowerCase()
     });
     var u = result[0];
-    return { user: { id: u.id, userId: u.user_id, nickname: u.nickname, email: u.email } };
+
+    // Also create player row
+    await sbPost('players', {
+      name:          displayName,
+      gender:        gender,
+      global_rating: 1.0,
+      global_points: 0
+    }).catch(() => {});
+
+    var authUser = { id: u.id, email: u.email, nickname: u.nickname, displayName: u.nickname };
+    return { user: authUser };
   } catch(e) {
     var msg = e.message || '';
-    if (msg.includes('user_accounts_email_key') || msg.includes('duplicate') && msg.includes('email'))
-      return { error: 'This email is already registered. Please use a different email.' };
-    if (msg.includes('user_accounts_user_id_key') || msg.includes('duplicate') && msg.includes('user_id'))
-      return { error: 'User ID already taken. Please choose another.' };
-    if (msg.includes('duplicate key') || msg.includes('unique constraint'))
-      return { error: 'Account already exists. Please try a different User ID or email.' };
+    if (msg.includes('duplicate') || msg.includes('already'))
+      return { error: 'Email already registered. Please login.' };
     return { error: 'Sign up failed. Please try again.' };
   }
 }
 
 /* ── Login ── */
-async function authLogin(userId, password) {
-  userId = userId.trim().toLowerCase();
+async function authLogin(email, password) {
+  email = email.trim().toLowerCase();
 
-  if (!userId) return { error: 'Please enter your User ID' };
+  if (!email) return { error: 'Please enter your email' };
   if (!password) return { error: 'Please enter your password' };
 
-  if (AUTH_MOCK_MODE) {
-    var user = _mockUsers.find(function(u) {
-      return u.userId === userId && u.password === password;
-    });
-    if (!user) return { error: 'Invalid User ID or password' };
-    var authUser = { id: user.id, userId: user.userId, nickname: user.nickname, email: user.email };
-    _authUser = authUser;
-    localStorage.setItem('auth_user', JSON.stringify(authUser));
-    return { user: authUser };
-  }
-
-  // ── Real Supabase ──
+  // ── Real Supabase — filter by email + password server-side ──
   try {
     var rows = await sbGet('user_accounts',
-      'user_id=eq.' + encodeURIComponent(userId) +
+      'email=eq.' + encodeURIComponent(email) +
       '&password_hash=eq.' + encodeURIComponent(password) +
-      '&select=id,user_id,nickname,email');
-    if (!rows || !rows.length) return { error: 'Invalid User ID or password' };
+      '&select=id,nickname,email');
+    if (!rows || !rows.length) {
+      // Check if email exists at all for better error message
+      var exists = await sbGet('user_accounts', 'email=eq.' + encodeURIComponent(email) + '&select=id').catch(() => []);
+      if (!exists || !exists.length) return { error: 'No account found with this email' };
+      return { error: 'Wrong password' };
+    }
     var u = rows[0];
-    var authUser = { id: u.id, userId: u.user_id, nickname: u.nickname, email: u.email };
+    var authUser = { id: u.id, email: u.email, nickname: u.nickname, displayName: u.nickname };
     _authUser = authUser;
     localStorage.setItem('auth_user', JSON.stringify(authUser));
     return { user: authUser };
   } catch(e) {
     return { error: e.message || 'Login failed. Please try again.' };
+  }
+}
+
+/* ── Reset Password via recovery word ── */
+async function authResetPassword(email, recoveryWord, newPassword) {
+  email        = email.trim().toLowerCase();
+  recoveryWord = recoveryWord.trim().toLowerCase();
+
+  if (!email || !email.includes('@')) return { error: 'Please enter your email' };
+  if (!recoveryWord) return { error: 'Please enter your recovery keyword' };
+  if (!newPassword || newPassword.length < 6) return { error: 'Password must be at least 6 characters' };
+
+  try {
+    var rows = await sbGet('user_accounts',
+      'email=eq.' + encodeURIComponent(email) +
+      '&recovery_word=eq.' + encodeURIComponent(recoveryWord) +
+      '&select=id');
+    if (!rows || !rows.length) return { error: 'Email or recovery keyword is incorrect' };
+
+    await sbPatch('user_accounts', 'id=eq.' + rows[0].id, { password_hash: newPassword });
+    return { success: true };
+  } catch(e) {
+    return { error: e.message || 'Reset failed. Please try again.' };
   }
 }
 

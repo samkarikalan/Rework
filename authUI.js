@@ -66,11 +66,11 @@ function authSetLoading(btnSelector, loading) {
 
 /* ── Do Login ── */
 async function authDoLogin() {
-  var userId   = (document.getElementById('loginUserId')?.value || '').trim();
+  var email    = (document.getElementById('loginEmail')?.value || '').trim();
   var password = (document.getElementById('loginPassword')?.value || '');
 
   authSetLoading('#authLogin .auth-btn-primary', true);
-  var result = await authLogin(userId, password);
+  var result = await authLogin(email, password);
   authSetLoading('#authLogin .auth-btn-primary', false);
 
   if (result.error) {
@@ -85,11 +85,12 @@ async function authDoLogin() {
 
 /* ── Do Sign Up ── */
 async function authDoSignup() {
-  var userId   = (document.getElementById('signupUserId')?.value || '').trim();
-  var nickname = (document.getElementById('signupNickname')?.value || '').trim();
-  var email    = (document.getElementById('signupEmail')?.value || '').trim();
-  var password = (document.getElementById('signupPassword')?.value || '');
-  var confirm  = (document.getElementById('signupConfirm')?.value || '');
+  var email        = (document.getElementById('signupEmail')?.value || '').trim();
+  var displayName  = (document.getElementById('signupDisplayName')?.value || '').trim();
+  var gender       = (document.getElementById('signupGender')?.value || 'Male');
+  var password     = (document.getElementById('signupPassword')?.value || '');
+  var confirm      = (document.getElementById('signupConfirm')?.value || '');
+  var recoveryWord = (document.getElementById('signupRecoveryWord')?.value || '').trim();
 
   if (password !== confirm) {
     authShowError('signupError', 'Passwords do not match');
@@ -97,7 +98,7 @@ async function authDoSignup() {
   }
 
   authSetLoading('#authSignup .auth-btn-primary', true);
-  var result = await authSignUp(userId, nickname, email, password);
+  var result = await authSignUp(email, password, displayName, gender, recoveryWord);
   authSetLoading('#authSignup .auth-btn-primary', false);
 
   if (result.error) {
@@ -106,7 +107,7 @@ async function authDoSignup() {
   }
 
   // Auto login after signup
-  var loginResult = await authLogin(userId, password);
+  var loginResult = await authLogin(email, password);
   if (loginResult.error) {
     authShowError('signupError', 'Account created! Please login.');
     authShowScreen('login');
@@ -158,48 +159,30 @@ async function authAfterLogin(user) {
   authShowScreen('joinClub');
 }
 
-/* ── Do Forgot Password — Send OTP ── */
-async function authDoForgotSend() {
-  var email = (document.getElementById('forgotEmail')?.value || '').trim();
+/* ── Do Forgot Password — recovery keyword ── */
+async function authDoForgotReset() {
+  var email        = (document.getElementById('forgotEmail')?.value || '').trim();
+  var recoveryWord = (document.getElementById('forgotRecoveryWord')?.value || '').trim();
+  var newPw        = (document.getElementById('forgotNewPw')?.value || '');
+  var confirmPw    = (document.getElementById('forgotConfirmPw')?.value || '');
 
-  authSetLoading('#forgotStep1 .auth-btn-primary', true);
-  var result = await authForgotSendOtp(email);
-  authSetLoading('#forgotStep1 .auth-btn-primary', false);
+  if (newPw !== confirmPw) {
+    authShowError('forgotError', 'Passwords do not match');
+    return;
+  }
+
+  authSetLoading('#authForgot .auth-btn-primary', true);
+  var result = await authResetPassword(email, recoveryWord, newPw);
+  authSetLoading('#authForgot .auth-btn-primary', false);
 
   if (result.error) {
     authShowError('forgotError', result.error);
     return;
   }
 
-  // Show OTP step
-  var step1 = document.getElementById('forgotStep1');
-  var step2 = document.getElementById('forgotStep2');
-  if (step1) step1.style.display = 'none';
-  if (step2) step2.style.display = 'block';
-
-  if (AUTH_MOCK_MODE) {
-    authShowError('forgotError2', '⚠️ Mock mode: check browser console for OTP');
-  }
-}
-
-/* ── Do Forgot Password — Verify OTP ── */
-async function authDoForgotVerify() {
-  var email  = (document.getElementById('forgotEmail')?.value || '').trim();
-  var otp    = (document.getElementById('forgotOtp')?.value || '').trim();
-  var newPw  = (document.getElementById('forgotNewPw')?.value || '');
-
-  authSetLoading('#forgotStep2 .auth-btn-primary', true);
-  var result = await authForgotVerify(email, otp, newPw);
-  authSetLoading('#forgotStep2 .auth-btn-primary', false);
-
-  if (result.error) {
-    authShowError('forgotError2', result.error);
-    return;
-  }
-
-  // Success — go to login
-  alert('Password reset successfully! Please login.');
-  authShowScreen('login');
+  authShowError('forgotError', '✅ Password reset! Please login.');
+  document.getElementById('forgotError').style.color = 'var(--green, #2dce89)';
+  setTimeout(function() { authShowScreen('login'); }, 1500);
 }
 
 /* ── Do Join Club ── */

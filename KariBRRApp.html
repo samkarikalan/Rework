@@ -102,12 +102,12 @@
       </div>
       <div class="auth-form">
         <div class="auth-field">
-          <label class="auth-label">User ID</label>
-          <input type="text" id="loginUserId" class="auth-input" placeholder="e.g. kari123" autocapitalize="none">
+          <label class="auth-label">Email</label>
+          <input type="email" id="loginEmail" class="auth-input" placeholder="your@email.com" autocapitalize="none" autocomplete="email">
         </div>
         <div class="auth-field">
           <label class="auth-label">Password</label>
-          <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
+          <input type="password" id="loginPassword" class="auth-input" placeholder="Password" autocomplete="current-password">
         </div>
         <div id="loginError" class="auth-error" style="display:none;"></div>
         <button class="auth-btn-primary" onclick="authDoLogin()">Login</button>
@@ -123,24 +123,31 @@
       </div>
       <div class="auth-form">
         <div class="auth-field">
-          <label class="auth-label">User ID <span class="auth-hint">unique, e.g. kari123</span></label>
-          <input type="text" id="signupUserId" class="auth-input" placeholder="kari123" autocapitalize="none">
+          <label class="auth-label">Email</label>
+          <input type="email" id="signupEmail" class="auth-input" placeholder="your@email.com" autocapitalize="none" autocomplete="email">
         </div>
         <div class="auth-field">
-          <label class="auth-label">Nickname <span class="auth-hint">shown to others</span></label>
-          <input type="text" id="signupNickname" class="auth-input" placeholder="Kari">
+          <label class="auth-label">Display Name <span class="auth-hint">your name or alias</span></label>
+          <input type="text" id="signupDisplayName" class="auth-input" placeholder="e.g. Kari">
         </div>
         <div class="auth-field">
-          <label class="auth-label">Email <span class="auth-hint">for password recovery</span></label>
-          <input type="email" id="signupEmail" class="auth-input" placeholder="kari@email.com">
+          <label class="auth-label">Gender</label>
+          <select id="signupGender" class="auth-input">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
         </div>
         <div class="auth-field">
-          <label class="auth-label">Password</label>
-          <input type="password" id="signupPassword" class="auth-input" placeholder="Min 6 characters">
+          <label class="auth-label">Password <span class="auth-hint">min 6 characters</span></label>
+          <input type="password" id="signupPassword" class="auth-input" placeholder="Password" autocomplete="new-password">
         </div>
         <div class="auth-field">
           <label class="auth-label">Confirm Password</label>
-          <input type="password" id="signupConfirm" class="auth-input" placeholder="Repeat password">
+          <input type="password" id="signupConfirm" class="auth-input" placeholder="Repeat password" autocomplete="new-password">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Recovery Keyword <span class="auth-hint">to reset password if forgotten</span></label>
+          <input type="text" id="signupRecoveryWord" class="auth-input" placeholder="e.g. mango, sunflower..." autocapitalize="none">
         </div>
         <div id="signupError" class="auth-error" style="display:none;"></div>
         <button class="auth-btn-primary" onclick="authDoSignup()">Create Account</button>
@@ -154,28 +161,24 @@
         <span class="auth-screen-title">Reset Password</span>
       </div>
       <div class="auth-form">
-        <!-- Step 1: Email -->
-        <div id="forgotStep1">
-          <div class="auth-field">
-            <label class="auth-label">Email address</label>
-            <input type="email" id="forgotEmail" class="auth-input" placeholder="your@email.com">
-          </div>
-          <div id="forgotError" class="auth-error" style="display:none;"></div>
-          <button class="auth-btn-primary" onclick="authDoForgotSend()">Send OTP</button>
+        <div class="auth-field">
+          <label class="auth-label">Email</label>
+          <input type="email" id="forgotEmail" class="auth-input" placeholder="your@email.com">
         </div>
-        <!-- Step 2: OTP + new password -->
-        <div id="forgotStep2" style="display:none;">
-          <div class="auth-field">
-            <label class="auth-label">OTP Code</label>
-            <input type="text" id="forgotOtp" class="auth-input" placeholder="6-digit code" maxlength="6">
-          </div>
-          <div class="auth-field">
-            <label class="auth-label">New Password</label>
-            <input type="password" id="forgotNewPw" class="auth-input" placeholder="Min 6 characters">
-          </div>
-          <div id="forgotError2" class="auth-error" style="display:none;"></div>
-          <button class="auth-btn-primary" onclick="authDoForgotVerify()">Reset Password</button>
+        <div class="auth-field">
+          <label class="auth-label">Recovery Keyword</label>
+          <input type="text" id="forgotRecoveryWord" class="auth-input" placeholder="Your recovery keyword" autocapitalize="none">
         </div>
+        <div class="auth-field">
+          <label class="auth-label">New Password</label>
+          <input type="password" id="forgotNewPw" class="auth-input" placeholder="Min 6 characters">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Confirm New Password</label>
+          <input type="password" id="forgotConfirmPw" class="auth-input" placeholder="Repeat new password">
+        </div>
+        <div id="forgotError" class="auth-error" style="display:none;"></div>
+        <button class="auth-btn-primary" onclick="authDoForgotReset()">Reset Password</button>
       </div>
     </div>
 
