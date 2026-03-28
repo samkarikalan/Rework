@@ -287,13 +287,24 @@ async function dbSyncRatings(updatedRatings) {
       );
       if (!mrows || !mrows.length) continue;
       const m = mrows[0];
-      await sbPatch('memberships', `id=eq.${m.id}`, { club_rating: rounded });
+      // Points = same delta as rating but uncapped (always accumulates)
+      const prevRating = parseFloat(m.club_rating) || 1.0;
+      const pointsDelta = Math.abs(rounded - prevRating);
+      const newPoints = Math.round(((parseFloat(m.club_points) || 0) + pointsDelta) * 10) / 10;
+
+      await sbPatch('memberships', `id=eq.${m.id}`, {
+        club_rating: rounded,
+        club_points: newPoints
+      });
+
       if (update.wins > 0 || update.losses > 0) {
-        const prows = await sbGet('players', `id=eq.${m.player_id}&select=wins,losses`);
+        const prows = await sbGet('players', `id=eq.${m.player_id}&select=wins,losses,global_points`);
         if (prows && prows.length) {
+          const newGlobalPoints = Math.round(((parseFloat(prows[0].global_points) || 0) + pointsDelta) * 10) / 10;
           await sbPatch('players', `id=eq.${m.player_id}`, {
-            wins:   (prows[0].wins   || 0) + (update.wins   || 0),
-            losses: (prows[0].losses || 0) + (update.losses || 0)
+            wins:          (prows[0].wins   || 0) + (update.wins   || 0),
+            losses:        (prows[0].losses || 0) + (update.losses || 0),
+            global_points: newGlobalPoints
           });
         }
       }
@@ -470,7 +481,10 @@ async function syncAfterRound(roundWins, roundLosses) {
 
     await dbSyncRatings(updatedRatings);
 
-    // STEP 2 — Write live session to Supabase live_sessions table
+    // STEP 2 — Record matches to matches table
+    await dbRecordRoundMatches(updatedRatings);
+
+    // STEP 3 — Write live session to Supabase live_sessions table
     await syncLiveSession(playedNames);
 
     // Pull fresh — syncToLocal will also flush any queued items
@@ -1092,5 +1106,73 @@ function startSessionHeartbeat() {
 
 function stopSessionHeartbeat() {
   if (_heartbeatTimer) { clearInterval(_heartbeatTimer); _heartbeatTimer = null; }
+}
+
+/* ============================================================
+   ROUND MATCH RECORDING
+   Called after each round (Next Round pressed).
+============================================================ */
+async function dbRecordRoundMatches(updatedRatings) {
+  try {
+    const club = getMyClub();
+    if (!club.id) return;
+    const sessionId = (typeof getMySessionId === 'function') ? getMySessionId() : null;
+
+    const rounds = (typeof allRounds !== 'undefined') ? allRounds : [];
+    if (!rounds.length) return;
+
+    // Find last round with winners marked
+    let completedRound = null;
+    for (let i = rounds.length - 1; i >= 0; i--) {
+      const games = rounds[i].games || [];
+      if (games.some(g => g.winner)) { completedRound = rounds[i]; break; }
+    }
+    if (!completedRound) return;
+
+    const games = completedRound.games || [];
+    const roundNumber = completedRound.round || 0;
+
+    // Build nickname → membership map
+    const allNicknames = [];
+    games.forEach(g => {
+      [...(g.pair1 || []), ...(g.pair2 || [])].forEach(n => { if (n) allNicknames.push(n); });
+    });
+    const unique = [...new Set(allNicknames)];
+    if (!unique.length) return;
+
+    const enc = unique.map(n => 'nickname.ilike.' + encodeURIComponent(n)).join(',');
+    const members = await sbGet('memberships',
+      `club_id=eq.${club.id}&or=(${enc})&select=player_id,nickname,club_rating`
+    ).catch(() => []);
+
+    const mMap = {};
+    (members || []).forEach(m => { mMap[m.nickname.trim().toLowerCase()] = m; });
+    const pid = (n) => mMap[(n||'').trim().toLowerCase()]?.player_id || null;
+
+    for (const game of games) {
+      if (!game.winner) continue;
+      const winnerPair = game.winner === 'L' ? 'pair1' : 'pair2';
+      const p1 = game.pair1 || [], p2 = game.pair2 || [];
+      const newR = updatedRatings.filter(u => [...p1,...p2].includes(u.name));
+      const delta = newR.length ? Math.abs(Math.round(newR[0].activeRating * 10) / 10 - (parseFloat(mMap[(newR[0].name||'').trim().toLowerCase()]?.club_rating) || 1.0)) : 0;
+
+      await sbPost('matches', {
+        session_id:    sessionId, club_id: club.id, round_number: roundNumber,
+        pair1_player1: pid(p1[0]), pair1_player2: pid(p1[1]),
+        pair2_player1: pid(p2[0]), pair2_player2: pid(p2[1]),
+        winner_pair:   winnerPair, rating_delta: delta, points_delta: delta
+      }).catch(() => {});
+    }
+
+    // Recalculate global_rating for all involved players
+    const pids = [...new Set(Object.values(mMap).map(m => m.player_id).filter(Boolean))];
+    for (const p of pids) {
+      const allM = await sbGet('memberships', `player_id=eq.${p}&select=club_rating`).catch(() => []);
+      if (allM.length) {
+        const avg = allM.reduce((s, m) => s + (parseFloat(m.club_rating) || 1.0), 0) / allM.length;
+        await sbPatch('players', `id=eq.${p}`, { global_rating: Math.round(avg * 10) / 10 }).catch(() => {});
+      }
+    }
+  } catch(e) { console.warn('dbRecordRoundMatches error:', e.message); }
 }
 
