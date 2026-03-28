@@ -1100,7 +1100,7 @@ display: block;
 .club-mgmt-toggle:hover { color: var(--text); }
 
 
-/* ── Vault Gradient Tiles (Option A) ── */
+/* ── Vault Tiles (Option B — Dark Glass) ── */
 .vault-tile-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1117,49 +1117,64 @@ display: block;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+  background: var(--surface2, #1a1a2e);
+  border: 1px solid var(--border, #2a2a40);
   transition: transform 0.15s, box-shadow 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.vault-tile:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.vault-tile::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 18px 18px 0 0;
+}
+.vault-tile:active { transform: scale(0.97); }
 
-.vt-playing  { background: linear-gradient(135deg, #f5a623, #f76b1c); }
-.vt-register { background: linear-gradient(135deg, #6c8cff, #a78bfa); }
-.vt-modify   { background: linear-gradient(135deg, #2dce89, #00b09b); }
-.vt-requests { background: linear-gradient(135deg, #e63757, #f5a623); }
-.vt-club     { background: linear-gradient(135deg, #2c2c54, #4a4a8a); min-height: 64px; flex-direction: row; align-items: center; gap: 14px; justify-content: flex-start; }
+.vt-playing::before  { background: #f5a623; box-shadow: 0 0 12px rgba(245,166,35,0.6); }
+.vt-register::before { background: #6c8cff; box-shadow: 0 0 12px rgba(108,140,255,0.6); }
+.vt-modify::before   { background: #2dce89; box-shadow: 0 0 12px rgba(45,206,137,0.6); }
+.vt-requests::before { background: #e63757; box-shadow: 0 0 12px rgba(230,55,87,0.6); }
+.vt-club::before     { background: #a78bfa; box-shadow: 0 0 12px rgba(167,139,250,0.6); }
+
+.vt-club {
+  min-height: 64px;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  justify-content: flex-start;
+}
 
 .vt-badge {
   position: absolute;
   top: 10px; right: 10px;
-  background: rgba(255,255,255,0.28);
-  backdrop-filter: blur(4px);
   border-radius: 20px;
   padding: 2px 8px;
   font-size: 0.62rem;
   font-weight: 800;
-  color: #fff;
   letter-spacing: 0.05em;
 }
+.vt-playing  .vt-badge { background: rgba(245,166,35,0.18); color: #f5a623; }
+.vt-requests .vt-badge { background: rgba(230,55,87,0.18);  color: #e63757; }
+
 .vt-icon {
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   margin-bottom: 6px;
   line-height: 1;
 }
 .vt-stat {
   font-size: 1.8rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text, #fff);
   line-height: 1;
   margin-bottom: 2px;
 }
 .vt-name {
   font-size: 0.78rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.95);
+  color: var(--muted, #888);
 }
 .vt-sub {
   font-size: 0.65rem;
-  color: rgba(255,255,255,0.65);
+  color: var(--muted, #666);
   margin-top: 1px;
+  opacity: 0.7;
 }
