@@ -130,6 +130,33 @@ async function homeRefreshTiles() {
     }
   }
 
+  // ── Vault club status tile ──
+  var vctName  = document.getElementById('vctName');
+  var vctBadge = document.getElementById('vctBadge');
+  var vctDot   = document.getElementById('vctDot');
+  if (vctName) {
+    if (club && club.name) {
+      vctName.textContent = club.name;
+      if (vctDot) vctDot.style.background = '#2dce89';
+      if (vctBadge) {
+        if (isAdmin) {
+          vctBadge.textContent = 'ADMIN';
+          vctBadge.style.background = '#2dce89';
+          vctBadge.style.color = '#000';
+        } else {
+          vctBadge.textContent = 'USER';
+          vctBadge.style.background = '#6c8cff';
+          vctBadge.style.color = '#fff';
+        }
+        vctBadge.style.display = '';
+      }
+    } else {
+      vctName.textContent = 'No club selected';
+      if (vctBadge) vctBadge.style.display = 'none';
+      if (vctDot) vctDot.style.background = '#888';
+    }
+  }
+
   // ── Vault gradient tiles — load live stats ──
   if (club && club.id && document.getElementById('vtStatPlaying')) {
     homeRefreshVaultTiles(club.id);

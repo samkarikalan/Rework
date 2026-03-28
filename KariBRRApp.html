@@ -387,6 +387,17 @@
 
     <!-- ── VAULT MANAGER GRID (new) ── -->
     <div id="homeVaultGrid" style="display:none;">
+
+      <!-- Club status tile -->
+      <div class="vault-club-tile" id="vaultClubStatusTile">
+        <div class="vct-dot" id="vctDot"></div>
+        <div class="vct-info">
+          <div class="vct-name" id="vctName">No club selected</div>
+          <span class="vct-badge" id="vctBadge" style="display:none">ADMIN</span>
+        </div>
+        <button class="vct-change-btn" onclick="homeGo('vaultClubMgmtPage',null)">Change</button>
+      </div>
+
       <div class="vault-tile-grid">
 
         <div class="vault-tile vt-playing" onclick="homeGo('vaultPlayingPage',null)">
@@ -419,11 +430,7 @@
           <div class="vt-sub">pending approval</div>
         </div>
 
-        <div class="vault-tile vt-club" onclick="homeGo('vaultClubMgmtPage',null)" style="grid-column: span 2;">
-          <div class="vt-icon" style="font-size:1.3rem">🏢</div>
-          <div class="vt-name" style="margin-top:6px">Club Management</div>
-          <div class="vt-sub">create · delete · switch</div>
-        </div>
+
 
       </div>
     </div>
