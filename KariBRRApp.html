@@ -825,29 +825,12 @@
           <input type="text" id="sbNewClubName" class="club-input" placeholder="Club name">
         </div>
         <div class="club-row" style="margin-top:6px">
-          <input type="email" id="sbNewClubEmail" class="club-input" placeholder="Your email (for OTP)">
-        </div>
-        <div class="club-row" style="margin-top:6px">
-          <input type="password" id="sbNewClubSelectPw" class="club-input" placeholder="User password">
+          <input type="password" id="sbNewClubSelectPw" class="club-input" placeholder="Member password">
         </div>
         <div class="club-row" style="margin-top:6px">
           <input type="password" id="sbNewClubAdminPw" class="club-input" placeholder="Admin password">
         </div>
-        <div id="clubCreateStep1">
-          <button class="btn-save" style="width:100%;margin-top:8px" onclick="clubCreateSendOtp()">📧 Send OTP</button>
-        </div>
-        <div id="clubCreateStep2" style="display:none">
-          <div class="club-row" style="margin-top:8px">
-            <input type="text" id="sbNewClubOtp" class="club-input"
-                   placeholder="Enter 8-digit OTP" maxlength="8"
-                   onkeydown="if(event.key==='Enter')clubCreateVerify()">
-            <button class="btn-save" onclick="clubCreateVerify()">Verify &amp; Create</button>
-          </div>
-          <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">
-            OTP sent to <span id="clubCreateEmailMasked"></span>
-            · <button class="link-btn" onclick="clubCreateResend()">Resend</button>
-          </div>
-        </div>
+        <button class="btn-save" style="width:100%;margin-top:8px" onclick="clubCreateSendOtp()">Create Club</button>
         <div id="clubCreateFeedback" style="font-size:0.78rem;margin-top:6px"></div>
       </div>
 

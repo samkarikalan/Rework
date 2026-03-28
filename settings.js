@@ -805,75 +805,39 @@ function toggleClubMgmt(forceOpen) {
   if (open) sbPopulateDeleteDropdown();
 }
 
-/* ── CREATE CLUB — Step 1: Send OTP ── */
+/* ── CREATE CLUB — Direct (no OTP needed) ── */
 async function clubCreateSendOtp() {
-  const name    = document.getElementById('sbNewClubName')?.value.trim();
-  const email   = document.getElementById('sbNewClubEmail')?.value.trim();
-  const selPw   = document.getElementById('sbNewClubSelectPw')?.value.trim();
-  const adminPw = document.getElementById('sbNewClubAdminPw')?.value.trim();
-  const fb      = document.getElementById('clubCreateFeedback');
-
-  const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
-
-  if (!name)    { setFb('Enter club name.', false); return; }
-  if (!email || !email.includes('@')) { setFb('Enter a valid email.', false); return; }
-  if (!selPw)   { setFb('Enter user password.', false); return; }
-  if (!adminPw) { setFb('Enter admin password.', false); return; }
-
-  setFb('Sending OTP...', true);
-  try {
-    await dbSendOtp(email);
-    _clubCreateEmail = email;
-    document.getElementById('clubCreateEmailMasked').textContent = maskEmail(email);
-    document.getElementById('clubCreateStep1').style.display = 'none';
-    document.getElementById('clubCreateStep2').style.display = '';
-    document.getElementById('sbNewClubOtp').value = '';
-    document.getElementById('sbNewClubOtp').focus();
-    setFb('OTP sent! Check your email.', true);
-  } catch (e) { setFb('❌ ' + e.message, false); }
-}
-
-async function clubCreateResend() {
-  if (!_clubCreateEmail) return;
-  try {
-    await dbSendOtp(_clubCreateEmail);
-    document.getElementById('clubCreateFeedback').textContent = 'OTP resent.';
-    document.getElementById('clubCreateFeedback').style.color = '#2dce89';
-  } catch (e) {}
-}
-
-/* ── CREATE CLUB — Step 2: Verify OTP & Create ── */
-async function clubCreateVerify() {
-  const otp     = document.getElementById('sbNewClubOtp')?.value.trim();
+  // Renamed but now creates directly without OTP
   const name    = document.getElementById('sbNewClubName')?.value.trim();
   const selPw   = document.getElementById('sbNewClubSelectPw')?.value.trim();
   const adminPw = document.getElementById('sbNewClubAdminPw')?.value.trim();
   const fb      = document.getElementById('clubCreateFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!otp || otp.length < 8) { setFb('Enter the 8-digit OTP.', false); return; }
-  setFb('Verifying...', true);
+  if (!name)    { setFb('Enter club name.', false); return; }
+  if (!selPw)   { setFb('Enter member password.', false); return; }
+  if (!adminPw) { setFb('Enter admin password.', false); return; }
+  if (selPw === adminPw) { setFb('Member and admin passwords must be different.', false); return; }
+
+  setFb('Creating club...', true);
   try {
-    await dbVerifyOtp(_clubCreateEmail, otp);
-    // OTP verified — create the club
-    const club = await dbAddClub(name, selPw, adminPw, _clubCreateEmail);
+    const club = await dbAddClub(name, selPw, adminPw);
     setMyClub(club.id, club.name);
     localStorage.setItem('kbrr_club_mode',    'admin');
     localStorage.setItem('kbrr_rating_field', 'club_rating');
-    // Reset form
-    ['sbNewClubName','sbNewClubEmail','sbNewClubSelectPw','sbNewClubAdminPw','sbNewClubOtp'].forEach(id => {
+    ['sbNewClubName','sbNewClubSelectPw','sbNewClubAdminPw'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    document.getElementById('clubCreateStep1').style.display = '';
-    document.getElementById('clubCreateStep2').style.display = 'none';
-    _clubCreateEmail = '';
     setFb('✅ Club "' + club.name + '" created! You are now Admin.', true);
     sbRenderClubStatus();
     vaultSyncStatus();
     if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
     await syncToLocal();
-  } catch (e) { setFb('❌ ' + e.message, false); }
+  } catch(e) { setFb('❌ ' + e.message, false); }
 }
+
+async function clubCreateResend() { /* no longer needed */ }
+async function clubCreateVerify() { /* no longer needed */ }
 
 /* ── DELETE CLUB — Step 1: Send OTP ── */
 async function clubDeleteSendOtp() {
