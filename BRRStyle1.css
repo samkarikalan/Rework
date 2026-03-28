@@ -1286,3 +1286,29 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
+
+/* ── Dashboard Force End Button ── */
+.dash-card-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border, #2a2a40);
+}
+.dash-force-end-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(230,55,87,0.08);
+  border: 1px solid rgba(230,55,87,0.25);
+  color: #e63757;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dash-force-end-btn:active {
+  background: rgba(230,55,87,0.18);
+}
+.dash-force-end-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1062,6 +1062,12 @@ async function endSession(fromProfile = false) {
     if (schedulerState.restCount)   schedulerState.restCount.clear();
   }
 
+  // Stop heartbeat
+  if (typeof stopSessionHeartbeat === 'function') stopSessionHeartbeat();
+
+  // Hide live bar
+  updateSessionLiveBar();
+
   // Stay on dashboard and refresh it
   if (typeof showPage === 'function') {
     showPage('dashboardPage', document.getElementById('tabBtnDashboard'));

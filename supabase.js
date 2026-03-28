@@ -689,10 +689,10 @@ async function dbCleanupStaleSessions() {
       `club_id=eq.${club.id}&status=eq.live&select=id,created_at`
     );
     if (!rows || !rows.length) return;
-    const threeHoursAgo = Date.now() - (3 * 60 * 60 * 1000);
+    const thirtyMinsAgo = Date.now() - (30 * 60 * 1000);
     for (const sess of rows) {
-      const age = new Date(sess.created_at).getTime();
-      if (age < threeHoursAgo) {
+      const age = new Date(sess.updated_at || sess.created_at).getTime();
+      if (age < thirtyMinsAgo) {
         await sbPatch('sessions', `id=eq.${sess.id}`, {
           status:     'completed',
           updated_at: new Date().toISOString()
@@ -1058,3 +1058,28 @@ async function getPlayerSessions(playerName) {
     return [];
   }
 }
+
+/* ============================================================
+   SESSION HEARTBEAT
+   Updates sessions.updated_at every 2 minutes while active.
+   If app crashes, heartbeat stops → cleanup catches it in 30 mins.
+============================================================ */
+var _heartbeatTimer = null;
+
+function startSessionHeartbeat() {
+  stopSessionHeartbeat();
+  _heartbeatTimer = setInterval(async () => {
+    const sessionId = (typeof getMySessionId === 'function') ? getMySessionId() : null;
+    if (!sessionId) { stopSessionHeartbeat(); return; }
+    try {
+      await sbPatch('sessions', `id=eq.${sessionId}`, {
+        updated_at: new Date().toISOString()
+      });
+    } catch(e) { /* silent — offline */ }
+  }, 2 * 60 * 1000); // every 2 minutes
+}
+
+function stopSessionHeartbeat() {
+  if (_heartbeatTimer) { clearInterval(_heartbeatTimer); _heartbeatTimer = null; }
+}
+
