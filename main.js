@@ -809,28 +809,14 @@ function _showClubSetupSheet(targetMode) {
 
       <!-- CREATE PANEL -->
       <div id="clubSetupPanelCreate" style="display:none;margin-top:14px">
-        <div id="clubSetupCreateStep1">
-          <input type="text"     id="csCreateName"    class="auth-input" placeholder="Club name"       style="margin-bottom:8px">
-          <input type="email"    id="csCreateEmail"   class="auth-input" placeholder="Your email (OTP)" style="margin-bottom:8px">
-          <input type="password" id="csCreateUserPw"  class="auth-input" placeholder="User password"   style="margin-bottom:8px">
+        <div id="clubSetupPanelCreateForm">
+          <input type="text"     id="csCreateName"    class="auth-input" placeholder="Club name"      style="margin-bottom:8px">
+          <input type="password" id="csCreateUserPw"  class="auth-input" placeholder="Member password" style="margin-bottom:8px">
           <input type="password" id="csCreateAdminPw" class="auth-input" placeholder="Admin password"  style="margin-bottom:10px">
-          <div id="csCreateFeedback" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
+          <div id="csCreateFeedback" style="font-size:0.82rem;min-height:18px;margin-bottom:10px"></div>
           <div style="display:flex;gap:10px">
             <button class="admin-modal-cancel" style="flex:1" onclick="document.getElementById('clubSetupSheetOverlay').remove()">Cancel</button>
-            <button class="admin-modal-ok" style="flex:1" onclick="_clubSetupCreateSendOtp()">📧 Send OTP</button>
-          </div>
-        </div>
-        <div id="clubSetupCreateStep2" style="display:none">
-          <p style="font-size:0.82rem;color:var(--text-dim);margin-bottom:10px">
-            OTP sent to <strong id="csCreateEmailMasked"></strong>
-            · <button class="link-btn" onclick="_clubSetupCreateResend()">Resend</button>
-          </p>
-          <input type="text" id="csCreateOtp" class="auth-input" placeholder="Enter 8-digit OTP" maxlength="8"
-                 onkeydown="if(event.key==='Enter')_clubSetupCreateVerify()" style="margin-bottom:10px">
-          <div id="csCreateFeedback2" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
-          <div style="display:flex;gap:10px">
-            <button class="admin-modal-cancel" style="flex:1" onclick="_clubSetupShowTab('create')">Back</button>
-            <button class="admin-modal-ok" style="flex:1" onclick="_clubSetupCreateVerify()">Create Club</button>
+            <button class="admin-modal-ok" style="flex:1" onclick="_clubSetupCreateDirect()">Create Club</button>
           </div>
         </div>
       </div>
@@ -849,10 +835,8 @@ function _clubSetupShowTab(tab) {
   document.getElementById('clubSetupTabCreate').classList.toggle('active', tab === 'create');
   document.getElementById('clubSetupPanelJoin').style.display   = tab === 'join'   ? '' : 'none';
   document.getElementById('clubSetupPanelCreate').style.display = tab === 'create' ? '' : 'none';
-  // Reset create steps
+  // Reset create form
   if (tab === 'create') {
-    document.getElementById('clubSetupCreateStep1').style.display = '';
-    document.getElementById('clubSetupCreateStep2').style.display = 'none';
     _clubSetupCreateEmail = '';
   }
 }
@@ -934,67 +918,30 @@ async function _clubSetupJoin() {
   } catch(e) { setFb('❌ ' + e.message, false); }
 }
 
-async function _clubSetupCreateSendOtp() {
+async function _clubSetupCreateSendOtp() { _clubSetupCreateDirect(); } // legacy alias
+async function _clubSetupCreateResend()  { } // no longer needed
+
+async function _clubSetupCreateVerify() { _clubSetupCreateDirect(); } // legacy alias
+
+async function _clubSetupCreateDirect() {
   const name    = document.getElementById('csCreateName')?.value.trim();
-  const email   = document.getElementById('csCreateEmail')?.value.trim();
   const userPw  = document.getElementById('csCreateUserPw')?.value.trim();
   const adminPw = document.getElementById('csCreateAdminPw')?.value.trim();
   const fb      = document.getElementById('csCreateFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
   if (!name)    { setFb('Enter club name.', false); return; }
-  if (!email || !email.includes('@')) { setFb('Enter a valid email.', false); return; }
-  if (!userPw)  { setFb('Enter user password.', false); return; }
+  if (!userPw)  { setFb('Enter member password.', false); return; }
   if (!adminPw) { setFb('Enter admin password.', false); return; }
+  if (userPw === adminPw) { setFb('Member and admin passwords must be different.', false); return; }
 
-  setFb('Sending OTP…', true);
-  try {
-    // Store form values so they survive the step switch
-    document.getElementById('csCreateName')._savedVal    = name;
-    document.getElementById('csCreateUserPw')._savedVal  = userPw;
-    document.getElementById('csCreateAdminPw')._savedVal = adminPw;
-
-    await dbSendOtp(email);
-    _clubSetupCreateEmail = email;
-
-    const masked = document.getElementById('csCreateEmailMasked');
-    if (masked) masked.textContent = maskEmail ? maskEmail(email) : email.replace(/(.{2}).+(@.+)/, '$1…$2');
-
-    document.getElementById('clubSetupCreateStep1').style.display = 'none';
-    document.getElementById('clubSetupCreateStep2').style.display = '';
-    document.getElementById('csCreateOtp').value = '';
-    document.getElementById('csCreateOtp').focus();
-    setFb('OTP sent! Check your email.', true);
-  } catch(e) { setFb('❌ ' + e.message, false); }
-}
-
-async function _clubSetupCreateResend() {
-  if (!_clubSetupCreateEmail) return;
-  try {
-    await dbSendOtp(_clubSetupCreateEmail);
-    const fb2 = document.getElementById('csCreateFeedback2');
-    if (fb2) { fb2.textContent = 'OTP resent.'; fb2.style.color = '#2dce89'; }
-  } catch(e) {}
-}
-
-async function _clubSetupCreateVerify() {
-  const otp     = document.getElementById('csCreateOtp')?.value.trim();
-  const name    = document.getElementById('csCreateName')?._savedVal    || document.getElementById('csCreateName')?.value.trim();
-  const userPw  = document.getElementById('csCreateUserPw')?._savedVal  || document.getElementById('csCreateUserPw')?.value.trim();
-  const adminPw = document.getElementById('csCreateAdminPw')?._savedVal || document.getElementById('csCreateAdminPw')?.value.trim();
-  const fb      = document.getElementById('csCreateFeedback2');
-  const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
-
-  if (!otp || otp.length < 8) { setFb('Enter the 8-digit OTP.', false); return; }
   setFb('Creating club…', true);
   try {
-    await dbVerifyOtp(_clubSetupCreateEmail, otp);
-    const club = await dbAddClub(name, userPw, adminPw, _clubSetupCreateEmail);
+    const club = await dbAddClub(name, userPw, adminPw);
     if (typeof setMyClub === 'function') setMyClub(club.id, club.name);
     localStorage.setItem('kbrr_club_mode', 'admin');
     localStorage.setItem('kbrr_rating_field', 'club_rating');
-    setFb(`✅ Club "${club.name}" created! You are now Admin.`, true);
-    _clubSetupCreateEmail = '';
+    setFb('✅ Club "' + club.name + '" created! You are now Admin.', true);
 
     setTimeout(() => {
       const ov = document.getElementById('clubSetupSheetOverlay');
