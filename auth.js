@@ -375,7 +375,7 @@ async function authRequestJoin(clubId, chosenNickname) {
 async function authGetJoinRequests(clubId) {
   try {
     var requests = await sbGet('club_join_requests',
-      'club_id=eq.' + clubId + '&status=eq.pending&select=id,user_account_id,nickname,requested_at');
+      'club_id=eq.' + clubId + '&status=eq.pending&select=id,user_account_id,requested_at');
 
     // Get user details for each request
     var result = [];
@@ -383,14 +383,13 @@ async function authGetJoinRequests(clubId) {
       var req = requests[i];
       try {
         var users = await sbGet('user_accounts',
-          'id=eq.' + req.user_account_id + '&select=id,user_id,nickname,email');
+          'id=eq.' + req.user_account_id + '&select=id,nickname,email');
         if (users && users.length) {
           result.push({
             requestId:     req.id,
             requestedAt:   req.requested_at,
             userAccountId: req.user_account_id,
-            userId:        users[0].user_id,
-            nickname:      req.nickname || users[0].nickname,  // use chosen nickname first
+            nickname:      users[0].nickname,
             email:         users[0].email
           });
         }

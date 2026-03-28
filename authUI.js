@@ -327,7 +327,7 @@ async function vaultLoadRequests() {
     return '<div class="vault-request-card">' +
       '<div class="vault-request-info">' +
         '<div class="vault-request-name">' + req.nickname + '</div>' +
-        '<div class="vault-request-id">@' + req.userId + '</div>' +
+        '<div class="vault-request-id">' + req.email + '</div>' +
       '</div>' +
       '<div class="vault-request-actions">' +
         '<button class="vault-request-accept" onclick="vaultAcceptRequest(\'' + req.requestId + '\',\'' + req.userAccountId + '\',\'' + req.nickname.replace(/'/g, "\\'") + '\')">✓ Accept</button>' +
