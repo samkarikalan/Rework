@@ -1099,3 +1099,67 @@ display: block;
 }
 .club-mgmt-toggle:hover { color: var(--text); }
 
+
+/* ── Vault Gradient Tiles (Option A) ── */
+.vault-tile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 4px 0;
+}
+.vault-tile {
+  border-radius: 18px;
+  padding: 16px 14px 14px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.vault-tile:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+.vt-playing  { background: linear-gradient(135deg, #f5a623, #f76b1c); }
+.vt-register { background: linear-gradient(135deg, #6c8cff, #a78bfa); }
+.vt-modify   { background: linear-gradient(135deg, #2dce89, #00b09b); }
+.vt-requests { background: linear-gradient(135deg, #e63757, #f5a623); }
+.vt-club     { background: linear-gradient(135deg, #2c2c54, #4a4a8a); min-height: 64px; flex-direction: row; align-items: center; gap: 14px; justify-content: flex-start; }
+
+.vt-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: rgba(255,255,255,0.28);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+.vt-icon {
+  font-size: 1.7rem;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+.vt-stat {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.vt-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+}
+.vt-sub {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.65);
+  margin-top: 1px;
+}

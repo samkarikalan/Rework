@@ -130,6 +130,11 @@ async function homeRefreshTiles() {
     }
   }
 
+  // ── Vault gradient tiles — load live stats ──
+  if (club && club.id && document.getElementById('vtStatPlaying')) {
+    homeRefreshVaultTiles(club.id);
+  }
+
   // ── Players ──
   var playersSub = document.getElementById('tileSubPlayers');
   if (playersSub) {
@@ -743,4 +748,33 @@ async function joinClubLeave() {
   document.getElementById('joinClubStatusCard').style.display = 'none';
   document.getElementById('joinClubSearchSection').style.display = '';
   homeRefreshJoinClubTile();
+}
+
+/* ── Load live stats into vault gradient tiles ── */
+async function homeRefreshVaultTiles(clubId) {
+  try {
+    // Playing count
+    var playing = await sbGet('memberships', 'club_id=eq.' + clubId + '&is_playing=eq.true&select=id').catch(() => []);
+    var playingCount = (playing || []).length;
+    var vtPlaying = document.getElementById('vtStatPlaying');
+    if (vtPlaying) vtPlaying.textContent = playingCount;
+    var vtBadgePlaying = document.getElementById('vtBadgePlaying');
+    if (vtBadgePlaying) vtBadgePlaying.style.display = playingCount > 0 ? '' : 'none';
+
+    // Total players (register + modify share same count)
+    var members = await sbGet('memberships', 'club_id=eq.' + clubId + '&select=id').catch(() => []);
+    var memberCount = (members || []).length;
+    var vtRegister = document.getElementById('vtStatRegister');
+    if (vtRegister) vtRegister.textContent = memberCount;
+    var vtModify = document.getElementById('vtStatModify');
+    if (vtModify) vtModify.textContent = memberCount;
+
+    // Pending requests
+    var requests = await sbGet('club_join_requests', 'club_id=eq.' + clubId + '&status=eq.pending&select=id').catch(() => []);
+    var reqCount = (requests || []).length;
+    var vtRequests = document.getElementById('vtStatRequests');
+    if (vtRequests) vtRequests.textContent = reqCount;
+    var vtBadgeReq = document.getElementById('vtBadgeRequests');
+    if (vtBadgeReq) vtBadgeReq.style.display = reqCount > 0 ? '' : 'none';
+  } catch(e) { /* silent */ }
 }

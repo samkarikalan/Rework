@@ -387,37 +387,44 @@
 
     <!-- ── VAULT MANAGER GRID (new) ── -->
     <div id="homeVaultGrid" style="display:none;">
-      <div class="home-grid">
-        <div class="home-tile" onclick="homeGo('vaultPlayingPage',null)">
-          <div class="home-tile-icon tile-vault">⚡</div>
-          <div class="home-tile-name">Playing</div>
-          <div class="home-tile-sub">Who's on court</div>
+      <div class="vault-tile-grid">
+
+        <div class="vault-tile vt-playing" onclick="homeGo('vaultPlayingPage',null)">
+          <div class="vt-badge" id="vtBadgePlaying" style="display:none">LIVE</div>
+          <div class="vt-icon">⚡</div>
+          <div class="vt-stat" id="vtStatPlaying">—</div>
+          <div class="vt-name">Playing</div>
+          <div class="vt-sub">on court now</div>
         </div>
-        <div class="home-tile" onclick="homeGo('vaultRegisterPage',null)">
-          <div class="home-tile-icon" style="background:rgba(45,206,137,0.15)">📋</div>
-          <div class="home-tile-name">Register</div>
-          <div class="home-tile-sub">Add players to club</div>
+
+        <div class="vault-tile vt-register" onclick="homeGo('vaultRegisterPage',null)">
+          <div class="vt-icon">📋</div>
+          <div class="vt-stat" id="vtStatRegister">—</div>
+          <div class="vt-name">Register</div>
+          <div class="vt-sub">players in club</div>
         </div>
-        <div class="home-tile" onclick="homeGo('vaultModifyPage',null)">
-          <div class="home-tile-icon" style="background:rgba(108,99,255,0.15)">✏️</div>
-          <div class="home-tile-name">Modify</div>
-          <div class="home-tile-sub">Edit player data</div>
+
+        <div class="vault-tile vt-modify" onclick="homeGo('vaultModifyPage',null)">
+          <div class="vt-icon">✏️</div>
+          <div class="vt-stat" id="vtStatModify">—</div>
+          <div class="vt-name">Modify</div>
+          <div class="vt-sub">tap to edit</div>
         </div>
-        <div class="home-tile" onclick="homeGo('vaultRequestsPage',null)">
-          <div class="home-tile-icon" style="background:rgba(245,158,11,0.15)">🔔</div>
-          <div class="home-tile-name">Requests</div>
-          <div class="home-tile-sub" id="tileSubRequests">Join requests</div>
+
+        <div class="vault-tile vt-requests" onclick="homeGo('vaultRequestsPage',null)">
+          <div class="vt-badge" id="vtBadgeRequests" style="display:none">NEW</div>
+          <div class="vt-icon">🔔</div>
+          <div class="vt-stat" id="vtStatRequests">—</div>
+          <div class="vt-name">Requests</div>
+          <div class="vt-sub">pending approval</div>
         </div>
-        <div class="home-tile" onclick="homeGo('vaultClubMgmtPage',null)">
-          <div class="home-tile-icon" style="background:rgba(239,68,68,0.12)">🏢</div>
-          <div class="home-tile-name">Club Mgmt</div>
-          <div class="home-tile-sub">Create · Delete</div>
+
+        <div class="vault-tile vt-club" onclick="homeGo('vaultClubMgmtPage',null)" style="grid-column: span 2;">
+          <div class="vt-icon" style="font-size:1.3rem">🏢</div>
+          <div class="vt-name" style="margin-top:6px">Club Management</div>
+          <div class="vt-sub">create · delete · switch</div>
         </div>
-        <div class="home-tile" onclick="homeGo('settingsPage',null)">
-          <div class="home-tile-icon tile-settings">⚙️</div>
-          <div class="home-tile-name">Settings</div>
-          <div class="home-tile-sub" id="tileSubSettingsVM">Theme · Font</div>
-        </div>
+
       </div>
     </div>
 
