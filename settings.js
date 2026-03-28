@@ -939,14 +939,89 @@ function vaultRenderRegister() {
   const container = document.getElementById('vaultRegisterContainer');
   if (!container) return;
   const club = (typeof getMyClub === 'function') ? getMyClub() : { name: null };
-  if (typeof newImportRenderRegister === 'function') {
-    // Temporarily swap the render target so register renders into vault container
-    const original = document.getElementById('newImportSelectCards');
-    if (original) original.id = '_newImportSelectCards_hidden';
-    container.id = 'newImportSelectCards';
-    newImportRenderRegister();
-    container.id = 'vaultRegisterContainer';
-    if (original) original.id = 'newImportSelectCards';
+
+  container.innerHTML = `
+    <div class="register-form">
+      <div class="register-club-label">
+        ${club.name
+          ? '🏸 Registering for: <strong>' + club.name + '</strong>'
+          : '⚠️ No club selected. Join a club first.'}
+      </div>
+      ${club.name ? `
+      <div class="auth-field" style="margin-bottom:10px">
+        <label class="register-label">Nickname</label>
+        <input type="text" id="vregNickname" class="auth-input" placeholder="Player nickname">
+      </div>
+      <div class="auth-field" style="margin-bottom:10px">
+        <label class="register-label">Gender</label>
+        <select id="vregGender" class="auth-input">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div class="auth-field" style="margin-bottom:10px">
+        <label class="register-label">Rating <span class="auth-hint">default 1.0</span></label>
+        <input type="number" id="vregRating" class="auth-input" value="1.0" min="1.0" max="5.0" step="0.1">
+      </div>
+      <div class="auth-field" style="margin-bottom:10px">
+        <label class="register-label">Default Password <span class="auth-hint">player uses this to claim account</span></label>
+        <input type="text" id="vregDefaultPassword" class="auth-input" placeholder="e.g. club123">
+      </div>
+      <div id="vregFeedback" style="font-size:0.85rem;min-height:18px;margin-bottom:10px"></div>
+      <button class="register-save-btn" onclick="vaultDoRegisterPlayer()">✅ Register Player</button>
+      ` : ''}
+    </div>`;
+}
+
+async function vaultDoRegisterPlayer() {
+  const club     = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+  const nickname = document.getElementById('vregNickname')?.value.trim();
+  const gender   = document.getElementById('vregGender')?.value || 'Male';
+  const rating   = parseFloat(document.getElementById('vregRating')?.value) || 1.0;
+  const defPw    = document.getElementById('vregDefaultPassword')?.value.trim();
+  const fb       = document.getElementById('vregFeedback');
+  const setFb    = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green,#2dce89)' : 'var(--red,#e63757)'; } };
+
+  if (!club.id)   { setFb('No club selected.', false); return; }
+  if (!nickname)  { setFb('Please enter a nickname.', false); return; }
+  if (!defPw)     { setFb('Please set a default password.', false); return; }
+
+  setFb('Registering...', true);
+  try {
+    // Check nickname not already in this club
+    const existing = await sbGet('memberships',
+      'club_id=eq.' + club.id + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id');
+    if (existing && existing.length) { setFb('Nickname already exists in this club.', false); return; }
+
+    // Create player row
+    const created = await sbPost('players', {
+      name:             nickname,
+      gender:           gender,
+      global_rating:    rating,
+      global_points:    0,
+      default_password: defPw
+    });
+    const player = created[0];
+
+    // Create membership
+    await sbPost('memberships', {
+      player_id:   player.id,
+      club_id:     club.id,
+      nickname:    nickname,
+      club_rating: rating,
+      club_points: 0
+    });
+
+    setFb('✅ ' + nickname + ' registered!', true);
+    // Clear fields for next entry
+    document.getElementById('vregNickname').value = '';
+    document.getElementById('vregDefaultPassword').value = '';
+    document.getElementById('vregRating').value = '1.0';
+    // Invalidate player cache
+    localStorage.removeItem('kbrr_cache_players');
+    localStorage.removeItem('kbrr_cache_ts');
+  } catch(e) {
+    setFb('❌ ' + e.message, false);
   }
 }
 

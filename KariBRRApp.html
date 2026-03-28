@@ -91,6 +91,7 @@
       <div class="auth-welcome-btns">
         <button class="auth-btn-primary" onclick="authShowScreen('login')">Login</button>
         <button class="auth-btn-secondary" onclick="authShowScreen('signup')">Create Account</button>
+        <button class="auth-btn-secondary" onclick="authShowScreen('claim')" style="margin-top:8px">Claim My Account</button>
       </div>
     </div>
 
@@ -179,6 +180,51 @@
         </div>
         <div id="forgotError" class="auth-error" style="display:none;"></div>
         <button class="auth-btn-primary" onclick="authDoForgotReset()">Reset Password</button>
+      </div>
+    </div>
+
+    <!-- CLAIM ACCOUNT screen -->
+    <div id="authClaim" class="auth-screen" style="display:none;">
+      <div class="auth-back-row">
+        <button class="auth-back-btn" onclick="authShowScreen('welcome')">&#8249;</button>
+        <span class="auth-screen-title">Claim My Account</span>
+      </div>
+      <div class="auth-form">
+        <p class="auth-hint-block" style="margin-bottom:16px;color:var(--text-dim,#888);font-size:0.85rem;">
+          Your admin has registered you. Enter your club, nickname and the default password they gave you to set up your account.
+        </p>
+        <div class="auth-field">
+          <label class="auth-label">Club</label>
+          <select id="claimClubSelect" class="auth-input">
+            <option value="">— Loading clubs… —</option>
+          </select>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Nickname <span class="auth-hint">as registered by admin</span></label>
+          <input type="text" id="claimNickname" class="auth-input" placeholder="Your nickname">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Default Password <span class="auth-hint">given by admin</span></label>
+          <input type="password" id="claimDefaultPassword" class="auth-input" placeholder="Default password">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Your Email</label>
+          <input type="email" id="claimEmail" class="auth-input" placeholder="your@email.com" autocapitalize="none">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">New Password</label>
+          <input type="password" id="claimPassword" class="auth-input" placeholder="Min 6 characters">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Confirm Password</label>
+          <input type="password" id="claimConfirm" class="auth-input" placeholder="Repeat password">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">Recovery Keyword</label>
+          <input type="text" id="claimRecoveryWord" class="auth-input" placeholder="e.g. mango, sunflower..." autocapitalize="none">
+        </div>
+        <div id="claimError" class="auth-error" style="display:none;"></div>
+        <button class="auth-btn-primary" onclick="authDoClaimAccount()">Claim Account</button>
       </div>
     </div>
 

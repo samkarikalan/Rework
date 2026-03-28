@@ -141,6 +141,57 @@ async function authResetPassword(email, recoveryWord, newPassword) {
   }
 }
 
+/* ── Claim Account — player already registered by admin ── */
+async function authClaimAccount(clubId, nickname, defaultPassword, email, newPassword, recoveryWord) {
+  try {
+    // 1. Find membership by club + nickname
+    var memberships = await sbGet('memberships',
+      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id'
+    );
+    if (!memberships || !memberships.length)
+      return { error: 'Nickname not found in this club. Check with your admin.' };
+
+    var membership = memberships[0];
+
+    // 2. Already claimed?
+    if (membership.user_account_id)
+      return { error: 'This account has already been claimed. Please login or use Forgot Password.' };
+
+    // 3. Verify default password on player row
+    var players = await sbGet('players',
+      'id=eq.' + membership.player_id + '&default_password=eq.' + encodeURIComponent(defaultPassword) + '&select=id'
+    );
+    if (!players || !players.length)
+      return { error: 'Default password is incorrect. Check with your admin.' };
+
+    // 4. Check email not already used
+    var existing = await sbGet('user_accounts', 'email=eq.' + encodeURIComponent(email) + '&select=id');
+    if (existing && existing.length)
+      return { error: 'This email is already registered. Use a different email.' };
+
+    // 5. Create user_account
+    var result = await sbPost('user_accounts', {
+      user_id:       email,
+      nickname:      nickname,
+      email:         email,
+      password_hash: newPassword,
+      recovery_word: recoveryWord
+    });
+    var u = result[0];
+
+    // 6. Link membership to user_account
+    await sbPatch('memberships', 'id=eq.' + membership.id, { user_account_id: u.id });
+
+    var authUser = { id: u.id, email: u.email, nickname: u.nickname, displayName: u.nickname };
+    _authUser = authUser;
+    localStorage.setItem('auth_user', JSON.stringify(authUser));
+    return { user: authUser };
+
+  } catch(e) {
+    return { error: e.message || 'Claim failed. Please try again.' };
+  }
+}
+
 /* ── Logout ── */
 function authLogout() {
   _authUser = null;

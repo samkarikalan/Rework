@@ -27,13 +27,17 @@ function authShowScreen(screen) {
     'login':    'authLogin',
     'signup':   'authSignup',
     'forgot':   'authForgot',
+    'claim':    'authClaim',
     'joinClub': 'authJoinClub'
   };
   var el = document.getElementById(screenMap[screen]);
   if (el) el.style.display = 'flex';
 
+  // Load clubs for claim dropdown
+  if (screen === 'claim') authLoadClaimClubs();
+
   // Clear errors
-  ['loginError','signupError','forgotError','forgotError2','joinClubError'].forEach(function(id) {
+  ['loginError','signupError','forgotError','forgotError2','claimError','joinClubError'].forEach(function(id) {
     var err = document.getElementById(id);
     if (err) { err.style.display = 'none'; err.textContent = ''; }
   });
