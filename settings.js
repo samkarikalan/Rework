@@ -286,15 +286,14 @@ async function playerPlayingRenderList() {
     let rows;
     if (club.id) {
       // Get only players belonging to this club
-      rows = await sbGet('memberships',
-        `club_id=eq.${club.id}&is_playing=eq.true&select=nickname,players(gender)&order=nickname.asc`
-      );
-      if (!rows || !rows.length) {
+      const members = await sbGet('players', `club_id=eq.${club.id}&select=id,nickname,gender,rating,club_rating,wins,losses`);
+      if (!members || !members.length) {
         container.innerHTML = '<p class="player-mgmt-empty">No players currently locked.</p>';
         return;
       }
-      // Normalize to expected shape
-      rows = rows.map(m => ({ name: m.nickname, gender: m.players?.gender || 'Male' }));
+      rows = await sbGet('players',
+        `club_id=eq.${club.id}&is_playing=eq.true&select=nickname,gender,session_id,session_started_at&order=nickname.asc`
+      );
     } else {
       // No club logged in — show nothing
       container.innerHTML = '<p class="player-mgmt-empty">Join a club to view playing players.</p>';
@@ -324,7 +323,9 @@ async function playerPlayingRenderList() {
     rows.forEach(function(p) {
       const row = document.createElement('div');
       row.className = 'player-mgmt-row';
-      const started = ''; // session time tracking removed
+      const started = p.session_started_at
+        ? new Date(p.session_started_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+        : '—';
 
       const img = document.createElement('img');
       img.src = p.gender === 'Female' ? 'female.png' : 'male.png';
@@ -364,12 +365,9 @@ async function playerPlayingRenderList() {
 async function playerPlayingRelease(name) {
   if (!confirm('Release "' + name + '" from active session?')) return;
   try {
-    const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    if (club.id) {
-      await sbPatch('memberships', `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}`, {
-        is_playing: false
-      });
-    }
+    await sbPatch('players', `club_id=eq.${(getMyClub&&getMyClub()||{}).id||''}&nickname=ilike.` + encodeURIComponent(name), {
+      is_playing: false, session_id: null, session_started_at: null
+    });
     playerPlayingRenderList();
   } catch(e) { alert('Failed to release: ' + e.message); }
 }
@@ -379,8 +377,11 @@ async function playerPlayingReleaseAll() {
   try {
     const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
     if (!club.id) { alert('No club logged in.'); return; }
-    await sbPatch('memberships', `club_id=eq.${club.id}&is_playing=eq.true`, {
-      is_playing: false
+    const members = await sbGet('players', `club_id=eq.${club.id}&select=id,nickname,gender,rating,club_rating,wins,losses`);
+    if (!members || !members.length) return;
+    const idList = '(' + members.map(m => `"${m.id}"`).join(',') + ')';
+    await sbPatch('players', `id=in.${idList}&is_playing=eq.true`, {
+      is_playing: false, session_id: null, session_started_at: null
     });
     playerPlayingRenderList();
   } catch(e) { alert('Failed: ' + e.message); }
@@ -446,14 +447,7 @@ async function playerMgmtToggleGender(displayName) {
   localStorage.setItem("newImportHistory", JSON.stringify(newImportState.historyPlayers));
   // Sync gender to Supabase
   try {
-    // Update gender via memberships (nickname lookup)
-    const _gc = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    if (_gc.id) {
-      await sbPatch('memberships', `club_id=eq.${_gc.id}&nickname=ilike.${encodeURIComponent(displayName.trim())}`, { /* gender stored on players row */ });
-      // Also update players table via player id
-      const _pr = await sbGet('memberships', `club_id=eq.${_gc.id}&nickname=ilike.${encodeURIComponent(displayName.trim())}&select=player_id`).catch(()=>[]);
-      if (_pr.length) await sbPatch('players', `id=eq.${_pr[0].player_id}`, { gender: hp.gender });
-    }
+    await sbPatch("players", `club_id=eq.${(getMyClub&&getMyClub()||{}).id||""}&nickname=ilike.${encodeURIComponent(displayName.trim())}`, { gender: hp.gender });
   } catch(e) { /* silent */ }
   syncPlayersFromMaster();
   updatePlayerList();
@@ -465,11 +459,12 @@ async function playerMgmtDelete(displayName) {
   if (!confirm(`Remove "${displayName}" from this club?`)) return;
   const key = displayName.trim().toLowerCase();
 
-  // Remove from Supabase memberships
+  // Remove from Supabase club_members
   try {
     const club = getMyClub();
-    if (club.id) {
-      await sbDelete('memberships', `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(displayName.trim())}`);
+    const players = await sbGet("players", `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(displayName.trim())}&select=id`);
+    if (players.length) {
+      await sbDelete("players", `id=eq.${players[0].id}&club_id=eq.${club.id}`);
     }
   } catch(e) { /* silent */ }
 
@@ -581,6 +576,7 @@ function vaultShowTab(tab, btn) {
   if (tab === 'requests') { if (typeof vaultLoadRequests === 'function') vaultLoadRequests(); }
 }
 
+/* ── Vault Modify tab — admin-only player edits ── */
 /* ── Vault Modify — SCS-style player list ── */
 
 var _vmAllPlayers = []; // full loaded list for client-side filter
@@ -603,16 +599,24 @@ async function vaultRenderModify() {
   container.innerHTML = '<p class="player-mgmt-empty"><span class="vm-spinner"></span> Loading…</p>';
 
   try {
-    const clubPlayers = await dbGetPlayers(true);
+    const [clubPlayers, userAccounts] = await Promise.all([
+      dbGetPlayers(true),
+      sbGet('user_accounts', 'select=id,user_id,password_hash').catch(() => [])
+    ]);
+
+    const userMap = {};
+    (userAccounts || []).forEach(u => { userMap[u.id] = { userId: u.user_id, password: u.password_hash }; });
 
     _vmAllPlayers = (clubPlayers || []).map(p => ({
-      id:            p.membershipId || p.id,
-      playerId:      p.id,
+      id:            p.id,
       displayName:   p.name,
       gender:        p.gender || 'Male',
       rating:        parseFloat(p.clubRating) || parseFloat(p.rating) || 1.0,
-      wins:          0,
-      losses:        0,
+      wins:          p.wins   || 0,
+      losses:        p.losses || 0,
+      userAccountId: p.userAccountId || null,
+      userId:        p.userAccountId && userMap[p.userAccountId] ? userMap[p.userAccountId].userId : null,
+      password:      p.userAccountId && userMap[p.userAccountId] ? userMap[p.userAccountId].password : null,
     })).sort((a, b) => a.displayName.localeCompare(b.displayName));
 
     vaultModifyFilter();
@@ -674,15 +678,15 @@ function _vmEsc(s) {
 function vmOpenEditModal(playerId) {
   const p = _vmAllPlayers.find(x => x.id === playerId);
   if (!p) return;
-  document.getElementById('vmEditPlayerId').value      = p.id;
+  document.getElementById('vmEditPlayerId').value    = p.id;
   document.getElementById('vmEditUserAccountId').value = p.userAccountId || '';
-  document.getElementById('vmEditName').value          = p.displayName;
-  document.getElementById('vmEditGender').value        = p.gender || 'Male';
-  document.getElementById('vmEditRating').value        = p.rating.toFixed(1);
-  document.getElementById('vmEditWins').value          = p.wins;
-  document.getElementById('vmEditLosses').value        = p.losses;
-  document.getElementById('vmEditUserId').value        = p.userId || '';
-  document.getElementById('vmEditPassword').value      = '';
+  document.getElementById('vmEditName').value        = p.displayName;
+  document.getElementById('vmEditGender').value      = p.gender || 'Male';
+  document.getElementById('vmEditRating').value      = p.rating.toFixed(1);
+  document.getElementById('vmEditWins').value        = p.wins;
+  document.getElementById('vmEditLosses').value      = p.losses;
+  document.getElementById('vmEditUserId').value      = p.userId || '';
+  document.getElementById('vmEditPassword').value    = '';
   const fb = document.getElementById('vmEditFeedback');
   if (fb) { fb.textContent = ''; fb.style.color = ''; }
   document.getElementById('vmEditModal').classList.add('open');
@@ -695,46 +699,52 @@ function vmCloseEditModal(e) {
 }
 
 async function vmSaveEdit() {
-  const playerId    = document.getElementById('vmEditPlayerId').value;
-  const userAcctId  = document.getElementById('vmEditUserAccountId').value;
-  const name        = document.getElementById('vmEditName').value.trim();
-  const gender      = document.getElementById('vmEditGender').value;
-  const rating      = parseFloat(document.getElementById('vmEditRating').value) || 1.0;
-  const wins        = parseInt(document.getElementById('vmEditWins').value)   || 0;
-  const losses      = parseInt(document.getElementById('vmEditLosses').value) || 0;
-  const newUserId   = document.getElementById('vmEditUserId').value.trim().toLowerCase();
-  const newPassword = document.getElementById('vmEditPassword').value.trim();
-  const fb          = document.getElementById('vmEditFeedback');
+  const playerId     = document.getElementById('vmEditPlayerId').value;
+  const userAcctId   = document.getElementById('vmEditUserAccountId').value;
+  const name         = document.getElementById('vmEditName').value.trim();
+  const gender       = document.getElementById('vmEditGender').value;
+  const rating       = parseFloat(document.getElementById('vmEditRating').value) || 1.0;
+  const wins         = parseInt(document.getElementById('vmEditWins').value)   || 0;
+  const losses       = parseInt(document.getElementById('vmEditLosses').value) || 0;
+  const newUserId    = document.getElementById('vmEditUserId').value.trim().toLowerCase();
+  const newPassword  = document.getElementById('vmEditPassword').value.trim();
+  const fb           = document.getElementById('vmEditFeedback');
   const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green)' : 'var(--red)'; } };
 
   if (!name) { setFb('Name cannot be empty.', false); return; }
 
   setFb('Saving…', true);
   try {
-    // 1. Update membership (nickname + club_rating)
-    const _club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    if (_club.id) {
-      await sbPatch('memberships', `id=eq.${playerId}`, {
-        nickname:    name,
-        club_rating: Math.round(rating * 10) / 10
-      });
-    }
-    // 2. Update player display_name + gender
-    const _p = _vmAllPlayers.find(x => x.id === playerId);
-    if (_p?.playerId) {
-      await sbPatch('players', `id=eq.${_p.playerId}`, { display_name: name, gender });
-    }
+    const club = (typeof getMyClub === 'function') ? getMyClub() : null;
+
+    // 1. Update player row
+    await sbPatch('players', `id=eq.${playerId}`, {
+      nickname:    name,
+      gender,
+      club_rating: Math.round(rating * 10) / 10,
+      rating:      Math.round(rating * 10) / 10,
+      wins,
+      losses
+    });
 
     // 2. Update user_account if exists
-    // Password changes handled via Supabase Auth — no user_accounts table
+    if (userAcctId) {
+      const acctPatch = {};
+      if (newUserId)   acctPatch.user_id       = newUserId;
+      if (newPassword) acctPatch.password_hash  = newPassword;
+      if (newUserId)   acctPatch.nickname        = name;
+      if (Object.keys(acctPatch).length) {
+        await sbPatch('user_accounts', `id=eq.${userAcctId}`, acctPatch);
+      }
+    }
 
     // 3. Update local state
     const hp = (newImportState.historyPlayers || []).find(
       p => p.displayName && p.displayName.trim().toLowerCase() === _vmAllPlayers.find(x => x.id === playerId)?.displayName.trim().toLowerCase()
     );
     if (hp) {
-      hp.displayName  = name;
-      hp.gender       = gender;
+      hp.displayName = name;
+      hp.gender      = gender;
       hp.activeRating = Math.round(rating * 10) / 10;
       hp.clubRating   = Math.round(rating * 10) / 10;
     }
@@ -755,12 +765,13 @@ async function vmSaveEdit() {
 async function vmDeletePlayer(playerId, displayName) {
   if (!confirm(`Remove "${displayName}" from this club?`)) return;
   try {
-    // Remove from club — delete membership only, keep global player record
-    const _dclub = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    if (_dclub.id) {
-      await sbDelete('memberships', `id=eq.${playerId}&club_id=eq.${_dclub.id}`);
+    const p = _vmAllPlayers.find(x => x.id === playerId);
+    await sbDelete('players', `id=eq.${playerId}`);
+    if (p && p.userAccountId) {
+      await sbDelete('user_accounts', `id=eq.${p.userAccountId}`).catch(() => {});
     }
     _vmAllPlayers = _vmAllPlayers.filter(x => x.id !== playerId);
+    // also update local history
     if (newImportState && newImportState.historyPlayers) {
       newImportState.historyPlayers = newImportState.historyPlayers.filter(
         h => h.displayName?.trim().toLowerCase() !== displayName.trim().toLowerCase()
@@ -775,7 +786,9 @@ async function vmDeletePlayer(playerId, displayName) {
   }
 }
 
-// vaultToggleGender and vaultDeletePlayer (old name-based) replaced by vmSaveEdit / vmDeletePlayer above
+// vaultToggleGender and vaultDeletePlayer replaced by vmSaveEdit / vmDeletePlayer above
+
+
 
 // ── Club Management — OTP-based create/delete ──
 
@@ -846,7 +859,7 @@ async function clubCreateVerify() {
     const club = await dbAddClub(name, selPw, adminPw, _clubCreateEmail);
     setMyClub(club.id, club.name);
     localStorage.setItem('kbrr_club_mode',    'admin');
-    localStorage.setItem('kbrr_rating_field', 'club_ratings');
+    localStorage.setItem('kbrr_rating_field', 'club_rating');
     // Reset form
     ['sbNewClubName','sbNewClubEmail','sbNewClubSelectPw','sbNewClubAdminPw','sbNewClubOtp'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
@@ -1069,27 +1082,22 @@ async function showPlayerStats(name) {
   modal.style.display = "flex";
 
   try {
-    // Query via memberships to get club-specific data
-    const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    let rows = [];
-    if (club.id) {
-      rows = await sbGet('memberships',
-        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}&select=nickname,club_rating,club_points,players(gender,global_rating,global_points)`
-      );
-    }
+    const rows = await sbGet(
+      "players",
+      `name=ilike.${encodeURIComponent(name)}&select=name,gender,wins,losses,sessions`
+    );
     if (!rows || !rows.length) {
       content.innerHTML = "<div class='stats-loading'>Player not found.</div>";
       return;
     }
-    const m      = rows[0];
-    const p      = { name: m.nickname, gender: m.players?.gender || 'Male', rating: m.club_rating, wins: 0, losses: 0 };
-    const gender = p.gender;
+    const p      = rows[0];
+    const gender = p.gender || "Male";
     // Single gate — sync first, then read activeRating
     await syncToLocal();
     const rating = getActiveRating(name).toFixed(1);
-    const wins     = 0; // calculated from matches table
-    const losses   = 0;
-    const sessions = [];
+    const wins     = p.wins   || 0;
+    const losses   = p.losses || 0;
+    const sessions = Array.isArray(p.sessions) ? p.sessions : [];
     const genderImg = gender === "Female" ? "female.png" : "male.png";
     const total    = wins + losses;
     const winPct   = total > 0 ? Math.round((wins / total) * 100) : 0;

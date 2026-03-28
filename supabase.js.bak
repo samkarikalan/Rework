@@ -3,8 +3,8 @@
    Replaces supabase.js — same public API, Supabase backend
    ============================================================ */
 
-const SUPABASE_URL = "https://hplkoxdorbfjhwbvqatn.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwbGtveGRvcmJmamh3YnZxYXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MTcyOTgsImV4cCI6MjA5MDE5MzI5OH0.G-04VeYkUGMF93qw61ryTaQ0Q7xK3dOAHLDvG6l31vc";
+const SUPABASE_URL = "https://plakuxwfrkswoqdigzng.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWt1eHdmcmtzd29xZGlnem5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNDY0NjIsImV4cCI6MjA4OTcyMjQ2Mn0.AJ0vC8bSGBsDNv1VvIUab7K4OEX7YeCxn595CA5mOfE";
 
 const SB_HEADERS = {
   "apikey": SUPABASE_KEY,
@@ -124,27 +124,26 @@ async function dbGetPlayers(forceFresh = false) {
   }
 
   try {
-    let normalized;
+    let players;
     if (club.id) {
-      // New schema: players linked via memberships table
-      const memberships = await sbGet('memberships',
-        `club_id=eq.${club.id}&order=nickname.asc&select=id,nickname,club_rating,club_points,is_playing,player_id,players(id,gender,global_rating,global_points,wins,losses,sessions)`
-      );
-      normalized = memberships.map(m => ({
-        id:            m.player_id,
-        membershipId:  m.id,
-        name:          m.nickname,
-        gender:        m.players?.gender     || 'Male',
-        rating:        parseFloat(m.players?.global_rating) || 1.0,
-        clubRating:    parseFloat(m.club_rating)            || 1.0,
-        activeRating:  parseFloat(m.club_rating)            || 1.0,
-        wins:          m.players?.wins   || 0,
-        losses:        m.players?.losses || 0,
-        sessions:      m.players?.sessions || []
-      }));
+      players = await sbGet("players", `club_id=eq.${club.id}&order=nickname.asc&select=id,nickname,gender,rating,club_rating,wins,losses,sessions,user_account_id`);
     } else {
-      normalized = [];
+      players = await sbGet("players", "order=nickname.asc&select=id,nickname,gender,rating,club_rating,wins,losses,sessions,user_account_id");
     }
+
+    // Normalize to local format
+    const normalized = players.map(p => {
+      return {
+        id:          p.id,
+        name:        p.nickname,
+        gender:      p.gender,
+        rating:      parseFloat(p.rating)      || 1.0,
+        clubRating:  parseFloat(p.club_rating) || 1.0,
+        wins:        p.wins   || 0,
+        losses:      p.losses || 0,
+        userAccountId: p.user_account_id
+      };
+    });
 
     localStorage.setItem(CACHE_PLAYERS,   JSON.stringify(normalized));
     localStorage.setItem(CACHE_TIMESTAMP, String(Date.now()));
@@ -162,28 +161,20 @@ async function dbAddPlayer(name, gender, _unused) {
   if (!club.id) throw new Error("No club selected.");
   // Mode check done at login — trust session
 
-  // Check duplicate nickname in this club via memberships
-  const existing = await sbGet('memberships',
+  // Check duplicate nickname in this club
+  const existing = await sbGet("players",
     `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name.trim())}&select=id`);
-  if (existing.length) throw new Error('Player already exists in this club.');
+  if (existing.length) throw new Error("Player already exists in this club.");
 
-  // Create global player row
-  const created = await sbPost('players', {
-    name:          name.trim(),
-    gender:        gender,
-    global_rating: 1.0,
-    global_points: 0
-  });
-  const player = created[0];
-
-  // Link to club via memberships
-  await sbPost('memberships', {
-    player_id:   player.id,
+  // Create player directly with club_id
+  const created = await sbPost("players", {
     club_id:     club.id,
     nickname:    name.trim(),
-    club_rating: 1.0,
-    club_points: 0
+    gender:      gender,
+    rating:      1.0,
+    club_rating: 1.0
   });
+  const player = created[0];
 
   // Invalidate cache + refresh immediately
   localStorage.removeItem(CACHE_PLAYERS);
@@ -232,24 +223,23 @@ async function flushSyncQueue() {
   for (const update of pending) {
     try {
       const rounded = Math.round(update.activeRating * 10) / 10;
-      const mrows = await sbGet('memberships',
-        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,player_id,club_rating`
+      const rows = await sbGet("players",
+        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,wins,losses,club_rating`
       );
-      if (!mrows || !mrows.length) continue;
-      const m = mrows[0];
+      if (!rows || !rows.length) continue;
+      const row   = rows[0];
+      const patch = {};
 
-      // Update membership club_rating
-      await sbPatch('memberships', `id=eq.${m.id}`, { club_rating: rounded });
+      // Always write to club_rating (float) — this is the actual column
+      patch.club_rating = rounded;
 
-      // Update player wins/losses
       if (update.wins > 0 || update.losses > 0) {
-        const prows = await sbGet('players', `id=eq.${m.player_id}&select=wins,losses`);
-        if (prows && prows.length) {
-          await sbPatch('players', `id=eq.${m.player_id}`, {
-            wins:   (prows[0].wins   || 0) + (update.wins   || 0),
-            losses: (prows[0].losses || 0) + (update.losses || 0)
-          });
-        }
+        patch.wins   = (row.wins   || 0) + (update.wins   || 0);
+        patch.losses = (row.losses || 0) + (update.losses || 0);
+      }
+
+      if (Object.keys(patch).length) {
+        await sbPatch("players", `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}`, patch);
       }
     } catch(e) {
       failed.push(update); // keep failed items for next retry
@@ -282,20 +272,23 @@ async function dbSyncRatings(updatedRatings) {
     try {
       const rounded = Math.round(update.activeRating * 10) / 10;
 
-      const mrows = await sbGet('memberships',
-        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,player_id,club_rating`
+      const rows = await sbGet("players",
+        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,wins,losses,club_rating`
       );
-      if (!mrows || !mrows.length) continue;
-      const m = mrows[0];
-      await sbPatch('memberships', `id=eq.${m.id}`, { club_rating: rounded });
+      if (!rows || !rows.length) continue;
+      const row   = rows[0];
+      const patch = {};
+
+      // Always write to club_rating (float) — this is the actual column
+      patch.club_rating = rounded;
+
       if (update.wins > 0 || update.losses > 0) {
-        const prows = await sbGet('players', `id=eq.${m.player_id}&select=wins,losses`);
-        if (prows && prows.length) {
-          await sbPatch('players', `id=eq.${m.player_id}`, {
-            wins:   (prows[0].wins   || 0) + (update.wins   || 0),
-            losses: (prows[0].losses || 0) + (update.losses || 0)
-          });
-        }
+        patch.wins   = (row.wins   || 0) + (update.wins   || 0);
+        patch.losses = (row.losses || 0) + (update.losses || 0);
+      }
+
+      if (Object.keys(patch).length) {
+        await sbPatch("players", `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}`, patch);
       }
     } catch(e) {
       console.warn("dbSyncRatings offline for", update.name, "— queued");
@@ -317,11 +310,10 @@ async function dbOverrideRating(playerId, newRating) {
   const ratingField = localStorage.getItem("kbrr_rating_field") || "club_rating";
   const patch       = {};
 
-  // Update club_rating in memberships
-  const club2 = getMyClub();
-  if (club2.id) {
-    await sbPatch('memberships', `player_id=eq.${playerId}&club_id=eq.${club2.id}`, { club_rating: rounded });
-  }
+  // Write to club_rating (float) — actual column in players table
+  patch.club_rating = rounded;
+
+  await sbPatch("players", `id=eq.${playerId}`, patch);
   localStorage.removeItem(CACHE_PLAYERS);
   localStorage.removeItem(CACHE_TIMESTAMP);
   // Refresh immediately so all displays show new value
@@ -337,17 +329,7 @@ async function dbEditPlayer(playerId, updates, clubAdminPassword) {
   if (!clubs.length || clubs[0].admin_password !== clubAdminPassword)
     throw new Error("Wrong admin password.");
 
-  // updates may contain nickname — patch memberships, other fields go to players
-  const { nickname, club_rating, ...playerUpdates } = updates;
-  if (nickname || club_rating) {
-    const mPatch = {};
-    if (nickname) mPatch.nickname = nickname;
-    if (club_rating !== undefined) mPatch.club_rating = club_rating;
-    await sbPatch('memberships', `player_id=eq.${playerId}&club_id=eq.${club.id}`, mPatch);
-  }
-  if (Object.keys(playerUpdates).length) {
-    await sbPatch('players', `id=eq.${playerId}`, playerUpdates);
-  }
+  await sbPatch("players", `id=eq.${playerId}`, updates);
   localStorage.removeItem(CACHE_PLAYERS);
   localStorage.removeItem(CACHE_TIMESTAMP);
 }
@@ -361,8 +343,8 @@ async function dbDeletePlayer(playerId, clubAdminPassword) {
   if (!clubs.length || clubs[0].admin_password !== clubAdminPassword)
     throw new Error("Wrong admin password.");
 
-  // Remove from club only (delete membership, keep global player)
-  await sbDelete('memberships', `player_id=eq.${playerId}&club_id=eq.${club.id}`);
+  // Delete player row directly (club_id is on the player row)
+  await sbDelete("players", `id=eq.${playerId}&club_id=eq.${club.id}`);
   localStorage.removeItem(CACHE_PLAYERS);
   localStorage.removeItem(CACHE_TIMESTAMP);
   if (typeof syncToLocal === "function") await syncToLocal();
@@ -557,7 +539,7 @@ async function syncLiveSession(playedNames) {
           started_by:  startedBy,
           updated_at:  new Date().toISOString()
         };
-        return Promise.resolve(); // live_sessions replaced by sessions.rounds_data
+        return sbUpsert("live_sessions", row, "player_name,club_id,date").catch(() => {});
       });
 
     await Promise.all(upserts);
@@ -732,8 +714,8 @@ async function dbForceCompleteSession(sessionId) {
 async function dbGetPlayerClubs(playerName) {
   try {
     if (!playerName) return [];
-    // Use memberships to find clubs by nickname
-    const rows = await sbGet('memberships',
+    // Players table has club_id directly — get all clubs this nickname appears in
+    const rows = await sbGet('players',
       `nickname=ilike.${encodeURIComponent(playerName)}&select=club_id`
     );
     return (rows || []).map(r => r.club_id).filter(Boolean);
@@ -747,22 +729,49 @@ async function dbGetLiveSessions() {
     const isViewer = (typeof appMode !== 'undefined') && appMode === 'viewer';
     const today    = new Date().toISOString().split('T')[0];
 
+    let rows = [];
     if (isViewer) {
+      // Viewer -- show live_sessions rows from all clubs the player belongs to
       const myPlayer = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
       if (!myPlayer) return [];
       const clubIds = await dbGetPlayerClubs(myPlayer.name);
       if (!clubIds.length) return [];
       const inList = '(' + clubIds.join(',') + ')';
-      return await sbGet('sessions',
-        `club_id=in.${inList}&status=eq.live&order=started_at.asc&select=id,rounds_data,started_by,updated_at,club_id`
-      ) || [];
+      rows = await sbGet('live_sessions',
+        `club_id=in.${inList}&date=eq.${today}&select=player_name,club_id,date,wins,losses,matches,started_by,updated_at`
+      );
     } else {
+      // Organiser/Vault -- show today's live_sessions for their club
       const club = getMyClub();
       if (!club.id) return [];
-      return await sbGet('sessions',
-        `club_id=eq.${club.id}&status=eq.live&order=started_at.asc&select=id,rounds_data,started_by,updated_at`
-      ) || [];
+      rows = await sbGet('live_sessions',
+        `club_id=eq.${club.id}&date=eq.${today}&select=player_name,club_id,date,wins,losses,matches,started_by,updated_at`
+      );
     }
+
+    if (!rows || !rows.length) return [];
+
+    // Group per-player rows into a single session object per club
+    const sessionMap = {};
+    rows.forEach(r => {
+      const key = r.club_id;
+      if (!sessionMap[key]) {
+        sessionMap[key] = {
+          id:          `live-${key}-${today}`,
+          club_id:     r.club_id,
+          started_by:  r.started_by,
+          updated_at:  r.updated_at,
+          players:     [],
+          rounds_data: []
+        };
+      }
+      if (r.updated_at > sessionMap[key].updated_at) {
+        sessionMap[key].updated_at = r.updated_at;
+      }
+      sessionMap[key].players.push(r.player_name);
+    });
+
+    return Object.values(sessionMap);
   } catch (e) {
     console.warn('dbGetLiveSessions error:', e.message);
     return [];
@@ -811,8 +820,10 @@ async function flushLiveSession() {
     const club = getMyClub();
     if (!club.id) return;
 
-    // live_sessions table removed — data stored in sessions.rounds_data
-    return;
+    const today = new Date().toISOString().split("T")[0];
+    const rows  = await sbGet("live_sessions",
+      `club_id=eq.${club.id}&date=eq.${today}`);
+    if (!rows || !rows.length) return;
 
     // Write all players in parallel — no sequential awaits
     const writes = rows
@@ -824,11 +835,8 @@ async function flushLiveSession() {
 
       // Write to players.sessions — merge with existing today entry if present
       try {
-        const _mrows = await sbGet('memberships',
-          `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(row.player_name)}&select=player_id`);
-        const playerRows = _mrows.length
-          ? await sbGet('players', `id=eq.${_mrows[0].player_id}&select=id,sessions`)
-          : [];
+        const playerRows = await sbGet("players",
+          `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(row.player_name)}&select=id,sessions`);
         if (playerRows && playerRows.length) {
           const existing   = playerRows[0].sessions || [];
           const todayEntry = existing.find(s => s.date === today);
@@ -849,7 +857,8 @@ async function flushLiveSession() {
           };
 
           const updated = [entry, ...otherDays].slice(0, 3);
-          await sbPatch('players', `id=eq.${playerRows[0].id}`, { sessions: updated });
+          await sbPatch("players",
+            `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(row.player_name)}`, { sessions: updated });
 
           // Mirror to localStorage
           try {
@@ -882,7 +891,7 @@ async function cleanupLiveSessions() {
     const club  = getMyClub();
     if (!club.id) return;
     const today = new Date().toISOString().split("T")[0];
-    // live_sessions removed — no cleanup needed
+    await sbDelete("live_sessions", `club_id=eq.${club.id}&date=lt.${today}`);
   } catch (e) {
     console.warn("cleanupLiveSessions error:", e.message);
   }
@@ -903,12 +912,12 @@ async function syncGlobalPlayersCache() {
   try {
     const club = getMyClub();
     if (!club.id) return;
-    const raw = await sbGet('memberships', `club_id=eq.${club.id}&order=nickname.asc&select=nickname,club_rating,players(gender,global_rating)`);
-    const players = raw.map(m => ({
-      displayName: m.nickname,
-      gender:      m.players?.gender       || 'Male',
-      rating:      parseFloat(m.players?.global_rating) || 1.0,
-      clubRating:  parseFloat(m.club_rating)            || 1.0
+    const raw = await sbGet("players", `club_id=eq.${club.id}&order=nickname.asc&select=nickname,gender,rating,club_rating`);
+    const players = raw.map(p => ({
+      displayName: p.nickname,
+      gender:      p.gender || "Male",
+      rating:      parseFloat(p.rating)      || 1.0,
+      clubRating:  parseFloat(p.club_rating) || 1.0
     }));
     localStorage.setItem(CACHE_GLOBAL_PLAYERS, JSON.stringify(players));
   } catch (e) {
@@ -941,8 +950,9 @@ async function dbIsOnline() {
 }
 
 async function dbDeleteClub(clubId) {
-  // Cascade deletes memberships, sessions, join_requests
-  await sbDelete('clubs', `id=eq.${clubId}`);
+  // Delete all players in this club first, then the club
+  await sbDelete("players", `club_id=eq.${clubId}`);
+  await sbDelete("clubs",   `id=eq.${clubId}`);
 }
 
 /// ============================================================
@@ -961,8 +971,10 @@ async function dbClaimSessionSlots(playerNames) {
   const now = new Date().toISOString();
   for (const name of playerNames) {
     try {
-      await sbPatch('memberships', `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}`, {
-        is_playing: true
+      await sbPatch("players", `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}`, {
+        is_playing:          true,
+        session_id:          SESSION_ID,
+        session_started_at:  now
       });
     } catch(e) { /* silent per player */ }
   }
@@ -974,9 +986,10 @@ async function dbClaimSessionSlots(playerNames) {
 async function dbReleaseSessionSlots(playerNames) {
   for (const name of playerNames) {
     try {
-      const _rc = getMyClub();
-      await sbPatch('memberships', `club_id=eq.${_rc.id}&nickname=ilike.${encodeURIComponent(name)}`, {
-        is_playing: false
+      await sbPatch("players", `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}`, {
+        is_playing:         false,
+        session_id:         null,
+        session_started_at: null
       });
     } catch(e) { /* silent per player */ }
   }
@@ -987,8 +1000,11 @@ async function dbReleaseSessionSlots(playerNames) {
 /// Release only slots owned by this session (safe cleanup on unload)
 async function dbReleaseMySession() {
   try {
-    const _rmc = getMyClub();
-    if (_rmc.id) await sbPatch('memberships', `club_id=eq.${_rmc.id}&is_playing=eq.true`, { is_playing: false });
+    await sbPatch("players", `session_id=eq.${SESSION_ID}`, {
+      is_playing:         false,
+      session_id:         null,
+      session_started_at: null
+    });
   } catch(e) { /* silent */ }
 }
 
@@ -998,10 +1014,8 @@ async function dbGetUnavailablePlayers() {
   try {
     const cutoff = new Date(Date.now() - SESSION_TIMEOUT_MS).toISOString();
     // Players marked as playing, not in our session, and not timed out
-    const _uclub = getMyClub();
-    if (!_uclub.id) return new Set();
-    const rows = await sbGet('memberships',
-      `club_id=eq.${_uclub.id}&is_playing=eq.true&select=nickname`
+    const rows = await sbGet("players",
+      `is_playing=eq.true&session_id=neq.${SESSION_ID}&session_started_at=gte.${cutoff}&select=nickname,session_id`
     );
     return new Set((rows || []).map(r => r.nickname.trim().toLowerCase()));
   } catch(e) {

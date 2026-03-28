@@ -1301,12 +1301,12 @@ async function addPlayersBrowseLoad() {
         rating:      parseFloat(p.rating) || 1.0
       }));
     } else {
-      // Fetch ALL players globally — use display_name
-      const raw = await sbGet("players", "order=display_name.asc&select=id,display_name,gender,global_rating");
+      // Fetch ALL players globally (bypass club filter)
+      const raw = await sbGet("players", "order=name.asc");
       players = raw.map(p => ({
-        displayName: p.display_name,
+        displayName: p.name,
         gender:      p.gender || "Male",
-        rating:      parseFloat(p.global_rating) || 1.0
+        rating:      parseFloat(p.rating) || 1.0
       }));
     }
     _browseAllPlayers = players;

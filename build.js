@@ -81,6 +81,7 @@ const JS_FILES = [
   'competitive_algorithm.js',
   'engjap.js',
   'ExportCSS.js',
+  'github.js',
   'help.js'
 ];
 

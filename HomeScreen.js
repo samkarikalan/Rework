@@ -75,8 +75,6 @@ function showHomeScreen() {
   var statusName = document.getElementById('homeStatusName');
   var club   = (typeof getMyClub   === 'function') ? getMyClub()   : null;
   var player = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
-  // Normalize display_name → displayName for new schema compatibility
-  if (player && player.display_name && !player.displayName) player.displayName = player.display_name;
   var isAdmin = (typeof isClubAdmin === 'function') ? isClubAdmin() : false;
 
   if (club && club.name) {

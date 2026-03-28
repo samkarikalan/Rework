@@ -1,10 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="apple-touch-icon" sizes="180x180" href="cs.PNG">
-  <link rel="apple-touch-icon" sizes="152x152" href="cs.PNG">
-  <link rel="apple-touch-icon" sizes="120x120" href="cs.PNG">
-  <link rel="apple-touch-startup-image" href="cs.PNG">
+  <link rel="apple-touch-icon" href="cs.PNG">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6c63ff">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,7 +18,6 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="BRRStyle3.css">
   <link rel="stylesheet" href="HomeStyle.css">
-  <link rel="stylesheet" href="HomeStyle-new.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="supabase.js" defer></script>
   <script src="auth.js" defer></script>
@@ -45,23 +41,60 @@
 <body>
 
   <!-- ============================= -->
+  <!--       MODE SELECT OVERLAY     -->
+  <!-- ============================= -->
+  <!-- Keep ghost for compatibility  -->
+  <div id="modeSelectOverlay" class="mode-select-overlay" style="display:none;">
+    <div class="mode-select-card">
+      <div class="mode-select-logo">🏸</div>
+      <div class="mode-select-title">Choose Mode</div>
+      <div class="mode-select-subtitle">How are you using the app today?</div>
+      <div class="mode-select-options">
+        <button class="mode-select-btn viewer" onclick="document.getElementById('modeSelectOverlay').style.display='none';selectMode('viewer')">
+          <span class="mode-select-btn-icon">👁</span>
+          <div class="mode-select-btn-info">
+            <div class="mode-select-btn-name">Viewer</div>
+            <div class="mode-select-btn-desc">Watch live rounds &amp; scores</div>
+          </div>
+          <span class="mode-select-btn-arrow">›</span>
+        </button>
+        <button class="mode-select-btn organiser" onclick="document.getElementById('modeSelectOverlay').style.display='none';switchMode('organiser')">
+          <span class="mode-select-btn-icon">🏆</span>
+          <div class="mode-select-btn-info">
+            <div class="mode-select-btn-name">Round Organiser</div>
+            <div class="mode-select-btn-desc">Run session, score games, manage players</div>
+          </div>
+          <span class="mode-select-btn-arrow">›</span>
+        </button>
+        <button class="mode-select-btn vault" onclick="document.getElementById('modeSelectOverlay').style.display='none';requestVaultMode()">
+          <span class="mode-select-btn-icon">🔑</span>
+          <div class="mode-select-btn-info">
+            <div class="mode-select-btn-name">Vault Manager</div>
+            <div class="mode-select-btn-desc">Club admin — players, requests, management</div>
+          </div>
+          <span class="mode-select-btn-arrow">›</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============================= -->
   <!--        AUTH SCREENS           -->
   <!-- ============================= -->
   <div id="authOverlay" class="auth-overlay" style="display:none;">
 
-    <!-- WELCOME -->
+    <!-- WELCOME screen -->
     <div id="authWelcome" class="auth-screen">
       <div class="auth-logo">🏸</div>
-      <div class="auth-app-name">Club Scheduler</div>
-      <div class="auth-tagline">Badminton · Pickleball · Racket Sports</div>
+      <div class="auth-app-name">Sports Club Scheduler</div>
+      <div class="auth-tagline">Badminton &amp; Pickleball</div>
       <div class="auth-welcome-btns">
         <button class="auth-btn-primary" onclick="authShowScreen('login')">Login</button>
         <button class="auth-btn-secondary" onclick="authShowScreen('signup')">Create Account</button>
       </div>
     </div>
 
-    <!-- LOGIN -->
+    <!-- LOGIN screen -->
     <div id="authLogin" class="auth-screen" style="display:none;">
       <div class="auth-back-row">
         <button class="auth-back-btn" onclick="authShowScreen('welcome')">&#8249;</button>
@@ -69,24 +102,20 @@
       </div>
       <div class="auth-form">
         <div class="auth-field">
-          <label class="auth-label">Email</label>
-          <input type="email" id="loginEmail" class="auth-input" placeholder="your@email.com"
-                 autocapitalize="none" autocomplete="email"
-                 onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()">
+          <label class="auth-label">User ID</label>
+          <input type="text" id="loginUserId" class="auth-input" placeholder="e.g. kari123" autocapitalize="none">
         </div>
         <div class="auth-field">
           <label class="auth-label">Password</label>
-          <input type="password" id="loginPassword" class="auth-input" placeholder="Password"
-                 autocomplete="current-password"
-                 onkeydown="if(event.key==='Enter')authDoLogin()">
+          <input type="password" id="loginPassword" class="auth-input" placeholder="Password">
         </div>
-        <div id="loginError" class="auth-error-msg" style="display:none;"></div>
-        <button id="loginBtn" class="auth-btn-primary" onclick="authDoLogin()">Login</button>
+        <div id="loginError" class="auth-error" style="display:none;"></div>
+        <button class="auth-btn-primary" onclick="authDoLogin()">Login</button>
         <button class="auth-btn-link" onclick="authShowScreen('forgot')">Forgot password?</button>
       </div>
     </div>
 
-    <!-- SIGN UP -->
+    <!-- SIGN UP screen -->
     <div id="authSignup" class="auth-screen" style="display:none;">
       <div class="auth-back-row">
         <button class="auth-back-btn" onclick="authShowScreen('welcome')">&#8249;</button>
@@ -94,52 +123,84 @@
       </div>
       <div class="auth-form">
         <div class="auth-field">
-          <label class="auth-label">Email</label>
-          <input type="email" id="signupEmail" class="auth-input" placeholder="your@email.com"
-                 autocapitalize="none" autocomplete="email">
+          <label class="auth-label">User ID <span class="auth-hint">unique, e.g. kari123</span></label>
+          <input type="text" id="signupUserId" class="auth-input" placeholder="kari123" autocapitalize="none">
         </div>
         <div class="auth-field">
-          <label class="auth-label">Display Name <span class="auth-hint">your real name or alias</span></label>
-          <input type="text" id="signupDisplayName" class="auth-input" placeholder="e.g. Sam">
+          <label class="auth-label">Nickname <span class="auth-hint">shown to others</span></label>
+          <input type="text" id="signupNickname" class="auth-input" placeholder="Kari">
         </div>
         <div class="auth-field">
-          <label class="auth-label">Gender</label>
-          <select id="signupGender" class="auth-input">
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
+          <label class="auth-label">Email <span class="auth-hint">for password recovery</span></label>
+          <input type="email" id="signupEmail" class="auth-input" placeholder="kari@email.com">
         </div>
         <div class="auth-field">
-          <label class="auth-label">Password <span class="auth-hint">min 6 characters</span></label>
-          <input type="password" id="signupPassword" class="auth-input" placeholder="Password"
-                 autocomplete="new-password">
+          <label class="auth-label">Password</label>
+          <input type="password" id="signupPassword" class="auth-input" placeholder="Min 6 characters">
         </div>
         <div class="auth-field">
           <label class="auth-label">Confirm Password</label>
-          <input type="password" id="signupConfirm" class="auth-input" placeholder="Repeat password"
-                 autocomplete="new-password"
-                 onkeydown="if(event.key==='Enter')authDoSignup()">
+          <input type="password" id="signupConfirm" class="auth-input" placeholder="Repeat password">
         </div>
-        <div id="signupError" class="auth-error-msg" style="display:none;"></div>
-        <button id="signupBtn" class="auth-btn-primary" onclick="authDoSignup()">Create Account</button>
+        <div id="signupError" class="auth-error" style="display:none;"></div>
+        <button class="auth-btn-primary" onclick="authDoSignup()">Create Account</button>
       </div>
     </div>
 
-    <!-- FORGOT PASSWORD -->
+    <!-- FORGOT PASSWORD screen -->
     <div id="authForgot" class="auth-screen" style="display:none;">
       <div class="auth-back-row">
         <button class="auth-back-btn" onclick="authShowScreen('login')">&#8249;</button>
         <span class="auth-screen-title">Reset Password</span>
       </div>
       <div class="auth-form">
-        <div class="auth-field">
-          <label class="auth-label">Email address</label>
-          <input type="email" id="forgotEmail" class="auth-input" placeholder="your@email.com"
-                 onkeydown="if(event.key==='Enter')authDoForgotSend()">
+        <!-- Step 1: Email -->
+        <div id="forgotStep1">
+          <div class="auth-field">
+            <label class="auth-label">Email address</label>
+            <input type="email" id="forgotEmail" class="auth-input" placeholder="your@email.com">
+          </div>
+          <div id="forgotError" class="auth-error" style="display:none;"></div>
+          <button class="auth-btn-primary" onclick="authDoForgotSend()">Send OTP</button>
         </div>
-        <div id="forgotError" class="auth-error-msg" style="display:none;"></div>
-        <button id="forgotBtn" class="auth-btn-primary" onclick="authDoForgotSend()">Send Reset Link</button>
-        <p class="auth-hint-block">A reset link will be sent to your email. Requires email to be configured.</p>
+        <!-- Step 2: OTP + new password -->
+        <div id="forgotStep2" style="display:none;">
+          <div class="auth-field">
+            <label class="auth-label">OTP Code</label>
+            <input type="text" id="forgotOtp" class="auth-input" placeholder="6-digit code" maxlength="6">
+          </div>
+          <div class="auth-field">
+            <label class="auth-label">New Password</label>
+            <input type="password" id="forgotNewPw" class="auth-input" placeholder="Min 6 characters">
+          </div>
+          <div id="forgotError2" class="auth-error" style="display:none;"></div>
+          <button class="auth-btn-primary" onclick="authDoForgotVerify()">Reset Password</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOIN CLUB screen -->
+    <div id="authJoinClub" class="auth-screen" style="display:none;">
+      <div class="auth-back-row">
+        <div style="flex:1"></div>
+        <button class="auth-btn-link" onclick="authSkipJoin()">Skip</button>
+      </div>
+      <div class="auth-logo" style="font-size:2.5rem;">🏢</div>
+      <div class="auth-screen-title" style="margin-bottom:6px;">Find Your Club</div>
+      <div class="auth-tagline">Search by club name and request to join</div>
+      <div class="auth-form" style="margin-top:24px;">
+        <div class="auth-field">
+          <label class="auth-label">Search Club</label>
+          <input type="text" id="joinClubSearch" class="auth-input"
+            placeholder="Type club name..."
+            oninput="authSearchClubsUI(this.value)">
+        </div>
+        <div id="joinClubResults" class="auth-club-results" style="display:none;"></div>
+        <div id="joinClubError" class="auth-error" style="display:none;"></div>
+        <div id="joinClubPending" class="auth-pending" style="display:none;">
+          <div class="auth-pending-icon">⏳</div>
+          <div class="auth-pending-text">Request sent! Waiting for admin approval.</div>
+        </div>
       </div>
     </div>
 
@@ -163,14 +224,14 @@
 
     <!-- Combined mode + status bar -->
     <div class="home-mode-status" id="homeStatusBar">
-      <div class="home-mode-left">
-        <span id="currentModeIcon">🏆</span>
-        <span id="currentModeLabel" class="home-mode-label">Organiser</span>
+      <div class="mode-pill" id="homeModeP">
+        <button class="mode-pill-btn" id="homePillViewer"    onclick="switchMode('viewer')">👁 Viewer</button>
+        <button class="mode-pill-btn active" id="homePillOrganiser" onclick="switchMode('organiser')">🏆 Organiser</button>
+        <button class="mode-pill-btn" id="homePillVault"     onclick="requestVaultMode()">🔑 Vault</button>
       </div>
       <div class="home-mode-status-right">
         <span class="home-status-dot"></span>
         <span class="home-status-name" id="homeStatusName">Not connected</span>
-        <button class="switch-mode-btn" onclick="openModeSwitcher()">Switch Mode</button>
       </div>
     </div>
 
@@ -333,6 +394,18 @@
           <div class="home-tile-sub" id="tileSubSettingsV">Theme · Font</div>
         </div>
       </div>
+      <!-- Join Club row -->
+      <div id="joinClubTileRow" style="margin:10px 16px 0;">
+        <div class="home-tile" id="tileJoinClub" onclick="homeGo('joinClubPage',null)" style="display:flex;flex-direction:row;align-items:center;gap:14px;padding:14px 16px;">
+          <div class="home-tile-icon" style="margin-bottom:0;flex-shrink:0;">🏢</div>
+          <div style="flex:1;">
+            <div class="home-tile-name">Join Club</div>
+            <div class="home-tile-sub" id="tileSubJoinClub">Find &amp; request</div>
+          </div>
+          <span style="color:var(--muted);font-size:1.1rem;">›</span>
+        </div>
+      </div>
+    </div>
 
     <button class="home-help-btn" onclick="homeGo('helpPage',null)">❓ Help &amp; Guide</button>
 

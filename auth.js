@@ -1,436 +1,410 @@
 /* ============================================================
-   auth.js — Professional Auth Layer
-   Uses Supabase Auth (email + password, no email confirmation)
-   JWT stored in localStorage, refreshed automatically
-   players table linked via auth.users.id
+   auth.js
+   Player authentication system
+   - Sign up / Login / Forgot password
+   - Mock mode for local testing (no Supabase needed)
+   - Switch MOCK_MODE = false when Supabase tables are ready
    ============================================================ */
 
-/* ============================================================
-   SESSION MANAGEMENT
-   Supabase Auth returns: access_token, refresh_token, expires_at
-============================================================ */
+var AUTH_MOCK_MODE = false; // ← set false when Supabase tables ready
 
-const AUTH_STORAGE_KEY    = 'kbrr_auth_session';
-const AUTH_USER_KEY       = 'kbrr_auth_user';
+/* ── Current session ── */
+var _authUser = null; // { id, userId, nickname, email }
 
-function _saveSession(session) {
-  if (!session) return;
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
-    access_token:  session.access_token,
-    refresh_token: session.refresh_token,
-    expires_at:    session.expires_at
-  }));
+/* ── Mock DB for testing ── */
+var _mockUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
+var _mockClubMembers = JSON.parse(localStorage.getItem('mock_club_members') || '[]');
+
+function _saveMockUsers() {
+  localStorage.setItem('mock_users', JSON.stringify(_mockUsers));
 }
-
-function _getSession() {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
-}
-
-function _clearSession() {
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-  localStorage.removeItem(AUTH_USER_KEY);
-  localStorage.removeItem('kbrr_my_player');
-  localStorage.removeItem('kbrr_my_club_id');
-  localStorage.removeItem('kbrr_my_club_name');
-  localStorage.removeItem('kbrr_club_mode');
-  localStorage.removeItem('kbrr_cache_players');
-  localStorage.removeItem('kbrr_cache_ts');
-}
-
-// Get auth headers using JWT instead of anon key
-function _authHeaders() {
-  const session = _getSession();
-  const token   = session?.access_token || SUPABASE_KEY;
-  return {
-    'apikey':        SUPABASE_KEY,
-    'Authorization': `Bearer ${token}`,
-    'Content-Type':  'application/json',
-    'Prefer':        'return=representation'
-  };
-}
-
-// Check if JWT is expired
-function _isTokenExpired() {
-  const session = _getSession();
-  if (!session?.expires_at) return true;
-  // expires_at is unix timestamp in seconds
-  return Date.now() / 1000 > session.expires_at - 60; // 60s buffer
+function _saveMockMembers() {
+  localStorage.setItem('mock_club_members', JSON.stringify(_mockClubMembers));
 }
 
 /* ============================================================
-   TOKEN REFRESH
-   Called automatically before any auth operation
-============================================================ */
+   PUBLIC API
+   ============================================================ */
 
-async function _refreshToken() {
-  const session = _getSession();
-  if (!session?.refresh_token) return false;
-
-  try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-      body:    JSON.stringify({ refresh_token: session.refresh_token })
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    if (data.access_token) {
-      _saveSession(data);
-      return true;
-    }
-    return false;
-  } catch(e) {
-    return false;
-  }
-}
-
-// Ensure token is fresh before operations
-async function _ensureFreshToken() {
-  if (_isTokenExpired()) {
-    const refreshed = await _refreshToken();
-    if (!refreshed) {
-      _clearSession();
-      return false;
-    }
-  }
-  return true;
-}
-
-/* ============================================================
-   PUBLIC AUTH API
-============================================================ */
-
-// Get current logged-in user
+/* ── Get current logged-in user ── */
 function authGetUser() {
-  try {
-    const raw = localStorage.getItem(AUTH_USER_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
+  if (_authUser) return _authUser;
+  var saved = localStorage.getItem('auth_user');
+  if (saved) {
+    try { _authUser = JSON.parse(saved); } catch(e) {}
+  }
+  return _authUser;
 }
 
-// Is logged in and token not expired
+/* ── Is logged in? ── */
 function authIsLoggedIn() {
-  const user    = authGetUser();
-  const session = _getSession();
-  if (!user || !session) return false;
-  return true; // token refresh handled lazily
+  return !!authGetUser();
 }
 
-/* ── Sign Up ── */
-async function authSignUp(email, password, displayName, gender) {
-  email       = email.trim().toLowerCase();
-  displayName = (displayName || '').trim();
+/* ── Sign up ── */
+async function authSignUp(userId, nickname, email, password) {
+  userId   = userId.trim().toLowerCase();
+  nickname = nickname.trim();
+  email    = email.trim().toLowerCase();
 
+  // Validate
+  if (!userId || userId.length < 3)
+    return { error: 'User ID must be at least 3 characters' };
+  if (!/^[a-z0-9_]+$/.test(userId))
+    return { error: 'User ID can only contain letters, numbers and underscore' };
+  if (!nickname || nickname.length < 2)
+    return { error: 'Nickname must be at least 2 characters' };
   if (!email || !email.includes('@'))
     return { error: 'Please enter a valid email' };
   if (!password || password.length < 6)
     return { error: 'Password must be at least 6 characters' };
-  if (!displayName || displayName.length < 2)
-    return { error: 'Display name must be at least 2 characters' };
 
-  try {
-    // 1. Create Supabase Auth user
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-      body:    JSON.stringify({ email, password })
-    });
+  if (AUTH_MOCK_MODE) {
+    // Check duplicate userId
+    if (_mockUsers.find(function(u) { return u.userId === userId; }))
+      return { error: 'User ID already taken. Try another.' };
+    // Check duplicate email
+    if (_mockUsers.find(function(u) { return u.email === email; }))
+      return { error: 'Email already registered.' };
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      const msg = data.msg || data.message || data.error_description || '';
-      if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists'))
-        return { error: 'Email already registered. Please login.' };
-      return { error: msg || 'Sign up failed. Please try again.' };
-    }
-
-    // 2. Save session
-    if (data.access_token) {
-      _saveSession(data);
-    }
-
-    // 3. Create player profile linked to auth user
-    const authUserId = data.user?.id;
-    if (!authUserId) return { error: 'Sign up failed. Please try again.' };
-
-    const playerRes = await fetch(`${SUPABASE_URL}/rest/v1/players`, {
-      method:  'POST',
-      headers: { ..._authHeaders(), 'Prefer': 'return=representation' },
-      body:    JSON.stringify({
-        id:            authUserId, // players.id = auth.users.id
-        email,
-        display_name:  displayName,
-        gender:        gender || 'Male',
-        global_rating: 1.0,
-        global_points: 0
-      })
-    });
-
-    if (!playerRes.ok) {
-      const errBody = await playerRes.json().catch(() => ({}));
-      console.warn('Player insert failed:', errBody);
-      // Player might already exist (edge case) — try to fetch
-      const existing = await _fetchPlayerProfile(authUserId);
-      if (!existing) return { error: errBody.message || 'Profile creation failed. Please try again.' };
-    }
-
-    const player = playerRes.ok
-      ? (await playerRes.json())[0]
-      : await _fetchPlayerProfile(authUserId);
-
-    // 4. Save user to localStorage
-    const authUser = {
-      id:          authUserId,
-      email,
-      displayName: player.display_name || displayName,
-      gender:      player.gender || gender || 'Male'
+    var user = {
+      id:       'mock_' + Date.now(),
+      userId:   userId,
+      nickname: nickname,
+      email:    email,
+      password: password, // plain text for mock only
+      createdAt: new Date().toISOString()
     };
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
-    setMyPlayer(player);
+    _mockUsers.push(user);
+    _saveMockUsers();
+    return { user: { id: user.id, userId: user.userId, nickname: user.nickname, email: user.email } };
+  }
 
-    return { user: authUser };
+  // ── Real Supabase ──
+  try {
+    // Check userId exists
+    var existing = await sbGet('user_accounts', 'user_id=eq.' + encodeURIComponent(userId) + '&select=id');
+    if (existing && existing.length) return { error: 'User ID already taken. Try another.' };
 
+    var result = await sbPost('user_accounts', {
+      user_id:       userId,
+      nickname:      nickname,
+      email:         email,
+      password_hash: password // TODO: hash in production
+    });
+    var u = result[0];
+    return { user: { id: u.id, userId: u.user_id, nickname: u.nickname, email: u.email } };
   } catch(e) {
-    return { error: e.message || 'Sign up failed. Please try again.' };
+    var msg = e.message || '';
+    if (msg.includes('user_accounts_email_key') || msg.includes('duplicate') && msg.includes('email'))
+      return { error: 'This email is already registered. Please use a different email.' };
+    if (msg.includes('user_accounts_user_id_key') || msg.includes('duplicate') && msg.includes('user_id'))
+      return { error: 'User ID already taken. Please choose another.' };
+    if (msg.includes('duplicate key') || msg.includes('unique constraint'))
+      return { error: 'Account already exists. Please try a different User ID or email.' };
+    return { error: 'Sign up failed. Please try again.' };
   }
 }
 
 /* ── Login ── */
-async function authLogin(email, password) {
-  email = email.trim().toLowerCase();
+async function authLogin(userId, password) {
+  userId = userId.trim().toLowerCase();
 
-  if (!email || !email.includes('@'))
-    return { error: 'Please enter a valid email' };
-  if (!password)
-    return { error: 'Please enter your password' };
+  if (!userId) return { error: 'Please enter your User ID' };
+  if (!password) return { error: 'Please enter your password' };
 
-  try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-      body:    JSON.stringify({ email, password })
+  if (AUTH_MOCK_MODE) {
+    var user = _mockUsers.find(function(u) {
+      return u.userId === userId && u.password === password;
     });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      const msg = data.msg || data.message || data.error_description || '';
-      if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials'))
-        return { error: 'Invalid email or password' };
-      return { error: msg || 'Login failed. Please try again.' };
-    }
-
-    // Save session (JWT)
-    _saveSession(data);
-
-    // Fetch player profile
-    const authUserId = data.user?.id;
-    const player     = await _fetchPlayerProfile(authUserId);
-
-    if (!player) {
-      // Player profile missing — create it
-      await fetch(`${SUPABASE_URL}/rest/v1/players`, {
-        method:  'POST',
-        headers: { ..._authHeaders(), 'Prefer': 'return=representation' },
-        body:    JSON.stringify({
-          id:            authUserId,
-          email,
-          display_name:  email.split('@')[0],
-          gender:        'Male',
-          global_rating: 1.0,
-          global_points: 0
-        })
-      });
-    }
-
-    const authUser = {
-      id:          authUserId,
-      email,
-      displayName: player?.display_name || email.split('@')[0],
-      gender:      player?.gender || 'Male'
-    };
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
-    // Always store player with id guaranteed
-    const playerToStore = player
-      ? { ...player, id: player.id || authUserId }
-      : { id: authUserId, email, display_name: authUser.displayName, displayName: authUser.displayName };
-    setMyPlayer(playerToStore);
-
+    if (!user) return { error: 'Invalid User ID or password' };
+    var authUser = { id: user.id, userId: user.userId, nickname: user.nickname, email: user.email };
+    _authUser = authUser;
+    localStorage.setItem('auth_user', JSON.stringify(authUser));
     return { user: authUser };
+  }
 
+  // ── Real Supabase ──
+  try {
+    var rows = await sbGet('user_accounts',
+      'user_id=eq.' + encodeURIComponent(userId) +
+      '&password_hash=eq.' + encodeURIComponent(password) +
+      '&select=id,user_id,nickname,email');
+    if (!rows || !rows.length) return { error: 'Invalid User ID or password' };
+    var u = rows[0];
+    var authUser = { id: u.id, userId: u.user_id, nickname: u.nickname, email: u.email };
+    _authUser = authUser;
+    localStorage.setItem('auth_user', JSON.stringify(authUser));
+    return { user: authUser };
   } catch(e) {
     return { error: e.message || 'Login failed. Please try again.' };
   }
 }
 
 /* ── Logout ── */
-async function authLogout() {
-  try {
-    const session = _getSession();
-    if (session?.access_token) {
-      await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${session.access_token}` }
-      }).catch(() => {});
-    }
-  } finally {
-    _clearSession();
-  }
+function authLogout() {
+  _authUser = null;
+  localStorage.removeItem('auth_user');
+  localStorage.removeItem('kbrr_my_club_id');
+  localStorage.removeItem('kbrr_my_club_name');
+  localStorage.removeItem('kbrr_my_player');
 }
 
-/* ── Password Reset (sends email when SMTP configured) ── */
-async function authResetPassword(email) {
+/* ── Forgot password — send OTP ── */
+async function authForgotSendOtp(email) {
   email = email.trim().toLowerCase();
   if (!email || !email.includes('@')) return { error: 'Please enter a valid email' };
 
-  try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
-      body:    JSON.stringify({ email })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err.msg || err.message || 'Reset failed' };
-    }
-    return { success: true };
-  } catch(e) {
-    return { error: e.message || 'Reset failed. Please try again.' };
+  if (AUTH_MOCK_MODE) {
+    var user = _mockUsers.find(function(u) { return u.email === email; });
+    if (!user) return { error: 'No account found with this email' };
+    var otp = Math.floor(100000 + Math.random() * 900000).toString();
+    localStorage.setItem('mock_forgot_otp', JSON.stringify({ email: email, otp: otp, ts: Date.now() }));
+    console.log('MOCK OTP for ' + email + ': ' + otp); // shown in console for testing
+    return { success: true, message: 'OTP sent (check console for mock OTP)' };
   }
+
+  // Real: call edge function or email service
+  return { error: 'Email service not configured yet' };
 }
 
-/* ── Update password (when logged in) ── */
-async function authUpdatePassword(newPassword) {
+/* ── Forgot password — verify OTP and reset ── */
+async function authForgotVerify(email, otp, newPassword) {
+  email = email.trim().toLowerCase();
   if (!newPassword || newPassword.length < 6)
     return { error: 'Password must be at least 6 characters' };
 
-  const fresh = await _ensureFreshToken();
-  if (!fresh) return { error: 'Session expired. Please login again.' };
+  if (AUTH_MOCK_MODE) {
+    var saved = JSON.parse(localStorage.getItem('mock_forgot_otp') || 'null');
+    if (!saved || saved.email !== email || saved.otp !== otp)
+      return { error: 'Invalid OTP' };
+    if (Date.now() - saved.ts > 10 * 60 * 1000)
+      return { error: 'OTP expired. Please request a new one.' };
 
-  try {
-    const session = _getSession();
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      method:  'PUT',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${session.access_token}` },
-      body:    JSON.stringify({ password: newPassword })
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err.msg || err.message || 'Update failed' };
-    }
+    var user = _mockUsers.find(function(u) { return u.email === email; });
+    if (!user) return { error: 'Account not found' };
+    user.password = newPassword;
+    _saveMockUsers();
+    localStorage.removeItem('mock_forgot_otp');
     return { success: true };
-  } catch(e) {
-    return { error: e.message || 'Update failed. Please try again.' };
   }
+
+  return { error: 'Not implemented yet' };
 }
 
-/* ── Update display name / gender ── */
-async function authUpdateProfile(updates) {
-  const user = authGetUser();
-  if (!user) return { error: 'Not logged in' };
+/* ── Join club by invite code ── */
+async function authJoinClub(inviteCode) {
+  var user = authGetUser();
+  if (!user) return { error: 'Please login first' };
 
-  const fresh = await _ensureFreshToken();
-  if (!fresh) return { error: 'Session expired. Please login again.' };
+  inviteCode = inviteCode.trim().toUpperCase();
+  if (!inviteCode) return { error: 'Please enter an invite code' };
 
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/players?id=eq.${user.id}`, {
-      method:  'PATCH',
-      headers: _authHeaders(),
-      body:    JSON.stringify(updates)
+  if (AUTH_MOCK_MODE) {
+    // Find club with this invite code from existing clubs
+    var clubs = JSON.parse(localStorage.getItem('mock_clubs') || '[]');
+    var club = clubs.find(function(c) { return c.inviteCode === inviteCode; });
+    if (!club) return { error: 'Invalid invite code. Check with your organiser.' };
+
+    // Check already member
+    var already = _mockClubMembers.find(function(m) {
+      return m.clubId === club.id && m.userId === user.id;
     });
-    if (!res.ok) throw new Error('Update failed');
-
-    // Update cached user
-    const updated = { ...user, ...updates };
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
-    return { success: true };
-  } catch(e) {
-    return { error: e.message || 'Update failed.' };
-  }
-}
-
-/* ── Fetch player profile by auth user ID ── */
-async function _fetchPlayerProfile(authUserId) {
-  try {
-    const rows = await fetch(
-      `${SUPABASE_URL}/rest/v1/players?id=eq.${authUserId}&select=id,email,display_name,gender,global_rating,global_points`,
-      { headers: _authHeaders() }
-    ).then(r => r.json());
-    return rows && rows.length ? rows[0] : null;
-  } catch(e) { return null; }
-}
-
-/* ── Auto-refresh session on app load ── */
-async function authInit() {
-  const session = _getSession();
-  if (!session) return false;
-
-  if (_isTokenExpired()) {
-    const refreshed = await _refreshToken();
-    if (!refreshed) {
-      _clearSession();
-      return false;
+    if (already) {
+      // Already member — just set as active club
+      setMyClub(club.id, club.name);
+      return { success: true, club: club };
     }
+
+    _mockClubMembers.push({ clubId: club.id, userId: user.id, joinedAt: new Date().toISOString() });
+    _saveMockMembers();
+    setMyClub(club.id, club.name);
+    return { success: true, club: club };
   }
 
-  // Refresh player profile from DB
-  const user = authGetUser();
-  if (user?.id) {
-    let player = await _fetchPlayerProfile(user.id);
+  // ── Real Supabase ──
+  try {
+    var clubRows = await sbGet('clubs', 'invite_code=eq.' + encodeURIComponent(inviteCode) + '&select=id,name');
+    if (!clubRows || !clubRows.length) return { error: 'Invalid invite code.' };
+    var club = clubRows[0];
 
-    // Player row missing — create it now (handles signup RLS failure)
-    if (!player) {
+    // Club membership is tracked via players.club_id — no separate club_members insert needed
+    setMyClub(club.id, club.name);
+    return { success: true, club: { id: club.id, name: club.name } };
+  } catch(e) {
+    return { error: e.message || 'Failed to join club.' };
+  }
+}
+
+/* ── Auto-join from deep link invite code ── */
+function authHandleInviteLink() {
+  // Check URL for invite code: ?invite=XXXXX or #invite=XXXXX
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('invite') || params.get('code');
+  if (code) {
+    localStorage.setItem('pending_invite_code', code.trim().toUpperCase());
+  }
+}
+
+/* ── Get pending invite code ── */
+function authGetPendingInvite() {
+  return localStorage.getItem('pending_invite_code') || null;
+}
+
+/* ── Clear pending invite ── */
+function authClearPendingInvite() {
+  localStorage.removeItem('pending_invite_code');
+}
+
+/* ── Search clubs by name ── */
+async function authSearchClubs(query) {
+  query = query.trim();
+  if (!query || query.length < 2) return { clubs: [] };
+
+  try {
+    var rows = await sbGet('clubs',
+      'name=ilike.' + encodeURIComponent('%' + query + '%') + '&select=id,name&limit=10');
+    return { clubs: rows || [] };
+  } catch(e) {
+    return { error: e.message || 'Search failed' };
+  }
+}
+
+/* ── Request to join a club ── */
+async function authRequestJoin(clubId, chosenNickname) {
+  var user = authGetUser();
+  if (!user) return { error: 'Please login first' };
+
+  // Use chosen nickname or fall back to account nickname
+  var nickname = (chosenNickname || user.nickname || '').trim();
+  if (!nickname) return { error: 'Please provide a nickname.' };
+
+  try {
+    // Check if already a member (by user_account_id)
+    var members = await sbGet('players',
+      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id + '&select=id');
+    if (members && members.length) {
+      var club = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name');
+      if (club && club.length) setMyClub(club[0].id, club[0].name);
+      return { alreadyMember: true };
+    }
+
+    // Check if already requested
+    var existing = await sbGet('club_join_requests',
+      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id);
+    if (existing && existing.length) {
+      var req = existing[0];
+      if (req.status === 'pending') return { pending: true, nickname: req.nickname };
+      if (req.status === 'rejected') return { error: 'Your request was rejected by the admin.' };
+      // Previously rejected — allow re-request with new nickname, delete old row
+      await sbDelete('club_join_requests', 'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id);
+    }
+
+    // Check nickname conflict in this club
+    var conflict = await sbGet('players',
+      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id');
+    if (conflict && conflict.length) {
+      return { nicknameConflict: true, conflictNickname: nickname };
+    }
+
+    // Create request with chosen nickname
+    await sbPost('club_join_requests', {
+      club_id:         clubId,
+      user_account_id: user.id,
+      nickname:        nickname,
+      status:          'pending'
+    });
+    return { success: true, nickname: nickname };
+  } catch(e) {
+    return { error: e.message || 'Failed to send request' };
+  }
+}
+
+/* ── Get pending join requests for a club (admin) ── */
+async function authGetJoinRequests(clubId) {
+  try {
+    var requests = await sbGet('club_join_requests',
+      'club_id=eq.' + clubId + '&status=eq.pending&select=id,user_account_id,nickname,requested_at');
+
+    // Get user details for each request
+    var result = [];
+    for (var i = 0; i < requests.length; i++) {
+      var req = requests[i];
       try {
-        const created = await fetch(`${SUPABASE_URL}/rest/v1/players`, {
-          method:  'POST',
-          headers: { ..._authHeaders(), 'Prefer': 'return=representation' },
-          body: JSON.stringify({
-            id:            user.id,
-            email:         user.email,
-            display_name:  user.displayName || user.email.split('@')[0],
-            gender:        user.gender || 'Male',
-            global_rating: 1.0,
-            global_points: 0
-          })
-        }).then(r => r.json());
-        player = Array.isArray(created) ? created[0] : created;
-      } catch(e) {
-        // Still no player — store minimal object with id so app doesn't break
-        player = { id: user.id, email: user.email, display_name: user.displayName || '' };
-      }
+        var users = await sbGet('user_accounts',
+          'id=eq.' + req.user_account_id + '&select=id,user_id,nickname,email');
+        if (users && users.length) {
+          result.push({
+            requestId:     req.id,
+            requestedAt:   req.requested_at,
+            userAccountId: req.user_account_id,
+            userId:        users[0].user_id,
+            nickname:      req.nickname || users[0].nickname,  // use chosen nickname first
+            email:         users[0].email
+          });
+        }
+      } catch(e) {}
     }
-
-    if (player) {
-      const playerToStore = { ...player, id: player.id || user.id };
-      setMyPlayer(playerToStore);
-      const updated = {
-        ...user,
-        displayName: player.display_name || user.displayName,
-        gender:      player.gender || user.gender || 'Male'
-      };
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
-    }
-  }
-
-  return true;
-}
-
-/* ── Make DB headers use JWT ── */
-// Override SB_HEADERS dynamically so all sbGet/sbPost/sbPatch/sbDelete use JWT
-function getAuthHeaders() {
-  return _authHeaders();
-}
-
-// Patch the global SB_HEADERS to use JWT dynamically
-// Called after login/refresh so all subsequent DB calls are authenticated
-function _updateSbHeaders() {
-  const session = _getSession();
-  if (session?.access_token) {
-    SB_HEADERS['Authorization'] = `Bearer ${session.access_token}`;
+    return { requests: result };
+  } catch(e) {
+    return { error: e.message || 'Failed to load requests' };
   }
 }
 
+/* ── Accept join request (admin) ── */
+async function authAcceptRequest(requestId, clubId, userAccountId, nickname, gender) {
+  try {
+    // Update request status
+    await sbPatch('club_join_requests', 'id=eq.' + requestId, {
+      status:      'accepted',
+      reviewed_at: new Date().toISOString()
+    });
+
+    // Create player row with club_id and user_account_id
+    await sbPost('players', {
+      club_id:         clubId,
+      user_account_id: userAccountId,
+      nickname:        nickname,
+      gender:          gender || 'Male',
+      rating:          1.0,
+      club_rating:     1.0,
+      wins:            0,
+      losses:          0
+    });
+
+    return { success: true };
+  } catch(e) {
+    return { error: e.message || 'Failed to accept request' };
+  }
+}
+
+/* ── Reject join request (admin) ── */
+async function authRejectRequest(requestId) {
+  try {
+    await sbPatch('club_join_requests', 'id=eq.' + requestId, {
+      status:      'rejected',
+      reviewed_at: new Date().toISOString()
+    });
+    return { success: true };
+  } catch(e) {
+    return { error: e.message || 'Failed to reject request' };
+  }
+}
+
+/* ── Check my request status ── */
+async function authCheckRequestStatus(clubId) {
+  var user = authGetUser();
+  if (!user) return { status: 'none' };
+
+  try {
+    var rows = await sbGet('club_join_requests',
+      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id + '&select=status');
+    if (!rows || !rows.length) return { status: 'none' };
+    return { status: rows[0].status };
+  } catch(e) {
+    return { status: 'none' };
+  }
+}
+
+// Check for invite link on load
+authHandleInviteLink();

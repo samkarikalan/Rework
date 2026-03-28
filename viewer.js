@@ -409,18 +409,21 @@ async function viewerJoinClub() {
   const pw = pwInput ? pwInput.value.trim() : '';
   if (!pw) { setFb('Enter password.', false); return; }
   try {
-    // Use server-side password filter — avoids RLS blocking password column reads
-    const encodedPw = encodeURIComponent(pw);
-    const asAdmin = await sbGet('clubs', `id=eq.${select.value}&admin_password=eq.${encodedPw}&select=id,name`);
-    const asUser  = await sbGet('clubs', `id=eq.${select.value}&select_password=eq.${encodedPw}&select=id,name`);
+    const isOrganiser = (typeof appMode !== 'undefined') && appMode === 'organiser';
+    const fields = isOrganiser ? 'id,name,select_password,admin_password' : 'id,name,select_password';
+    const clubs = await sbGet('clubs', `id=eq.${select.value}&select=${fields}`);
+    if (!clubs.length) throw new Error('Club not found.');
 
-    if (!asAdmin.length && !asUser.length) throw new Error('Wrong password.');
-    let role = asAdmin.length ? 'admin' : 'user';
-    const clubs = asAdmin.length ? asAdmin : asUser;
+    let role = 'user';
+    if (isOrganiser && pw === clubs[0].admin_password) {
+      role = 'admin';
+    } else if (pw !== clubs[0].select_password) {
+      throw new Error('Wrong password.');
+    }
 
     if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
     localStorage.setItem('kbrr_club_mode', role);
-    localStorage.setItem('kbrr_rating_field', 'club_ratings');
+    localStorage.setItem('kbrr_rating_field', 'club_rating');
     if (pwInput) pwInput.value = '';
     setFb(role === 'admin' ? '✅ Joined as Admin' : '✅ Joined successfully', true);
     clubLoginRefresh();
