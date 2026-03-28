@@ -891,33 +891,33 @@ function vaultRenderRegister() {
       <div class="register-club-label">🏸 Registering for: <strong>${club.name}</strong></div>
 
       <!-- Tabs -->
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button id="vregTabIndividual" class="vault-tab-btn active" onclick="vaultRegisterShowTab('individual')">Individual</button>
-        <button id="vregTabBulk"       class="vault-tab-btn"        onclick="vaultRegisterShowTab('bulk')">Bulk Import</button>
+      <div class="vault-inner-tabs">
+        <button id="vregTabIndividual" class="vault-inner-tab active" onclick="vaultRegisterShowTab('individual')">Individual</button>
+        <button id="vregTabBulk"       class="vault-inner-tab"        onclick="vaultRegisterShowTab('bulk')">Bulk Import</button>
       </div>
 
       <!-- Individual tab -->
       <div id="vregPanelIndividual">
-        <div class="auth-field" style="margin-bottom:10px">
+        <div class="register-field">
           <label class="register-label">Nickname</label>
-          <input type="text" id="vregNickname" class="auth-input" placeholder="Player nickname">
+          <input type="text" id="vregNickname" class="register-input" placeholder="Player nickname">
         </div>
-        <div class="auth-field" style="margin-bottom:10px">
+        <div class="register-field">
           <label class="register-label">Gender</label>
-          <select id="vregGender" class="auth-input">
+          <select id="vregGender" class="register-input">
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
         </div>
-        <div class="auth-field" style="margin-bottom:10px">
-          <label class="register-label">Rating <span class="auth-hint">default 1.0</span></label>
-          <input type="number" id="vregRating" class="auth-input" value="1.0" min="1.0" max="5.0" step="0.1">
+        <div class="register-field">
+          <label class="register-label">Rating <span class="register-hint">default 1.0</span></label>
+          <input type="number" id="vregRating" class="register-input register-rating-input" value="1.0" min="1.0" max="5.0" step="0.1">
         </div>
-        <div class="auth-field" style="margin-bottom:10px">
-          <label class="register-label">Default Password <span class="auth-hint">player uses this to claim account</span></label>
-          <input type="text" id="vregDefaultPassword" class="auth-input" placeholder="e.g. club123">
+        <div class="register-field">
+          <label class="register-label">Default Password <span class="register-hint">player uses this to claim account</span></label>
+          <input type="text" id="vregDefaultPassword" class="register-input" placeholder="e.g. club123">
         </div>
-        <div id="vregFeedback" style="font-size:0.85rem;min-height:18px;margin-bottom:10px"></div>
+        <div id="vregFeedback" class="register-feedback" style="min-height:18px;margin-bottom:10px"></div>
         <button class="register-save-btn" onclick="vaultDoRegisterPlayer()">✅ Register Player</button>
       </div>
 
@@ -937,9 +937,9 @@ function vaultRenderRegister() {
             <img src="female.png" class="reg-gender-img"><span>Female</span>
           </button>
         </div>
-        <div class="auth-field" style="margin-bottom:10px">
-          <label class="register-label">Default Password for all <span class="auth-hint">players use this to claim account</span></label>
-          <input type="text" id="vregBulkDefaultPassword" class="auth-input" placeholder="e.g. club123">
+        <div class="register-field">
+          <label class="register-label">Default Password for all <span class="register-hint">players use this to claim account</span></label>
+          <input type="text" id="vregBulkDefaultPassword" class="register-input" placeholder="e.g. club123">
         </div>
         <button class="register-add-btn" onclick="regAddToStaging()">Add to List</button>
         <div id="regStagingContainer" class="reg-staging-container"></div>
