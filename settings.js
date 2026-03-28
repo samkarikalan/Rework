@@ -904,37 +904,155 @@ function vaultRenderRegister() {
   if (!container) return;
   const club = (typeof getMyClub === 'function') ? getMyClub() : { name: null };
 
+  if (!club.name) {
+    container.innerHTML = '<div class="register-club-label">⚠️ No club selected. Join a club first.</div>';
+    return;
+  }
+
   container.innerHTML = `
     <div class="register-form">
-      <div class="register-club-label">
-        ${club.name
-          ? '🏸 Registering for: <strong>' + club.name + '</strong>'
-          : '⚠️ No club selected. Join a club first.'}
+      <div class="register-club-label">🏸 Registering for: <strong>${club.name}</strong></div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button id="vregTabIndividual" class="vault-tab-btn active" onclick="vaultRegisterShowTab('individual')">Individual</button>
+        <button id="vregTabBulk"       class="vault-tab-btn"        onclick="vaultRegisterShowTab('bulk')">Bulk Import</button>
       </div>
-      ${club.name ? `
-      <div class="auth-field" style="margin-bottom:10px">
-        <label class="register-label">Nickname</label>
-        <input type="text" id="vregNickname" class="auth-input" placeholder="Player nickname">
+
+      <!-- Individual tab -->
+      <div id="vregPanelIndividual">
+        <div class="auth-field" style="margin-bottom:10px">
+          <label class="register-label">Nickname</label>
+          <input type="text" id="vregNickname" class="auth-input" placeholder="Player nickname">
+        </div>
+        <div class="auth-field" style="margin-bottom:10px">
+          <label class="register-label">Gender</label>
+          <select id="vregGender" class="auth-input">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div class="auth-field" style="margin-bottom:10px">
+          <label class="register-label">Rating <span class="auth-hint">default 1.0</span></label>
+          <input type="number" id="vregRating" class="auth-input" value="1.0" min="1.0" max="5.0" step="0.1">
+        </div>
+        <div class="auth-field" style="margin-bottom:10px">
+          <label class="register-label">Default Password <span class="auth-hint">player uses this to claim account</span></label>
+          <input type="text" id="vregDefaultPassword" class="auth-input" placeholder="e.g. club123">
+        </div>
+        <div id="vregFeedback" style="font-size:0.85rem;min-height:18px;margin-bottom:10px"></div>
+        <button class="register-save-btn" onclick="vaultDoRegisterPlayer()">✅ Register Player</button>
       </div>
-      <div class="auth-field" style="margin-bottom:10px">
-        <label class="register-label">Gender</label>
-        <select id="vregGender" class="auth-input">
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
+
+      <!-- Bulk tab -->
+      <div id="vregPanelBulk" style="display:none">
+        <div class="auth-field" style="margin-bottom:10px">
+          <label class="register-label">Paste names (one per line)</label>
+          <textarea id="regNamesArea" class="register-textarea" rows="5"
+            placeholder="Raja&#10;Kari, Female&#10;Venkat"></textarea>
+        </div>
+        <div class="register-gender-row" style="margin-bottom:10px">
+          <span class="register-label" style="margin:0 8px 0 0">Default gender:</span>
+          <button id="regDefaultMale"   class="register-gender-img-btn active" onclick="regSetDefaultGender('Male')">
+            <img src="male.png" class="reg-gender-img"><span>Male</span>
+          </button>
+          <button id="regDefaultFemale" class="register-gender-img-btn" onclick="regSetDefaultGender('Female')">
+            <img src="female.png" class="reg-gender-img"><span>Female</span>
+          </button>
+        </div>
+        <div class="auth-field" style="margin-bottom:10px">
+          <label class="register-label">Default Password for all <span class="auth-hint">players use this to claim account</span></label>
+          <input type="text" id="vregBulkDefaultPassword" class="auth-input" placeholder="e.g. club123">
+        </div>
+        <button class="register-add-btn" onclick="regAddToStaging()">Add to List</button>
+        <div id="regStagingContainer" class="reg-staging-container"></div>
+        <div id="registerFeedback" class="register-feedback"></div>
+        <button class="register-save-btn" id="regRegisterAllBtn" onclick="vaultRegisterAll()" style="display:none">
+          ✅ Register All
+        </button>
       </div>
-      <div class="auth-field" style="margin-bottom:10px">
-        <label class="register-label">Rating <span class="auth-hint">default 1.0</span></label>
-        <input type="number" id="vregRating" class="auth-input" value="1.0" min="1.0" max="5.0" step="0.1">
-      </div>
-      <div class="auth-field" style="margin-bottom:10px">
-        <label class="register-label">Default Password <span class="auth-hint">player uses this to claim account</span></label>
-        <input type="text" id="vregDefaultPassword" class="auth-input" placeholder="e.g. club123">
-      </div>
-      <div id="vregFeedback" style="font-size:0.85rem;min-height:18px;margin-bottom:10px"></div>
-      <button class="register-save-btn" onclick="vaultDoRegisterPlayer()">✅ Register Player</button>
-      ` : ''}
     </div>`;
+
+  window._regDefaultGender = 'Male';
+  if (typeof _regStagingList !== 'undefined') _regStagingList = [];
+}
+
+function vaultRegisterShowTab(tab) {
+  document.getElementById('vregTabIndividual').classList.toggle('active', tab === 'individual');
+  document.getElementById('vregTabBulk').classList.toggle('active',       tab === 'bulk');
+  document.getElementById('vregPanelIndividual').style.display = tab === 'individual' ? '' : 'none';
+  document.getElementById('vregPanelBulk').style.display       = tab === 'bulk'       ? '' : 'none';
+  if (tab === 'bulk' && typeof _regStagingList !== 'undefined') {
+    _regStagingList = [];
+    if (typeof regRenderStaging === 'function') regRenderStaging();
+  }
+}
+
+async function vaultRegisterAll() {
+  // Same as regRegisterAll but uses bulk default password for all players
+  const defPw = document.getElementById('vregBulkDefaultPassword')?.value.trim();
+  const fb    = document.getElementById('registerFeedback');
+  const btn   = document.getElementById('regRegisterAllBtn');
+  const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.className = 'register-feedback ' + (ok ? 'success' : 'error'); } };
+
+  if (!defPw) { setFb('Please enter a default password for all players.', false); return; }
+
+  const club    = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
+  if (!club.id) { setFb('No club selected.', false); return; }
+
+  const pending = _regStagingList.filter(p => p.status === 'pending' || p.status === 'error');
+  if (!pending.length) return;
+
+  btn.disabled = true;
+  setFb('Registering...', true);
+
+  let successCount = 0, failCount = 0;
+
+  for (let i = 0; i < _regStagingList.length; i++) {
+    const p = _regStagingList[i];
+    if (p.status === 'success') continue;
+    try {
+      // Check duplicate
+      const existing = await sbGet('memberships',
+        'club_id=eq.' + club.id + '&nickname=ilike.' + encodeURIComponent(p.name) + '&select=id');
+      if (existing && existing.length) { _regStagingList[i].status = 'duplicate'; failCount++; continue; }
+
+      // Create player row
+      const created = await sbPost('players', {
+        name:             p.name,
+        gender:           p.gender,
+        global_rating:    p.rating || 1.0,
+        global_points:    0,
+        default_password: defPw
+      });
+      const player = created[0];
+
+      // Create membership
+      await sbPost('memberships', {
+        player_id:   player.id,
+        club_id:     club.id,
+        nickname:    p.name,
+        club_rating: p.rating || 1.0,
+        club_points: 0
+      });
+
+      _regStagingList[i].status = 'success';
+      successCount++;
+    } catch(e) {
+      _regStagingList[i].status = 'error';
+      failCount++;
+    }
+    if (typeof regRenderStaging === 'function') regRenderStaging();
+  }
+
+  btn.disabled = false;
+  const parts = [];
+  if (successCount) parts.push('✅ ' + successCount + ' registered');
+  if (failCount)    parts.push('⚠️ ' + failCount + ' skipped');
+  setFb(parts.join('  '), !failCount);
+
+  localStorage.removeItem('kbrr_cache_players');
+  localStorage.removeItem('kbrr_cache_ts');
 }
 
 async function vaultDoRegisterPlayer() {
