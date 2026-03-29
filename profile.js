@@ -505,30 +505,37 @@ async function renderMyCard() {
 
   try {
     const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    const pid  = player.id;
 
-    // 1. Fetch player global data
+    // Find player via membership — nickname lookup using logged-in user's nickname
+    const myNickname = player.displayName || player.name || player.nickname || '';
     let globalRating = 1.0, globalPoints = 0, totalWins = 0, totalLosses = 0;
-    let sessions = [];
-
-    if (pid) {
-      const prows = await sbGet('players', `id=eq.${pid}&select=global_rating,global_points,wins,losses,sessions`).catch(() => []);
-      if (prows.length) {
-        globalRating  = parseFloat(prows[0].global_rating) || 1.0;
-        globalPoints  = parseFloat(prows[0].global_points) || 0;
-        totalWins     = prows[0].wins   || 0;
-        totalLosses   = prows[0].losses || 0;
-        sessions      = prows[0].sessions || [];
-      }
-    }
-
-    // 2. Fetch club-specific data
     let clubRating = 1.0, clubPoints = 0;
-    if (pid && club.id) {
-      const mrows = await sbGet('memberships', `player_id=eq.${pid}&club_id=eq.${club.id}&select=club_rating,club_points`).catch(() => []);
+    let sessions = [];
+    let playerDbId = null;
+
+    if (club.id && myNickname) {
+      // Get membership by club + nickname
+      const mrows = await sbGet('memberships',
+        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(myNickname)}&select=player_id,club_rating,club_points`
+      ).catch(() => []);
+
       if (mrows.length) {
+        playerDbId = mrows[0].player_id;
         clubRating = parseFloat(mrows[0].club_rating) || 1.0;
         clubPoints = parseFloat(mrows[0].club_points) || 0;
+
+        // Get global data from players table using player_id
+        const prows = await sbGet('players',
+          `id=eq.${playerDbId}&select=global_rating,global_points,wins,losses,sessions`
+        ).catch(() => []);
+
+        if (prows.length) {
+          globalRating = parseFloat(prows[0].global_rating) || 1.0;
+          globalPoints = parseFloat(prows[0].global_points) || 0;
+          totalWins    = prows[0].wins    || 0;
+          totalLosses  = prows[0].losses  || 0;
+          sessions     = prows[0].sessions || [];
+        }
       }
     }
 

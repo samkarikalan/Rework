@@ -233,7 +233,7 @@ async function flushSyncQueue() {
     try {
       const rounded = Math.round(update.activeRating * 10) / 10;
       const mrows = await sbGet('memberships',
-        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,player_id,club_rating`
+        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,player_id,club_rating,club_points`
       );
       if (!mrows || !mrows.length) continue;
       const m = mrows[0];
@@ -1140,9 +1140,9 @@ async function dbRecordRoundMatches(updatedRatings) {
     const unique = [...new Set(allNicknames)];
     if (!unique.length) return;
 
-    const enc = unique.map(n => 'nickname.ilike.' + encodeURIComponent(n)).join(',');
+    // Fetch all club memberships and filter client-side — avoids complex OR syntax
     const members = await sbGet('memberships',
-      `club_id=eq.${club.id}&or=(${enc})&select=player_id,nickname,club_rating`
+      `club_id=eq.${club.id}&select=player_id,nickname,club_rating,club_points`
     ).catch(() => []);
 
     const mMap = {};
