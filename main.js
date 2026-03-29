@@ -880,17 +880,15 @@ async function _clubSetupJoin() {
 
   setFb('Checking…', true);
   try {
-    const isVault = _clubSetupTargetMode === 'vault';
-    const fields = isVault ? 'id,name,select_password,admin_password' : 'id,name,select_password,admin_password';
-    const clubs = await sbGet('clubs', `id=eq.${select.value}&select=${fields}`);
-    if (!clubs.length) throw new Error('Club not found.');
+    // Use server-side filter — avoids RLS blocking password column reads
+    const encodedPw = encodeURIComponent(pw);
+    const asAdmin = await sbGet('clubs', `id=eq.${select.value}&admin_password=eq.${encodedPw}&select=id,name`);
+    const asUser  = await sbGet('clubs', `id=eq.${select.value}&select_password=eq.${encodedPw}&select=id,name`);
 
-    let role = 'user';
-    if (pw === clubs[0].admin_password) {
-      role = 'admin';
-    } else if (pw !== clubs[0].select_password) {
-      throw new Error('Wrong password.');
-    }
+    if (!asAdmin.length && !asUser.length) throw new Error('Wrong password.');
+
+    let role = asAdmin.length ? 'admin' : 'user';
+    const clubs = asAdmin.length ? asAdmin : asUser;
 
     if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
     localStorage.setItem('kbrr_club_mode', role);
@@ -1015,8 +1013,8 @@ async function verifyVaultPassword() {
 
   if (errEl) errEl.textContent = 'Checking...';
   try {
-    const rows = await sbGet('clubs', `id=eq.${club.id}&select=admin_password`);
-    if (!rows || !rows.length || rows[0].admin_password !== pw) {
+    const rows = await sbGet('clubs', `id=eq.${club.id}&admin_password=eq.${encodeURIComponent(pw)}&select=id`);
+    if (!rows || !rows.length) {
       if (errEl) errEl.textContent = 'Wrong admin password';
       if (input) input.value = '';
       return;
