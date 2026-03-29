@@ -298,13 +298,28 @@ async function dbSyncRatings(updatedRatings) {
       });
 
       if (update.wins > 0 || update.losses > 0) {
-        const prows = await sbGet('players', `id=eq.${m.player_id}&select=wins,losses,global_points`);
+        const prows = await sbGet('players', `id=eq.${m.player_id}&select=wins,losses,global_points,sessions`);
         if (prows && prows.length) {
           const newGlobalPoints = Math.round(((parseFloat(prows[0].global_points) || 0) + pointsDelta) * 10) / 10;
+
+          // Update sessions jsonb for period stats (week/month/year)
+          const today = new Date().toISOString().split('T')[0];
+          const existing = prows[0].sessions || [];
+          const otherDays = existing.filter(s => s.date !== today);
+          const todayEntry = existing.find(s => s.date === today) || {};
+          const updatedSession = {
+            date:          today,
+            wins:          (todayEntry.wins || 0) + (update.wins || 0),
+            losses:        (todayEntry.losses || 0) + (update.losses || 0),
+            points_earned: Math.round(((parseFloat(todayEntry.points_earned) || 0) + pointsDelta) * 10) / 10,
+            club_rating:   rounded
+          };
+
           await sbPatch('players', `id=eq.${m.player_id}`, {
             wins:          (prows[0].wins   || 0) + (update.wins   || 0),
             losses:        (prows[0].losses || 0) + (update.losses || 0),
-            global_points: newGlobalPoints
+            global_points: newGlobalPoints,
+            sessions:      [updatedSession, ...otherDays].slice(0, 30)
           });
         }
       }
