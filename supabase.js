@@ -669,7 +669,7 @@ async function dbSyncRoundsData() {
 }
 
 // Called on End Session — mark this session completed, keep last 3 per club
-async function dbCompleteSession() {
+async function dbCompleteSession(shuttleData = null) {
   try {
     const sessionDbId = getMySessionId();
     const club        = getMyClub();
@@ -685,12 +685,14 @@ async function dbCompleteSession() {
         : 0
     }));
 
-    // Mark this session completed
-    await sbPatch('sessions', `id=eq.${sessionDbId}`, {
+    // Mark this session completed — include shuttle_data if provided
+    const patch = {
       status:     'completed',
       players,
       updated_at: new Date().toISOString()
-    });
+    };
+    if (shuttleData) patch.shuttle_data = shuttleData;
+    await sbPatch('sessions', `id=eq.${sessionDbId}`, patch);
 
     // Write session summary to players.sessions jsonb
     const today = new Date().toISOString().split('T')[0];
@@ -711,7 +713,8 @@ async function dbCompleteSession() {
           wins:          (todayEntry.wins || 0) + (p.wins || 0),
           losses:        (todayEntry.losses || 0) + (p.losses || 0),
           points_earned: Math.round(((parseFloat(todayEntry.points_earned) || 0) + (parseFloat(mrows[0].club_points) || 0)) * 10) / 10,
-          club_rating:   parseFloat(mrows[0].club_rating) || 1.0
+          club_rating:   parseFloat(mrows[0].club_rating) || 1.0,
+          cost_per_player: shuttleData ? shuttleData.cost_per_player : null
         };
         await sbPatch('players', `id=eq.${playerId}`, {
           sessions: [entry, ...otherDays].slice(0, 30)
@@ -854,14 +857,14 @@ async function dbGetPastSessions() {
       if (!clubIds.length) return [];
       const inList = '(' + clubIds.join(',') + ')';
       const rows = await sbGet('sessions',
-        `club_id=in.${inList}&status=eq.completed&order=updated_at.desc&limit=5&select=id,date,started_by,players,rounds_data,updated_at,club_id`
+        `club_id=in.${inList}&status=eq.completed&order=updated_at.desc&limit=5&select=id,date,started_by,players,rounds_data,updated_at,club_id,shuttle_data`
       );
       return rows || [];
     } else {
       const club = getMyClub();
       if (!club.id) return [];
       const rows = await sbGet('sessions',
-        `club_id=eq.${club.id}&status=eq.completed&order=updated_at.desc&limit=3&select=id,date,started_by,players,rounds_data,updated_at`
+        `club_id=eq.${club.id}&status=eq.completed&order=updated_at.desc&limit=3&select=id,date,started_by,players,rounds_data,updated_at,shuttle_data`
       );
       return rows || [];
     }

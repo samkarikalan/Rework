@@ -556,22 +556,28 @@ async function renderMyCard() {
 
     // 5. Period stats from sessions jsonb
     const now       = new Date();
-    const startOfWeek  = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfYear  = new Date(now.getFullYear(), 0, 1);
+    // Use date strings for comparison to avoid timezone issues
+    const todayStr  = now.toISOString().split('T')[0];
+    const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); 
+    const weekStr   = weekStart.toISOString().split('T')[0];
+    const monthStr  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-01';
+    const yearStr   = now.getFullYear() + '-01-01';
 
-    let wW=0,lW=0,pW=0, wM=0,lM=0,pM=0, wY=0,lY=0,pY=0;
+    let wW=0,lW=0,pW=0,cW=0, wM=0,lM=0,pM=0,cM=0, wY=0,lY=0,pY=0,cY=0;
     (sessions || []).forEach(s => {
-      const d = new Date(s.date);
-      const w = s.wins || 0, l = s.losses || 0, p = parseFloat(s.points_earned) || 0;
-      if (d >= startOfYear)  { wY += w; lY += l; pY += p; }
-      if (d >= startOfMonth) { wM += w; lM += l; pM += p; }
-      if (d >= startOfWeek)  { wW += w; lW += l; pW += p; }
+      const d = s.date;
+      if (!d) return;
+      const w = s.wins || 0, l = s.losses || 0;
+      const p = parseFloat(s.points_earned) || 0;
+      const c = parseFloat(s.cost_per_player) || 0;
+      if (d >= yearStr)  { wY += w; lY += l; pY += p; cY += c; }
+      if (d >= monthStr) { wM += w; lM += l; pM += p; cM += c; }
+      if (d >= weekStr)  { wW += w; lW += l; pW += p; cW += c; }
     });
 
-    setEl('mcWeekWins',    wW); setEl('mcWeekLosses',    lW); setEl('mcWeekPoints',    pW.toFixed(1));
-    setEl('mcMonthWins',   wM); setEl('mcMonthLosses',   lM); setEl('mcMonthPoints',   pM.toFixed(1));
-    setEl('mcYearWins',    wY); setEl('mcYearLosses',    lY); setEl('mcYearPoints',    pY.toFixed(1));
+    setEl('mcWeekWins',    wW); setEl('mcWeekLosses',    lW); setEl('mcWeekPoints',    pW.toFixed(1)); setEl('mcWeekCost',  cW > 0 ? '¥'+Math.round(cW).toLocaleString() : '—');
+    setEl('mcMonthWins',   wM); setEl('mcMonthLosses',   lM); setEl('mcMonthPoints',   pM.toFixed(1)); setEl('mcMonthCost', cM > 0 ? '¥'+Math.round(cM).toLocaleString() : '—');
+    setEl('mcYearWins',    wY); setEl('mcYearLosses',    lY); setEl('mcYearPoints',    pY.toFixed(1)); setEl('mcYearCost',  cY > 0 ? '¥'+Math.round(cY).toLocaleString() : '—');
 
     // 6. Render sessions list
     if (sessEl) {
@@ -581,11 +587,13 @@ async function renderMyCard() {
           const w    = s.wins   || 0;
           const l    = s.losses || 0;
           const pts  = parseFloat(s.points_earned || 0).toFixed(1);
+          const cost = s.cost_per_player ? `<span class="mc-session-stat cost">¥${Math.round(s.cost_per_player).toLocaleString()}</span>` : '';
           return `<div class="mc-session-row">
             <span class="mc-session-date">${d}</span>
             <span class="mc-session-stat wins">${w}W</span>
             <span class="mc-session-stat losses">${l}L</span>
             <span class="mc-session-stat points">${pts}pts</span>
+            ${cost}
           </div>`;
         }).join('');
       } else {

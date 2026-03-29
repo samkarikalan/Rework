@@ -1032,10 +1032,175 @@ async function verifyVaultPassword() {
    POWER BUTTON — End Session
 ============================================================= */
 async function endSession(fromProfile = false) {
-  if (!confirm('End session?')) return;
+  // Show shuttle cost sheet instead of plain confirm
+  showShuttleSheet();
+}
 
+function showShuttleSheet() {
+  const existing = document.getElementById('shuttleSheetOverlay');
+  if (existing) existing.remove();
+
+  const playerCount = (typeof schedulerState !== 'undefined') ? schedulerState.allPlayers.length : 0;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'shuttleSheetOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div class="shuttle-sheet" id="shuttleSheet">
+      <div class="shuttle-handle"></div>
+      <div class="shuttle-title">💰 Session Cost</div>
+
+      <div class="shuttle-mode-toggle">
+        <button class="shuttle-mode-btn active" id="shuttleModeA" onclick="shuttleSwitchMode('itemized')">📋 Itemized</button>
+        <button class="shuttle-mode-btn" id="shuttleModeB" onclick="shuttleSwitchMode('flat')">💴 Flat Fee</button>
+      </div>
+
+      <!-- Itemized mode -->
+      <div id="shuttleModeItemized">
+        <div class="shuttle-2col">
+          <div class="shuttle-input-group">
+            <div class="shuttle-input-label">🪶 Price/tube</div>
+            <input type="number" id="shuttleTubePrice" class="shuttle-input" placeholder="e.g. 6000" oninput="shuttleCalc()">
+          </div>
+          <div class="shuttle-input-group">
+            <div class="shuttle-input-label">Used today</div>
+            <input type="number" id="shuttleCount" class="shuttle-input" placeholder="e.g. 16" oninput="shuttleCalc()">
+          </div>
+        </div>
+        <div class="shuttle-divider"><div class="shuttle-div-line"></div><span class="shuttle-div-txt">optional</span><div class="shuttle-div-line"></div></div>
+        <div class="shuttle-input-group">
+          <div class="shuttle-input-label">🏟 Court fee (total)</div>
+          <input type="number" id="shuttleCourtFee" class="shuttle-input" placeholder="¥0" oninput="shuttleCalc()">
+        </div>
+        <div class="shuttle-input-group" style="margin-top:8px">
+          <div class="shuttle-input-label">📦 Misc fee (total)</div>
+          <input type="number" id="shuttleMiscFee" class="shuttle-input" placeholder="¥0" oninput="shuttleCalc()">
+        </div>
+      </div>
+
+      <!-- Flat fee mode -->
+      <div id="shuttleModeFlat" style="display:none">
+        <div class="shuttle-input-group" style="margin-top:4px">
+          <div class="shuttle-input-label">💴 Amount per player</div>
+          <input type="number" id="shuttleFlatFee" class="shuttle-input shuttle-input-lg" placeholder="¥0" oninput="shuttleCalc()">
+        </div>
+      </div>
+
+      <!-- Calc result -->
+      <div class="shuttle-calc-box" id="shuttleCalcBox" style="display:none">
+        <div class="shuttle-calc-row" id="shuttleCalcShuttles" style="display:none">
+          <span class="shuttle-calc-label">🪶 Shuttles</span>
+          <span class="shuttle-calc-val" id="shuttleCostShuttles">—</span>
+        </div>
+        <div class="shuttle-calc-row" id="shuttleCalcCourt" style="display:none">
+          <span class="shuttle-calc-label">🏟 Court</span>
+          <span class="shuttle-calc-val" id="shuttleCostCourt">—</span>
+        </div>
+        <div class="shuttle-calc-row" id="shuttleCalcMisc" style="display:none">
+          <span class="shuttle-calc-label">📦 Misc</span>
+          <span class="shuttle-calc-val" id="shuttleCostMisc">—</span>
+        </div>
+        <div class="shuttle-calc-row shuttle-calc-total">
+          <span class="shuttle-calc-label">Per player (${playerCount})</span>
+          <span class="shuttle-calc-val shuttle-calc-big" id="shuttleCostPerPlayer">—</span>
+        </div>
+      </div>
+
+      <button class="shuttle-btn-end" onclick="confirmEndSession()">⏹ End Session</button>
+      <button class="shuttle-btn-skip" onclick="skipShuttleAndEnd()">Skip — end without recording</button>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  document.getElementById('shuttleSheet').addEventListener('click', e => e.stopPropagation());
+}
+
+function shuttleSwitchMode(mode) {
+  const isItemized = mode === 'itemized';
+  document.getElementById('shuttleModeItemized').style.display = isItemized ? '' : 'none';
+  document.getElementById('shuttleModeFlat').style.display     = isItemized ? 'none' : '';
+  document.getElementById('shuttleModeA').classList.toggle('active', isItemized);
+  document.getElementById('shuttleModeB').classList.toggle('active', !isItemized);
+  document.getElementById('shuttleCalcBox').style.display = 'none';
+}
+
+function shuttleCalc() {
+  const players = (typeof schedulerState !== 'undefined') ? schedulerState.allPlayers.length : 0;
+  const isFlat  = document.getElementById('shuttleModeFlat')?.style.display !== 'none';
+
+  if (isFlat) {
+    const flat = parseFloat(document.getElementById('shuttleFlatFee')?.value) || 0;
+    if (!flat) { document.getElementById('shuttleCalcBox').style.display = 'none'; return; }
+    document.getElementById('shuttleCalcBox').style.display = '';
+    document.getElementById('shuttleCalcShuttles').style.display = 'none';
+    document.getElementById('shuttleCalcCourt').style.display    = 'none';
+    document.getElementById('shuttleCalcMisc').style.display     = 'none';
+    document.getElementById('shuttleCostPerPlayer').textContent  = '¥' + Math.round(flat).toLocaleString();
+    return;
+  }
+
+  // Itemized
+  const tubePrice  = parseFloat(document.getElementById('shuttleTubePrice')?.value) || 0;
+  const count      = parseFloat(document.getElementById('shuttleCount')?.value) || 0;
+  const courtFee   = parseFloat(document.getElementById('shuttleCourtFee')?.value) || 0;
+  const miscFee    = parseFloat(document.getElementById('shuttleMiscFee')?.value) || 0;
+
+  const shuttleCost = tubePrice && count ? (tubePrice / 12) * count : 0;
+  const total       = shuttleCost + courtFee + miscFee;
+  const perPlayer   = players > 0 ? total / players : 0;
+
+  if (!total) { document.getElementById('shuttleCalcBox').style.display = 'none'; return; }
+
+  document.getElementById('shuttleCalcBox').style.display = '';
+
+  const showRow = (rowId, valId, val) => {
+    document.getElementById(rowId).style.display = val > 0 ? '' : 'none';
+    if (val > 0) document.getElementById(valId).textContent = '¥' + Math.round(val / players).toLocaleString() + '/player';
+  };
+  showRow('shuttleCalcShuttles', 'shuttleCostShuttles', shuttleCost);
+  showRow('shuttleCalcCourt',    'shuttleCostCourt',    courtFee);
+  showRow('shuttleCalcMisc',     'shuttleCostMisc',     miscFee);
+  document.getElementById('shuttleCostPerPlayer').textContent = '¥' + Math.round(perPlayer).toLocaleString();
+}
+
+async function confirmEndSession() {
+  const players  = (typeof schedulerState !== 'undefined') ? schedulerState.allPlayers.length : 0;
+  const isFlat   = document.getElementById('shuttleModeFlat')?.style.display !== 'none';
+  let shuttleData = null;
+
+  if (isFlat) {
+    const flat = parseFloat(document.getElementById('shuttleFlatFee')?.value) || 0;
+    if (flat) shuttleData = { mode: 'flat', cost_per_player: Math.round(flat), player_count: players };
+  } else {
+    const tubePrice = parseFloat(document.getElementById('shuttleTubePrice')?.value) || 0;
+    const count     = parseFloat(document.getElementById('shuttleCount')?.value) || 0;
+    const courtFee  = parseFloat(document.getElementById('shuttleCourtFee')?.value) || 0;
+    const miscFee   = parseFloat(document.getElementById('shuttleMiscFee')?.value) || 0;
+    const shuttleCost = tubePrice && count ? (tubePrice / 12) * count : 0;
+    const total       = shuttleCost + courtFee + miscFee;
+    const perPlayer   = players > 0 ? Math.round(total / players) : 0;
+    if (total) shuttleData = {
+      mode: 'itemized',
+      tube_price: tubePrice, shuttles_used: count,
+      court_fee: courtFee,   misc_fee: miscFee,
+      total_cost: Math.round(total),
+      cost_per_player: perPlayer,
+      player_count: players
+    };
+  }
+
+  document.getElementById('shuttleSheetOverlay')?.remove();
+  await _doEndSession(shuttleData);
+}
+
+async function skipShuttleAndEnd() {
+  document.getElementById('shuttleSheetOverlay')?.remove();
+  await _doEndSession(null);
+}
+
+async function _doEndSession(shuttleData) {
   // Mark session completed in sessions table
-  if (typeof dbCompleteSession === 'function') await dbCompleteSession();
+  if (typeof dbCompleteSession === 'function') await dbCompleteSession(shuttleData);
 
   // Flush live_sessions → players.sessions, then delete temp rows
   if (typeof flushLiveSession === 'function') await flushLiveSession();

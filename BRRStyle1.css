@@ -1366,6 +1366,14 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
   padding: 1px 6px;
   border-radius: 10px;
 }
+.mc-period-val.cost {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6c8cff;
+  background: rgba(108,140,255,0.1);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
 
 /* ── My Card Session Rows ── */
 .mc-session-row {
@@ -1391,3 +1399,192 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
 .mc-session-stat.wins   { color: #2dce89; background: rgba(45,206,137,0.1); }
 .mc-session-stat.losses { color: #e63757; background: rgba(230,55,87,0.1); }
 .mc-session-stat.points { color: #f5a623; background: rgba(245,166,35,0.1); }
+
+/* ── Shuttle Cost Sheet ── */
+.shuttle-sheet {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 16px 16px 32px;
+  width: 100%;
+}
+.shuttle-handle {
+  width: 36px; height: 4px;
+  background: #ddd; border-radius: 2px;
+  margin: 0 auto 12px;
+}
+.shuttle-title {
+  font-size: 1rem; font-weight: 800;
+  color: var(--text, #1a1a2e); margin-bottom: 12px;
+}
+.shuttle-mode-toggle {
+  display: flex; background: #ebebf5;
+  border-radius: 10px; padding: 3px; margin-bottom: 14px;
+}
+.shuttle-mode-btn {
+  flex: 1; text-align: center; padding: 7px 4px;
+  border-radius: 7px; font-size: 0.7rem; font-weight: 700;
+  color: #888; cursor: pointer; border: none; background: none;
+}
+.shuttle-mode-btn.active {
+  background: #fff; color: #1a1a2e;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.shuttle-2col { display: flex; gap: 8px; margin-bottom: 8px; }
+.shuttle-input-group { flex: 1; margin-bottom: 8px; }
+.shuttle-input-label {
+  font-size: 0.68rem; font-weight: 700;
+  color: #888; margin-bottom: 4px;
+}
+.shuttle-input {
+  width: 100%; padding: 8px 10px;
+  border: 1.5px solid #e0e0f0; border-radius: 8px;
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--text, #1a1a2e); background: #f8f8ff;
+}
+.shuttle-input-lg {
+  font-size: 1.3rem; text-align: center; padding: 12px;
+}
+.shuttle-divider {
+  display: flex; align-items: center;
+  gap: 8px; margin: 6px 0 10px;
+}
+.shuttle-div-line { flex: 1; height: 1px; background: #eee; }
+.shuttle-div-txt { font-size: 0.62rem; color: #bbb; font-weight: 600; }
+.shuttle-calc-box {
+  background: #f0f4ff; border-radius: 10px;
+  padding: 10px 12px; margin: 10px 0;
+}
+.shuttle-calc-row {
+  display: flex; justify-content: space-between;
+  align-items: center; padding: 3px 0;
+}
+.shuttle-calc-total {
+  border-top: 1px solid #dde;
+  margin-top: 6px; padding-top: 8px !important;
+}
+.shuttle-calc-label { font-size: 0.7rem; color: #888; font-weight: 600; }
+.shuttle-calc-val { font-size: 0.8rem; font-weight: 800; color: var(--text, #1a1a2e); }
+.shuttle-calc-big { font-size: 1rem; color: #6c8cff; }
+.shuttle-btn-end {
+  width: 100%; padding: 12px;
+  background: #e63757; color: #fff;
+  border: none; border-radius: 12px;
+  font-size: 0.9rem; font-weight: 800;
+  cursor: pointer; margin-top: 8px;
+}
+.shuttle-btn-skip {
+  width: 100%; padding: 7px;
+  background: none; border: none;
+  color: #bbb; font-size: 0.72rem;
+  cursor: pointer; margin-top: 4px;
+}
+
+/* ── Dashboard shuttle info ── */
+.dash-shuttle-row {
+  display: flex; align-items: center;
+  gap: 6px; background: #f8f8ff;
+  border-radius: 8px; padding: 6px 10px;
+  border: 1px solid #e8e8ff; margin-top: 8px;
+}
+.dash-shuttle-info { flex: 1; font-size: 0.72rem; color: #888; }
+.dash-shuttle-info strong { color: #6c8cff; }
+.dash-shuttle-cost { font-size: 0.82rem; font-weight: 800; color: #2dce89; }
+
+/* ── My Card session cost tag ── */
+.mc-session-stat.cost {
+  color: #6c8cff;
+  background: rgba(108,140,255,0.1);
+}
+
+/* ── Shuttle Cost Sheet ── */
+.shuttle-sheet {
+  background: var(--surface, #fff);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 18px 32px;
+  width: 100%;
+}
+.shuttle-handle {
+  width: 36px; height: 4px;
+  background: var(--border, #ddd);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.shuttle-title {
+  font-size: 1rem; font-weight: 800;
+  color: var(--text, #1a1a2e);
+  margin-bottom: 4px;
+}
+.shuttle-sub {
+  font-size: 0.75rem; color: var(--muted, #888);
+  margin-bottom: 18px;
+}
+.shuttle-input-row {
+  display: flex; align-items: center;
+  gap: 10px; margin-bottom: 12px;
+}
+.shuttle-input-icon { font-size: 1.3rem; flex-shrink: 0; }
+.shuttle-input-info { flex: 1; }
+.shuttle-input-label {
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--muted, #888); margin-bottom: 4px;
+}
+.shuttle-input {
+  width: 100%; padding: 8px 10px;
+  border: 1.5px solid var(--border, #e0e0f0);
+  border-radius: 8px; font-size: 0.9rem;
+  font-weight: 600; color: var(--text, #1a1a2e);
+  background: var(--bg, #f8f8ff);
+}
+.shuttle-calc-box {
+  background: rgba(108,140,255,0.06);
+  border: 1px solid rgba(108,140,255,0.15);
+  border-radius: 10px; padding: 10px 12px;
+  margin: 14px 0;
+}
+.shuttle-calc-row {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+.shuttle-calc-row:last-child {
+  margin-bottom: 0; padding-top: 8px;
+  border-top: 1px solid rgba(108,140,255,0.15);
+  margin-top: 4px;
+}
+.shuttle-calc-label { color: var(--muted, #888); font-weight: 600; }
+.shuttle-calc-val { font-weight: 800; color: var(--text, #1a1a2e); }
+.shuttle-calc-val.total { color: #6c8cff; font-size: 1rem; }
+.shuttle-btn-end {
+  width: 100%; padding: 12px;
+  background: #e63757; color: #fff;
+  border: none; border-radius: 12px;
+  font-size: 0.95rem; font-weight: 800;
+  cursor: pointer; margin-top: 6px;
+}
+.shuttle-btn-skip {
+  width: 100%; padding: 8px;
+  background: none; border: none;
+  color: var(--muted, #aaa);
+  font-size: 0.75rem; cursor: pointer;
+  margin-top: 4px;
+}
+
+/* ── Dashboard Shuttle Row ── */
+.dash-shuttle-row {
+  display: flex; align-items: center;
+  gap: 6px; margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(108,140,255,0.06);
+  border: 1px solid rgba(108,140,255,0.15);
+  border-radius: 8px;
+  font-size: 0.72rem;
+}
+.dash-shuttle-icon { font-size: 0.9rem; flex-shrink: 0; }
+.dash-shuttle-info { flex: 1; color: var(--muted, #888); font-weight: 600; }
+.dash-shuttle-cost { font-weight: 800; color: #2dce89; }
+
+/* ── My Card Session Cost tag ── */
+.mc-session-stat.cost {
+  color: #6c8cff;
+  background: rgba(108,140,255,0.1);
+}

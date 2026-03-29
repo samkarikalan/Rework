@@ -161,7 +161,8 @@ async function renderDashboard() {
           isLive:      false,
           sessionId:   sess.id,
           date:        sess.date,
-          updatedAt:   sess.updated_at
+          updatedAt:   sess.updated_at,
+          shuttleData: sess.shuttle_data || null
         });
         pastSection.appendChild(card);
       });
@@ -199,7 +200,7 @@ function _extractPlayersFromRounds(roundsData) {
 }
 
 /* ── Build a session card ── */
-function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, sessionId, date, updatedAt }) {
+function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, sessionId, date, updatedAt, shuttleData }) {
   const card = document.createElement('div');
   card.className = 'dash-session-card' + (isLive ? ' live' : '');
 
@@ -255,6 +256,27 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
   if (sessionId) {
     card.style.cursor = 'pointer';
     card.addEventListener('click', () => _openSessionRounds(sessionId));
+  }
+
+  // Shuttle cost row — past sessions only
+  if (!isLive && shuttleData) {
+    const shuttleRow = document.createElement('div');
+    shuttleRow.className = 'dash-shuttle-row';
+    let info = '';
+    if (shuttleData.mode === 'flat') {
+      info = `<span class="dash-shuttle-info">💴 Flat fee</span>`;
+    } else {
+      const parts = [];
+      if (shuttleData.shuttles_used) parts.push(`🪶 ${shuttleData.shuttles_used} shuttles`);
+      if (shuttleData.court_fee)     parts.push(`🏟 ¥${shuttleData.court_fee.toLocaleString()}`);
+      if (shuttleData.misc_fee)      parts.push(`📦 ¥${shuttleData.misc_fee.toLocaleString()}`);
+      info = `<span class="dash-shuttle-info">${parts.join(' · ')}</span>`;
+    }
+    shuttleRow.innerHTML = `
+      ${info}
+      <span class="dash-shuttle-cost">¥${(shuttleData.cost_per_player||0).toLocaleString()}/player</span>
+    `;
+    card.appendChild(shuttleRow);
   }
 
   // Force End button — admin only, live sessions only
