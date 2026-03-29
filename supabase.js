@@ -283,7 +283,7 @@ async function dbSyncRatings(updatedRatings) {
       const rounded = Math.round(update.activeRating * 10) / 10;
 
       const mrows = await sbGet('memberships',
-        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,player_id,club_rating`
+        `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(update.name)}&select=id,player_id,club_rating,club_points`
       );
       if (!mrows || !mrows.length) continue;
       const m = mrows[0];
@@ -676,6 +676,33 @@ async function dbCompleteSession() {
       players,
       updated_at: new Date().toISOString()
     });
+
+    // Write session summary to players.sessions jsonb
+    const today = new Date().toISOString().split('T')[0];
+    for (const p of players) {
+      if (!p.name) continue;
+      try {
+        const mrows = await sbGet('memberships',
+          `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(p.name)}&select=player_id,club_rating,club_points`
+        ).catch(() => []);
+        if (!mrows.length) continue;
+        const playerId = mrows[0].player_id;
+        const prows = await sbGet('players', `id=eq.${playerId}&select=sessions`).catch(() => []);
+        const existing = (prows.length ? prows[0].sessions : null) || [];
+        const otherDays = existing.filter(s => s.date !== today);
+        const todayEntry = existing.find(s => s.date === today) || {};
+        const entry = {
+          date:          today,
+          wins:          (todayEntry.wins || 0) + (p.wins || 0),
+          losses:        (todayEntry.losses || 0) + (p.losses || 0),
+          points_earned: Math.round(((parseFloat(todayEntry.points_earned) || 0) + (parseFloat(mrows[0].club_points) || 0)) * 10) / 10,
+          club_rating:   parseFloat(mrows[0].club_rating) || 1.0
+        };
+        await sbPatch('players', `id=eq.${playerId}`, {
+          sessions: [entry, ...otherDays].slice(0, 30)
+        }).catch(() => {});
+      } catch(e) { /* silent per player */ }
+    }
 
     // Keep only last 3 completed sessions per club — delete older ones
     const all = await sbGet('sessions',
