@@ -362,8 +362,24 @@ async function authRequestJoin(clubId, chosenNickname) {
 
     // Check nickname conflict in this club
     var conflict = await sbGet('memberships',
-      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=player_id');
+      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id');
     if (conflict && conflict.length) {
+      var cm = conflict[0];
+      // If membership is unclaimed — this is the user's own account, auto-link it
+      if (!cm.user_account_id) {
+        await sbPatch('memberships', 'id=eq.' + cm.id, { user_account_id: user.id }).catch(function(){});
+        // Also link any other clubs with same nickname
+        var others = await sbGet('memberships',
+          'nickname=ilike.' + encodeURIComponent(nickname) + '&user_account_id=is.null&select=id').catch(function(){ return []; });
+        for (var i = 0; i < others.length; i++) {
+          await sbPatch('memberships', 'id=eq.' + others[i].id, { user_account_id: user.id }).catch(function(){});
+        }
+        // Get club name and auto-join
+        var clubInfo = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name').catch(function(){ return []; });
+        var cname = (clubInfo && clubInfo.length) ? clubInfo[0].name : '';
+        return { autoLinked: true, clubId: clubId, clubName: cname, nickname: nickname };
+      }
+      // Nickname taken by someone else
       return { nicknameConflict: true, conflictNickname: nickname };
     }
 

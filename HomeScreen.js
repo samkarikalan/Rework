@@ -711,6 +711,20 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
     return;
   }
 
+  if (result.autoLinked) {
+    // Membership was unclaimed — auto-linked to this account
+    if (typeof setMyClub === 'function') setMyClub(result.clubId, result.clubName);
+    if (typeof setMyPlayer === 'function') setMyPlayer({ name: result.nickname, gender: 'Male' });
+    if (fbEl) {
+      if (fbIcon)  fbIcon.textContent  = '✅';
+      if (fbTitle) fbTitle.textContent = 'Joined ' + result.clubName;
+      if (fbMsg)   fbMsg.textContent   = 'Welcome back, ' + result.nickname + '!';
+      fbEl.style.display = '';
+    }
+    homeRefreshJoinClubTile();
+    return;
+  }
+
   if (result.nicknameConflict) {
     // Nickname taken — ask user to pick a different one
     if (fbEl) fbEl.style.display = 'none';
