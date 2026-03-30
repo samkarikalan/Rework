@@ -479,11 +479,11 @@ async function homeRefreshJoinClubTile() {
   if (user) {
     try {
       var memberships = await sbGet('memberships',
-        'user_account_id=eq.' + user.id + '&select=club_id,clubs(name)');
+        'user_account_id=eq.' + user.id + '&select=club_id');
       if (memberships && memberships.length) {
-        var names = memberships.map(function(m) {
-          return (m.clubs && m.clubs.name) ? m.clubs.name : '';
-        }).filter(Boolean);
+        var clubIds = memberships.map(function(m) { return m.club_id; });
+        var clubRows = await sbGet('clubs', 'id=in.(' + clubIds.join(',') + ')&select=id,name').catch(function(){ return []; });
+        var names = clubRows.map(function(c) { return c.name; }).filter(Boolean);
         if (names.length) {
           sub.innerHTML = names.map(function(n) {
             return '<span style="display:block;font-size:0.75rem;color:var(--accent,#6c8cff)">✅ ' + n + '</span>';

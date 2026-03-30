@@ -141,21 +141,31 @@ async function authAfterLogin(user) {
   // Auto-find all clubs via memberships linked to this user_account
   try {
     var linkedMemberships = await sbGet('memberships',
-      'user_account_id=eq.' + user.id + '&select=club_id,nickname,clubs(id,name)');
+      'user_account_id=eq.' + user.id + '&select=club_id,nickname');
 
     if (linkedMemberships && linkedMemberships.length) {
+      // Fetch club names separately
+      var clubIds = linkedMemberships.map(function(m) { return m.club_id; });
+      var clubs = [];
+      try {
+        clubs = await sbGet('clubs', 'id=in.(' + clubIds.join(',') + ')&select=id,name');
+      } catch(e) {}
+      var clubMap = {};
+      clubs.forEach(function(c) { clubMap[c.id] = c.name; });
+
+      // Enrich memberships with club names
+      linkedMemberships = linkedMemberships.map(function(m) {
+        return { club_id: m.club_id, nickname: m.nickname, club_name: clubMap[m.club_id] || '' };
+      });
+
       if (linkedMemberships.length === 1) {
-        // Single club — auto-select and go to app
         var m = linkedMemberships[0];
-        var clubId   = m.club_id;
-        var clubName = m.clubs?.name || '';
-        if (typeof setMyClub === 'function') setMyClub(clubId, clubName);
+        if (typeof setMyClub === 'function') setMyClub(m.club_id, m.club_name);
         if (typeof setMyPlayer === 'function') setMyPlayer({ name: m.nickname, gender: 'Male' });
         authHideOverlay();
         if (typeof selectMode === 'function') selectMode(sessionStorage.getItem('appMode') || 'viewer');
         return;
       } else {
-        // Multiple clubs — let user pick
         authShowClubPicker(linkedMemberships, user);
         return;
       }
@@ -199,7 +209,7 @@ function authShowClubPicker(memberships, user) {
     '<div class="auth-sub">You are a member of multiple clubs</div>' +
     memberships.map(function(m) {
       var cid   = m.club_id;
-      var cname = (m.clubs && m.clubs.name) ? m.clubs.name : cid;
+      var cname = m.club_name || cid;
       var nick  = m.nickname;
       return '<button class="auth-club-pick-btn" onclick="authPickClub(\''+cid+'\',\''+cname+'\',\''+nick+'\')">'+
         '<strong>'+cname+'</strong><span>'+nick+'</span></button>';
