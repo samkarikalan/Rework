@@ -137,6 +137,7 @@ function switchMode(mode) {
     sessionStorage.setItem('appMode', mode);
     localStorage.setItem('kbrr_app_mode', mode);
     applyMode(mode);
+    updateModePill(mode);
     if (typeof showHomeScreen === 'function') showHomeScreen();
     return;
   }
@@ -158,13 +159,34 @@ function switchMode(mode) {
   sessionStorage.setItem('appMode', mode);
   localStorage.setItem('kbrr_app_mode', mode);
   applyMode(mode);
+  updateModePill(mode);
   if (typeof showHomeScreen === 'function') showHomeScreen();
+}
+
+function updateModePill(mode) {
+  const icons  = { viewer: '👁', organiser: '🏸', vault: '🔒' };
+  const labels = { viewer: 'Viewer', organiser: 'Organiser', vault: 'Vault' };
+  const colors = { viewer: '#6c8cff', organiser: '#2dce89', vault: '#f5a623' };
+  const icon  = icons[mode]  || '🏸';
+  const label = labels[mode] || 'Mode';
+  const color = colors[mode] || '#6c8cff';
+  ['', '2'].forEach(suffix => {
+    const iconEl  = document.getElementById('modePillIcon'  + suffix);
+    const labelEl = document.getElementById('modePillLabel' + suffix);
+    const btnEl   = document.getElementById('modePillBtn'   + suffix);
+    if (iconEl)  iconEl.textContent  = icon;
+    if (labelEl) labelEl.textContent = label;
+    if (btnEl)   { btnEl.style.color = color; btnEl.style.borderColor = color + '44'; btnEl.style.background = color + '11'; }
+  });
 }
 
 function initModeOnLoad() {
   // Keep home hidden
   var homeEl = document.getElementById('homePageOverlay');
   if (homeEl) homeEl.style.display = 'none';
+  // Update mode pill to reflect saved mode
+  const savedMode = localStorage.getItem('kbrr_app_mode') || 'organiser';
+  updateModePill(savedMode);
   // Run smart startup flow
   initAppFlow();
 }

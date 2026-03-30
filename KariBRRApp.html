@@ -265,9 +265,10 @@
     <!-- Top bar -->
     <div class="home-topbar">
       <span class="home-logo">🏸 CLUB Scheduler</span>
-      <button class="profile-btn" onclick="openProfileDrawer()" aria-label="Profile">
-        <img id="homeProfileAvatar" src="male.png" class="profile-btn-avatar" style="display:none;">
-        <span id="homeProfileIcon" class="profile-btn-icon">👤</span>
+      <button class="mode-pill-btn" id="modePillBtn" onclick="openModeSheet()">
+        <span id="modePillIcon">🏸</span>
+        <span id="modePillLabel">Organiser</span>
+        <span>▾</span>
       </button>
     </div>
 
@@ -479,10 +480,11 @@
   <!-- ============================= -->
   <div class="top-bar">
     <span class="app-logo-premium">CLUB Scheduler</span>
-    <button class="profile-btn" id="profileBtn" onclick="openProfileDrawer()" aria-label="Profile" title="My Profile">
-      <img id="profileBtnAvatar" src="male.png" class="profile-btn-avatar" style="display:none;">
-      <span id="profileBtnIcon" class="profile-btn-icon">👤</span>
-    </button>
+    <button class="mode-pill-btn" id="modePillBtn2" onclick="openModeSheet()">
+        <span id="modePillIcon2">🏸</span>
+        <span id="modePillLabel2">Organiser</span>
+        <span>▾</span>
+      </button>
   </div>
 
   <!-- ============================= -->
@@ -1066,9 +1068,11 @@
     <div id="myCardEmpty" style="display:none;">
       <div class="dash-empty">
         <div class="dash-empty-icon">👤</div>
-        <p>No profile selected.</p>
-        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">Tap the profile icon to select your name.</p>
-        <button class="btn-save" style="margin-top:14px" onclick="openProfileDrawer()">Select Profile</button>
+        <p style="font-weight:700;margin-bottom:6px">Sign in to view your stats</p>
+        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">Track your ratings, wins and match history.</p>
+        <button class="btn-save" style="margin-top:16px" onclick="authShowScreen('login');showPage('authPage',null)">Login</button>
+        <button class="btn-outline" style="margin-top:8px;width:100%" onclick="authShowScreen('signup');showPage('authPage',null)">Create Account</button>
+        <button class="btn-ghost" style="margin-top:6px" onclick="authShowScreen('claim');showPage('authPage',null)">Already registered? Claim account</button>
       </div>
     </div>
 
@@ -1082,6 +1086,7 @@
           <div class="mycard-name" id="mcName"></div>
           <div id="mcTier" class="profile-tier"></div>
         </div>
+        <button id="mcLogoutBtn" class="mc-logout-btn" style="display:none" onclick="if(typeof authLogout==='function')authLogout()">Logout</button>
       </div>
 
       <!-- Ratings + Points -->

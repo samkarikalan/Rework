@@ -485,7 +485,9 @@ async function renderMyCard() {
   const emptyEl   = document.getElementById('myCardEmpty');
   const contentEl = document.getElementById('myCardContent');
 
-  if (!player) {
+  // Show empty/login state if not logged in via auth
+  const authUser = (typeof authGetUser === 'function') ? authGetUser() : null;
+  if (!player || !authUser) {
     if (emptyEl)   emptyEl.style.display   = '';
     if (contentEl) contentEl.style.display = 'none';
     return;
@@ -499,6 +501,12 @@ async function renderMyCard() {
   if (avatar) avatar.src = player.gender === 'Female' ? 'female.png' : 'male.png';
   const nameEl = document.getElementById('mcName');
   if (nameEl) nameEl.textContent = player.displayName || player.name || '';
+
+  // Logout button — only show if logged in via auth
+  const logoutBtn = document.getElementById('mcLogoutBtn');
+  if (logoutBtn) {
+    logoutBtn.style.display = authUser ? '' : 'none';
+  }
 
   const sessEl = document.getElementById('mcSessions');
   if (sessEl) sessEl.innerHTML = '<div class="profile-sessions-loading">Loading...</div>';
