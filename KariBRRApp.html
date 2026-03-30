@@ -272,21 +272,8 @@
       </button>
     </div>
 
-    <!-- Combined mode + status bar -->
-    <div class="home-mode-status" id="homeStatusBar">
-      <div class="mode-pill" id="homeModeP">
-        <button class="mode-pill-btn" id="homePillViewer"    onclick="switchMode('viewer')">👁 Viewer</button>
-        <button class="mode-pill-btn active" id="homePillOrganiser" onclick="switchMode('organiser')">🏆 Organiser</button>
-        <button class="mode-pill-btn" id="homePillVault"     onclick="requestVaultMode()">🔑 Vault</button>
-      </div>
-      <div class="home-mode-status-right">
-        <span class="home-status-dot"></span>
-        <span class="home-status-name" id="homeStatusName">Not connected</span>
-      </div>
-    </div>
-
-    <!-- Trial banner -->
-    <div id="trialBanner" class="trial-banner" style="display:none;"></div>
+    <!-- Trial banner moved to Settings page -->
+    <div id="trialBanner" style="display:none;"></div>
 
     <!-- SESSION STEPPER (organiser) -->
     <div id="homeOrganizerFlow" style="display:none;">
@@ -565,6 +552,25 @@
       <span class="page-back-title">⚙️ Settings</span>
     </div>
     <div class="pref-wrap">
+
+      <!-- SUBSCRIPTION / TRIAL -->
+      <div class="pref-section-label">Subscription</div>
+      <div class="pref-card" id="settingsTrialCard">
+        <div class="pref-row">
+          <span class="pref-row-label" id="settingsTrialLabel">Free Trial</span>
+          <span class="pref-row-value" id="settingsTrialValue">—</span>
+        </div>
+      </div>
+
+      <!-- MODE -->
+      <div class="pref-section-label">Mode</div>
+      <div class="pref-card">
+        <div class="pref-row pref-row-tap" onclick="openModeSheet()">
+          <span class="pref-row-label">Current Mode</span>
+          <span class="pref-row-value" id="settingsModeValue">—</span>
+          <span class="pref-row-chevron">›</span>
+        </div>
+      </div>
 
       <!-- LANGUAGE -->
       <div class="pref-section-label">Language</div>

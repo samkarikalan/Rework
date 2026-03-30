@@ -178,6 +178,9 @@ function updateModePill(mode) {
     if (labelEl) labelEl.textContent = label;
     if (btnEl)   { btnEl.style.color = color; btnEl.style.borderColor = color + '44'; btnEl.style.background = color + '11'; }
   });
+  // Update Settings page mode value
+  const settingsModeEl = document.getElementById('settingsModeValue');
+  if (settingsModeEl) { settingsModeEl.textContent = icon + ' ' + label; settingsModeEl.style.color = color; }
 }
 
 function initModeOnLoad() {
@@ -571,6 +574,11 @@ function showPage(pageID, el) {
 
   if (pageID === "joinClubPage") {
     if (typeof joinClubPageOpen === 'function') joinClubPageOpen();
+  }
+
+  if (pageID === "settingsPage") {
+    if (typeof subShowTrialBanner === 'function') subShowTrialBanner();
+    updateModePill(localStorage.getItem('kbrr_app_mode') || 'organiser');
   }
 
   if (pageID === "helpPage") {
