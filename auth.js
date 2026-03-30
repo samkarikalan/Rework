@@ -179,8 +179,17 @@ async function authClaimAccount(clubId, nickname, defaultPassword, email, newPas
     });
     var u = result[0];
 
-    // 6. Link membership to user_account
+    // 6. Link THIS membership to user_account
     await sbPatch('memberships', 'id=eq.' + membership.id, { user_account_id: u.id });
+
+    // 7. Also link any other clubs where same nickname is unlinked
+    try {
+      var otherMemberships = await sbGet('memberships',
+        'nickname=ilike.' + encodeURIComponent(nickname) + '&user_account_id=is.null&select=id');
+      for (var i = 0; i < (otherMemberships || []).length; i++) {
+        await sbPatch('memberships', 'id=eq.' + otherMemberships[i].id, { user_account_id: u.id }).catch(function(){});
+      }
+    } catch(e) { /* silent */ }
 
     var authUser = { id: u.id, email: u.email, nickname: u.nickname, displayName: u.nickname };
     _authUser = authUser;
