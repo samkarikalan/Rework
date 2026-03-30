@@ -142,7 +142,7 @@ async function authAfterLogin(user) {
   var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
   if (club && club.id) {
     try {
-      var playerCheck = await sbGet('players',
+      var playerCheck = await sbGet('memberships',
         'club_id=eq.' + club.id + '&user_account_id=eq.' + user.id + '&select=nickname');
       if (!playerCheck || !playerCheck.length) {
         // Player was removed — clear club from localStorage

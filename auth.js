@@ -332,8 +332,8 @@ async function authRequestJoin(clubId, chosenNickname) {
 
   try {
     // Check if already a member (by user_account_id)
-    var members = await sbGet('players',
-      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id + '&select=id');
+    var members = await sbGet('memberships',
+      'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id + '&select=player_id');
     if (members && members.length) {
       var club = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name');
       if (club && club.length) setMyClub(club[0].id, club[0].name);
@@ -352,8 +352,8 @@ async function authRequestJoin(clubId, chosenNickname) {
     }
 
     // Check nickname conflict in this club
-    var conflict = await sbGet('players',
-      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id');
+    var conflict = await sbGet('memberships',
+      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=player_id');
     if (conflict && conflict.length) {
       return { nicknameConflict: true, conflictNickname: nickname };
     }

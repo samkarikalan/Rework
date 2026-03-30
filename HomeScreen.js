@@ -508,7 +508,8 @@ async function joinClubPageOpen() {
     try {
       var user = (typeof authGetUser === 'function') ? authGetUser() : null;
       if (user) {
-        var playerCheck = await sbGet('players',
+        // New schema: check via memberships table using user_account_id
+        var playerCheck = await sbGet('memberships',
           'club_id=eq.' + club.id + '&user_account_id=eq.' + user.id + '&select=nickname');
         if (!playerCheck || !playerCheck.length) {
           // Player was removed from club — clear local state
@@ -539,8 +540,8 @@ async function joinClubPageOpen() {
         if (rows && rows.length) {
           if (rows[0].status === 'accepted') {
             // Verify player row still exists (not left/deleted)
-            var playerCheck = await sbGet('players',
-              'club_id=eq.' + pendingId + '&user_account_id=eq.' + user.id + '&select=id');
+            var playerCheck = await sbGet('memberships',
+              'club_id=eq.' + pendingId + '&user_account_id=eq.' + user.id + '&select=player_id');
             if (!playerCheck || !playerCheck.length) {
               // Player row gone — treat as not a member
               localStorage.removeItem('kbrr_pending_club_id');
@@ -746,7 +747,7 @@ async function joinClubLeave() {
   if (clubId && user) {
     try {
       // Delete player row for this user in this club
-      await sbDelete('players', 'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id);
+      await sbDelete('memberships', 'club_id=eq.' + clubId + '&user_account_id=eq.' + user.id);
     } catch(e) { /* silent */ }
     try {
       // Delete join request so it doesn't restore on next login

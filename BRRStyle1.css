@@ -1654,3 +1654,36 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
   color: #bbb;
   font-weight: 600;
 }
+
+/* ── My Card logout button ── */
+.mc-logout-btn {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: #e63757;
+  background: rgba(230,55,87,0.08);
+  border: 1px solid rgba(230,55,87,0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+
+
+/* ── Mode Pill Button (top bar) ── */
+.mode-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(45,206,137,0.3);
+  background: rgba(45,206,137,0.1);
+  color: #2dce89;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.mode-pill-btn:active { opacity: 0.8; }

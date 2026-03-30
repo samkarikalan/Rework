@@ -162,14 +162,15 @@ function showProfilePicker() {
   if (searchEl) searchEl.value = '';
 
   // Load ALL players from server (no club filter)
-  sbGet('players', `club_id=eq.${(getMyClub&&getMyClub()||{}).id||''}&order=nickname.asc&select=id,nickname,gender,rating,club_rating,pin,recovery_word`).then(players => {
-    _pickerAllPlayers = (players || []).map(p => ({
-      name:          p.nickname,
-      gender:        p.gender || 'Male',
-      rating:        p.rating || 1.0,
-      club_rating:   parseFloat(p.club_rating) || 1.0,
-      pin:           p.pin || null,
-      recovery_word: p.recovery_word || null
+  const _club = (getMyClub && getMyClub()) || {};
+  sbGet('memberships', `club_id=eq.${_club.id||''}&order=nickname.asc&select=nickname,club_rating,is_playing,player_id,players(id,gender,global_rating)`).then(members => {
+    _pickerAllPlayers = (members || []).map(m => ({
+      name:          m.nickname,
+      gender:        m.players?.gender || 'Male',
+      rating:        parseFloat(m.players?.global_rating) || 1.0,
+      club_rating:   parseFloat(m.club_rating) || 1.0,
+      pin:           null,
+      recovery_word: null
     }));
     renderPickerList(_pickerAllPlayers);
   }).catch(() => {
@@ -264,9 +265,9 @@ async function confirmPinSetup(name) {
 
   err.textContent = '⏳ Saving...';
   try {
-    await sbPatch('players', `club_id=eq.${(getMyClub&&getMyClub()||{}).id||''}&nickname=ilike.${encodeURIComponent(name)}`, {
-      pin, recovery_word: recovery
-    });
+    // PIN/recovery stored in user_accounts via auth system — no DB patch needed here
+    // Just update local cache
+    
     const p = _pickerAllPlayers.find(x => x.name === name);
     if (p) { p.pin = pin; p.recovery_word = recovery; }
     err.textContent = '';
@@ -337,7 +338,7 @@ async function confirmPinRecovery(name) {
 
   err.textContent = '⏳ Saving...';
   try {
-    await sbPatch('players', `club_id=eq.${(getMyClub&&getMyClub()||{}).id||''}&nickname=ilike.${encodeURIComponent(name)}`, { pin: newPin });
+    // PIN stored in user_accounts — no direct players patch needed
     p.pin = newPin;
     err.textContent = '';
     _completeProfileSelection(name);
@@ -414,11 +415,19 @@ async function showProfileCard(player) {
   document.getElementById('pcWins').textContent   = '…';
   document.getElementById('pcLosses').textContent = '…';
   try {
-    const playerRows = await sbGet('players',
-      `club_id=eq.${(getMyClub&&getMyClub()||{}).id||''}&nickname=ilike.${encodeURIComponent(player.name)}&select=wins,losses`);
-    if (playerRows && playerRows.length) {
-      document.getElementById('pcWins').textContent   = (playerRows[0].wins   || 0);
-      document.getElementById('pcLosses').textContent = (playerRows[0].losses || 0);
+    // Look up via memberships → player_id → players
+    const _club = (getMyClub && getMyClub()) || {};
+    const _mrows = await sbGet('memberships',
+      `club_id=eq.${_club.id||''}&nickname=ilike.${encodeURIComponent(player.name)}&select=player_id`);
+    if (_mrows && _mrows.length) {
+      const _prows = await sbGet('players', `id=eq.${_mrows[0].player_id}&select=wins,losses`);
+      if (_prows && _prows.length) {
+        document.getElementById('pcWins').textContent   = (_prows[0].wins   || 0);
+        document.getElementById('pcLosses').textContent = (_prows[0].losses || 0);
+      } else {
+        document.getElementById('pcWins').textContent   = '—';
+        document.getElementById('pcLosses').textContent = '—';
+      }
     } else {
       document.getElementById('pcWins').textContent   = '—';
       document.getElementById('pcLosses').textContent = '—';
@@ -485,7 +494,9 @@ async function renderMyCard() {
   const emptyEl   = document.getElementById('myCardEmpty');
   const contentEl = document.getElementById('myCardContent');
 
-  if (!player) {
+  // Show empty/login state if not logged in via auth
+  const authUser = (typeof authGetUser === 'function') ? authGetUser() : null;
+  if (!player || !authUser) {
     if (emptyEl)   emptyEl.style.display   = '';
     if (contentEl) contentEl.style.display = 'none';
     return;
@@ -499,6 +510,12 @@ async function renderMyCard() {
   if (avatar) avatar.src = player.gender === 'Female' ? 'female.png' : 'male.png';
   const nameEl = document.getElementById('mcName');
   if (nameEl) nameEl.textContent = player.displayName || player.name || '';
+
+  // Logout button — only show if logged in via auth
+  const logoutBtn = document.getElementById('mcLogoutBtn');
+  if (logoutBtn) {
+    logoutBtn.style.display = authUser ? '' : 'none';
+  }
 
   const sessEl = document.getElementById('mcSessions');
   if (sessEl) sessEl.innerHTML = '<div class="profile-sessions-loading">Loading...</div>';
