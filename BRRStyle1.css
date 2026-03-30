@@ -1687,3 +1687,20 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
   transition: background 0.15s;
 }
 .mode-pill-btn:active { opacity: 0.8; }
+
+/* ── Auth Club Picker ── */
+.auth-club-pick-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--surface, #fff);
+  border: 1.5px solid var(--border, #eee);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.auth-club-pick-btn strong { color: var(--text, #1a1a2e); font-weight: 700; }
+.auth-club-pick-btn span   { color: var(--muted, #888); font-size: 0.78rem; }

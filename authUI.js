@@ -138,29 +138,79 @@ async function authAfterLogin(user) {
     return;
   }
 
-  // Check if already in a club — verify player row still exists in DB
+  // Auto-find all clubs via memberships linked to this user_account
+  try {
+    var linkedMemberships = await sbGet('memberships',
+      'user_account_id=eq.' + user.id + '&select=club_id,nickname,clubs(id,name)');
+
+    if (linkedMemberships && linkedMemberships.length) {
+      if (linkedMemberships.length === 1) {
+        // Single club — auto-select and go to app
+        var m = linkedMemberships[0];
+        var clubId   = m.club_id;
+        var clubName = m.clubs?.name || '';
+        if (typeof setMyClub === 'function') setMyClub(clubId, clubName);
+        if (typeof setMyPlayer === 'function') setMyPlayer({ name: m.nickname, gender: 'Male' });
+        authHideOverlay();
+        if (typeof selectMode === 'function') selectMode(sessionStorage.getItem('appMode') || 'viewer');
+        return;
+      } else {
+        // Multiple clubs — let user pick
+        authShowClubPicker(linkedMemberships, user);
+        return;
+      }
+    }
+  } catch(e) { /* offline — fall through to cached club */ }
+
+  // Check cached club
   var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
   if (club && club.id) {
-    try {
-      var playerCheck = await sbGet('memberships',
-        'club_id=eq.' + club.id + '&user_account_id=eq.' + user.id + '&select=nickname');
-      if (!playerCheck || !playerCheck.length) {
-        // Player was removed — clear club from localStorage
-        if (typeof clearMyClub === 'function') clearMyClub();
-        else { localStorage.removeItem('kbrr_my_club_id'); localStorage.removeItem('kbrr_my_club_name'); }
-        club = { id: null };
-      }
-    } catch(e) { /* offline — trust cached state */ }
-  }
-  if (club && club.id) {
-    // Already in club — go to app
     authHideOverlay();
-    selectMode(sessionStorage.getItem('appMode') || 'viewer');
+    if (typeof selectMode === 'function') selectMode(sessionStorage.getItem('appMode') || 'viewer');
     return;
   }
 
-  // No club — show join screen
+  // No club found — show join screen
   authShowScreen('joinClub');
+}
+
+function authShowClubPicker(memberships, user) {
+  // Show a simple sheet to pick which club to enter
+  var overlay = document.getElementById('authOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+
+  // Hide all screens
+  ['authWelcome','authLogin','authSignup','authForgot','authJoinClub','authClaim'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // Build club picker screen
+  var picker = document.getElementById('authClubPicker');
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'authClubPicker';
+    picker.className = 'auth-screen';
+    overlay.appendChild(picker);
+  }
+  picker.style.display = '';
+  picker.innerHTML = '<div class="auth-title">Select Club</div>' +
+    '<div class="auth-sub">You are a member of multiple clubs</div>' +
+    memberships.map(function(m) {
+      var cid   = m.club_id;
+      var cname = (m.clubs && m.clubs.name) ? m.clubs.name : cid;
+      var nick  = m.nickname;
+      return '<button class="auth-club-pick-btn" onclick="authPickClub(\''+cid+'\',\''+cname+'\',\''+nick+'\')">'+
+        '<strong>'+cname+'</strong><span>'+nick+'</span></button>';
+    }).join('');
+}
+
+async function authPickClub(clubId, clubName, nickname) {
+  if (typeof setMyClub   === 'function') setMyClub(clubId, clubName);
+  if (typeof setMyPlayer === 'function') setMyPlayer({ name: nickname, gender: 'Male' });
+  authHideOverlay();
+  if (typeof selectMode === 'function') selectMode(sessionStorage.getItem('appMode') || 'viewer');
 }
 
 /* ── Do Forgot Password — recovery keyword ── */

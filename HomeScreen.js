@@ -470,10 +470,31 @@ function homeLangSelect() {}
    ══════════════════════════════════════════════ */
 
 /* Called every time home screen opens — show/hide tile, refresh status */
-function homeRefreshJoinClubTile() {
+async function homeRefreshJoinClubTile() {
   var sub = document.getElementById('tileSubJoinClub');
   if (!sub) return;
 
+  // Try to get all linked clubs from memberships
+  var user = (typeof authGetUser === 'function') ? authGetUser() : null;
+  if (user) {
+    try {
+      var memberships = await sbGet('memberships',
+        'user_account_id=eq.' + user.id + '&select=club_id,clubs(name)');
+      if (memberships && memberships.length) {
+        var names = memberships.map(function(m) {
+          return (m.clubs && m.clubs.name) ? m.clubs.name : '';
+        }).filter(Boolean);
+        if (names.length) {
+          sub.innerHTML = names.map(function(n) {
+            return '<span style="display:block;font-size:0.75rem;color:var(--accent,#6c8cff)">✅ ' + n + '</span>';
+          }).join('');
+          return;
+        }
+      }
+    } catch(e) { /* offline — fall through */ }
+  }
+
+  // Fallback to cached single club
   var club = (typeof getMyClub === 'function') ? getMyClub() : null;
   if (club && club.id && club.name) {
     sub.textContent = '✅ ' + club.name;
