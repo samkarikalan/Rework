@@ -1063,7 +1063,7 @@ function showShuttleSheet() {
             <input type="number" id="shuttleTubePrice" class="shuttle-input" placeholder="e.g. 6000" oninput="shuttleCalc()">
           </div>
           <div class="shuttle-input-group">
-            <div class="shuttle-input-label">Used today</div>
+            <div class="shuttle-input-label">Shuttles used</div>
             <input type="number" id="shuttleCount" class="shuttle-input" placeholder="e.g. 16" oninput="shuttleCalc()">
           </div>
         </div>
@@ -1199,6 +1199,12 @@ async function skipShuttleAndEnd() {
 }
 
 async function _doEndSession(shuttleData) {
+  // Show ending feedback
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;color:#fff;padding:16px 24px;border-radius:14px;font-size:0.9rem;font-weight:700;z-index:99999;text-align:center;';
+  toast.textContent = '⏹ Ending session…';
+  document.body.appendChild(toast);
+
   // Mark session completed in sessions table
   if (typeof dbCompleteSession === 'function') await dbCompleteSession(shuttleData);
 
@@ -1229,6 +1235,10 @@ async function _doEndSession(shuttleData) {
 
   // Hide live bar
   updateSessionLiveBar();
+
+  // Remove toast
+  toast.textContent = '✅ Session ended';
+  setTimeout(() => toast.remove(), 1500);
 
   // Stay on dashboard and refresh it
   if (typeof showPage === 'function') {
