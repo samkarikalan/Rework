@@ -485,9 +485,7 @@ async function homeRefreshJoinClubTile() {
         var clubRows = await sbGet('clubs', 'id=in.(' + clubIds.join(',') + ')&select=id,name').catch(function(){ return []; });
         var names = clubRows.map(function(c) { return c.name; }).filter(Boolean);
         if (names.length) {
-          sub.innerHTML = names.map(function(n) {
-            return '<span style="display:block;font-size:0.75rem;color:var(--accent,#6c8cff)">✅ ' + n + '</span>';
-          }).join('');
+          sub.textContent = names.join(' · ');
           return;
         }
       }
