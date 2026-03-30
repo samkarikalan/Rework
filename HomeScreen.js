@@ -510,7 +510,7 @@ async function homeRefreshJoinClubTile() {
 
 /* ── Join Club Page — initialise when page opens ── */
 async function joinClubPageOpen() {
-  // Reset search
+  // Reset search + feedback
   var searchInput = document.getElementById('joinClubPageSearch');
   if (searchInput) searchInput.value = '';
   var results = document.getElementById('joinClubPageResults');
@@ -519,89 +519,84 @@ async function joinClubPageOpen() {
   if (errEl) errEl.style.display = 'none';
   var fbEl = document.getElementById('joinClubPageFeedback');
   if (fbEl) fbEl.style.display = 'none';
+  var nickEl = document.getElementById('joinClubNicknameSection');
+  if (nickEl) nickEl.style.display = 'none';
 
-  var statusCard = document.getElementById('joinClubStatusCard');
-  var searchSection = document.getElementById('joinClubSearchSection');
+  // Load all my clubs
+  await _renderMyClubsList();
+}
 
-  // Already a member? — verify player row still exists in DB
-  var club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (club && club.id && club.name) {
-    try {
-      var user = (typeof authGetUser === 'function') ? authGetUser() : null;
-      if (user) {
-        // New schema: check via memberships table using user_account_id
-        var playerCheck = await sbGet('memberships',
-          'club_id=eq.' + club.id + '&user_account_id=eq.' + user.id + '&select=nickname');
-        if (!playerCheck || !playerCheck.length) {
-          // Player was removed from club — clear local state
-          if (typeof clearMyClub === 'function') clearMyClub();
-          else { localStorage.removeItem('kbrr_my_club_id'); localStorage.removeItem('kbrr_my_club_name'); }
-          club = null;
-        }
-      }
-    } catch(e) { /* offline — trust cached state */ }
-  }
-  if (club && club.id && club.name) {
-    _joinClubShowStatus('joined', club.name);
-    if (statusCard) statusCard.style.display = '';
-    if (searchSection) searchSection.style.display = 'none';
+async function _renderMyClubsList() {
+  var inner = document.getElementById('myClubsListInner');
+  if (!inner) return;
+  inner.innerHTML = '<div class="jc-empty">Loading...</div>';
+
+  var user = (typeof authGetUser === 'function') ? authGetUser() : null;
+  if (!user) {
+    inner.innerHTML = '<div class="jc-empty">Login to see your clubs</div>';
     return;
   }
 
-  // Pending request?
-  var pendingName = localStorage.getItem('kbrr_pending_club_name');
-  var pendingId   = localStorage.getItem('kbrr_pending_club_id');
-  if (pendingId && pendingName) {
-    // Re-check from server in case it was approved
-    try {
-      var user = (typeof authGetUser === 'function') ? authGetUser() : null;
-      if (user) {
-        var rows = await sbGet('club_join_requests',
-          'club_id=eq.' + pendingId + '&user_account_id=eq.' + user.id + '&select=status');
-        if (rows && rows.length) {
-          if (rows[0].status === 'accepted') {
-            // Verify player row still exists (not left/deleted)
-            var playerCheck = await sbGet('memberships',
-              'club_id=eq.' + pendingId + '&user_account_id=eq.' + user.id + '&select=player_id');
-            if (!playerCheck || !playerCheck.length) {
-              // Player row gone — treat as not a member
-              localStorage.removeItem('kbrr_pending_club_id');
-              localStorage.removeItem('kbrr_pending_club_name');
-              // Fall through to search
-            } else {
-              setMyClub(pendingId, pendingName);
-              localStorage.removeItem('kbrr_pending_club_id');
-              localStorage.removeItem('kbrr_pending_club_name');
-              _joinClubShowStatus('joined', pendingName);
-              if (statusCard) statusCard.style.display = '';
-              if (searchSection) searchSection.style.display = 'none';
-              homeRefreshJoinClubTile();
-              return;
-            }
-          } else if (rows[0].status === 'rejected') {
-            localStorage.removeItem('kbrr_pending_club_id');
-            localStorage.removeItem('kbrr_pending_club_name');
-            // Fall through to search
-          } else {
-            _joinClubShowStatus('pending', pendingName);
-            if (statusCard) statusCard.style.display = '';
-            if (searchSection) searchSection.style.display = 'none';
-            return;
-          }
-        }
-      }
-    } catch(e) {
-      // Offline — show cached pending state
-      _joinClubShowStatus('pending', pendingName);
-      if (statusCard) statusCard.style.display = '';
-      if (searchSection) searchSection.style.display = 'none';
+  try {
+    // Get all memberships for this user
+    var memberships = await sbGet('memberships',
+      'user_account_id=eq.' + user.id + '&select=club_id,nickname');
+
+    // Also check pending requests
+    var pending = await sbGet('club_join_requests',
+      'user_account_id=eq.' + user.id + '&status=eq.pending&select=club_id').catch(function(){ return []; });
+    var pendingIds = (pending || []).map(function(p){ return p.club_id; });
+
+    if ((!memberships || !memberships.length) && !pendingIds.length) {
+      inner.innerHTML = '<div class="jc-empty">No clubs yet. Search below to join one.</div>';
       return;
     }
-  }
 
-  // No club — show search
-  if (statusCard) statusCard.style.display = 'none';
-  if (searchSection) searchSection.style.display = '';
+    // Fetch club names
+    var allIds = [...new Set([
+      ...(memberships||[]).map(function(m){ return m.club_id; }),
+      ...pendingIds
+    ])];
+    var clubs = allIds.length
+      ? await sbGet('clubs', 'id=in.(' + allIds.join(',') + ')&select=id,name').catch(function(){ return []; })
+      : [];
+    var clubMap = {};
+    clubs.forEach(function(c){ clubMap[c.id] = c.name; });
+
+    var html = '';
+
+    // Member clubs
+    (memberships || []).forEach(function(m) {
+      var cname = clubMap[m.club_id] || m.club_id;
+      html += '<div class="jc-club-row">' +
+        '<div class="jc-club-icon">🏸</div>' +
+        '<div class="jc-club-info">' +
+          '<div class="jc-club-name">' + cname + '</div>' +
+          '<div class="jc-club-nick">as ' + m.nickname + '</div>' +
+        '</div>' +
+        '<span class="jc-club-badge">Member</span>' +
+      '</div>';
+    });
+
+    // Pending clubs
+    pendingIds.forEach(function(cid) {
+      if ((memberships||[]).find(function(m){ return m.club_id === cid; })) return; // already shown
+      var cname = clubMap[cid] || cid;
+      html += '<div class="jc-club-row">' +
+        '<div class="jc-club-icon">⏳</div>' +
+        '<div class="jc-club-info">' +
+          '<div class="jc-club-name">' + cname + '</div>' +
+          '<div class="jc-club-nick">Request pending</div>' +
+        '</div>' +
+        '<span class="jc-club-pending">Pending</span>' +
+      '</div>';
+    });
+
+    inner.innerHTML = html || '<div class="jc-empty">No clubs yet.</div>';
+
+  } catch(e) {
+    inner.innerHTML = '<div class="jc-empty">Could not load clubs.</div>';
+  }
 }
 
 function _joinClubShowStatus(state, clubName) {
@@ -712,7 +707,6 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
   }
 
   if (result.autoLinked) {
-    // Membership was unclaimed — auto-linked to this account
     if (typeof setMyClub === 'function') setMyClub(result.clubId, result.clubName);
     if (typeof setMyPlayer === 'function') setMyPlayer({ name: result.nickname, gender: 'Male' });
     if (fbEl) {
@@ -722,6 +716,7 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
       fbEl.style.display = '';
     }
     homeRefreshJoinClubTile();
+    _renderMyClubsList();
     return;
   }
 

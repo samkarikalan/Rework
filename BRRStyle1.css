@@ -1704,3 +1704,36 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
 }
 .auth-club-pick-btn strong { color: var(--text, #1a1a2e); font-weight: 700; }
 .auth-club-pick-btn span   { color: var(--muted, #888); font-size: 0.78rem; }
+
+/* ── My Clubs Page ── */
+.jc-section-title {
+  font-size: 0.65rem; font-weight: 700;
+  color: var(--muted, #555);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.jc-divider { height: 1px; background: var(--border, #2a2a40); margin: 4px 0; }
+.jc-empty {
+  font-size: 0.78rem; color: var(--muted, #555);
+  text-align: center; padding: 16px 0;
+}
+.jc-club-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card-bg, #1e1e2e);
+  border: 1px solid var(--border, #2a2a40);
+  border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+}
+.jc-club-icon { font-size: 1.2rem; flex-shrink: 0; }
+.jc-club-info { flex: 1; }
+.jc-club-name { font-size: 0.82rem; font-weight: 700; color: var(--text, #fff); }
+.jc-club-nick { font-size: 0.68rem; color: var(--muted, #555); margin-top: 1px; }
+.jc-club-badge {
+  font-size: 0.6rem; font-weight: 700; padding: 3px 8px;
+  border-radius: 20px; background: rgba(45,206,137,0.15); color: #2dce89;
+  flex-shrink: 0;
+}
+.jc-club-pending {
+  font-size: 0.6rem; font-weight: 700; padding: 3px 8px;
+  border-radius: 20px; background: rgba(245,166,35,0.15); color: #f5a623;
+  flex-shrink: 0;
+}
