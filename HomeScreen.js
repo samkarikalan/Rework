@@ -508,7 +508,8 @@ async function joinClubPageOpen() {
     try {
       var user = (typeof authGetUser === 'function') ? authGetUser() : null;
       if (user) {
-        var playerCheck = await sbGet('players',
+        // New schema: check via memberships table using user_account_id
+        var playerCheck = await sbGet('memberships',
           'club_id=eq.' + club.id + '&user_account_id=eq.' + user.id + '&select=nickname');
         if (!playerCheck || !playerCheck.length) {
           // Player was removed from club — clear local state

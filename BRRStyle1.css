@@ -1668,30 +1668,7 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
   flex-shrink: 0;
 }
 
-/* ── My Card empty state buttons ── */
-.btn-outline {
-  display: block;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  background: none;
-  border: 1.5px solid var(--accent, #6c8cff);
-  color: var(--accent, #6c8cff);
-  cursor: pointer;
-  text-align: center;
-}
-.btn-ghost {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  background: none;
-  border: none;
-  color: var(--text-dim, #888);
-  font-size: 0.75rem;
-  cursor: pointer;
-  text-align: center;
-}
+
 
 /* ── Mode Pill Button (top bar) ── */
 .mode-pill-btn {
