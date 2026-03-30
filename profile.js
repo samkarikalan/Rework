@@ -601,6 +601,63 @@ async function renderMyCard() {
       }
     }
 
+    // 7. Render recent matches from matches table
+    const matchEl = document.getElementById('mcMatches');
+    if (matchEl && playerDbId && club.id) {
+      matchEl.innerHTML = '<div class="profile-sessions-loading">Loading matches...</div>';
+      try {
+        // Fetch all club memberships for UUID→nickname resolution
+        const allMembers = await sbGet('memberships',
+          `club_id=eq.${club.id}&select=player_id,nickname`
+        ).catch(() => []);
+        const uuidToNick = {};
+        (allMembers || []).forEach(m => { uuidToNick[m.player_id] = m.nickname; });
+
+        // Query matches where player appears in any slot
+        const matches = await sbGet('matches',
+          `club_id=eq.${club.id}&or=(pair1_player1.eq.${playerDbId},pair1_player2.eq.${playerDbId},pair2_player1.eq.${playerDbId},pair2_player2.eq.${playerDbId})&order=played_at.desc&limit=20`
+        ).catch(() => []);
+
+        if (!matches || !matches.length) {
+          matchEl.innerHTML = '<div class="profile-sessions-empty">No matches yet.</div>';
+        } else {
+          matchEl.innerHTML = matches.map(m => {
+            // Determine which pair I'm in
+            const inPair1 = m.pair1_player1 === playerDbId || m.pair1_player2 === playerDbId;
+            const myPair  = inPair1 ? [m.pair1_player1, m.pair1_player2] : [m.pair2_player1, m.pair2_player2];
+            const oppPair = inPair1 ? [m.pair2_player1, m.pair2_player2] : [m.pair1_player1, m.pair1_player2];
+            const won     = (inPair1 && m.winner_pair === 'pair1') || (!inPair1 && m.winner_pair === 'pair2');
+
+            const partner   = myPair.filter(id => id && id !== playerDbId).map(id => uuidToNick[id] || '?');
+            const opponents = oppPair.filter(id => id).map(id => uuidToNick[id] || '?');
+            const delta     = m.rating_delta ? (won ? '+' : '-') + parseFloat(m.rating_delta).toFixed(1) : '';
+            const date      = m.played_at ? new Date(m.played_at).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '';
+
+            const myNames  = [myNickname, ...partner].filter(Boolean).join(' & ');
+            const oppNames = opponents.join(' & ');
+
+            return `<div class="mc-match-row ${won ? 'mc-match-win' : 'mc-match-loss'}">
+              <div class="mc-match-left-bar"></div>
+              <div class="mc-match-content">
+                <div class="mc-match-teams">
+                  <div class="mc-match-pair">${myNames}</div>
+                  <div class="mc-match-vs">vs</div>
+                  <div class="mc-match-pair opp">${oppNames}</div>
+                </div>
+                <div class="mc-match-result">
+                  <span class="mc-match-badge ${won ? 'win' : 'loss'}">${won ? 'WIN' : 'LOSS'}</span>
+                  ${delta ? `<span class="mc-match-delta ${won ? 'win' : 'loss'}">${delta}</span>` : ''}
+                  ${date ? `<span class="mc-match-date">${date}</span>` : ''}
+                </div>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      } catch(e) {
+        matchEl.innerHTML = '<div class="profile-sessions-empty">Could not load matches.</div>';
+      }
+    }
+
   } catch(e) {
     console.error('renderMyCard error:', e);
     ['mcWins','mcLosses','mcGlobalRating','mcClubRating','mcGlobalPoints','mcClubPoints'].forEach(id => {

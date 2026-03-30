@@ -1588,3 +1588,69 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
   color: #6c8cff;
   background: rgba(108,140,255,0.1);
 }
+
+/* ── My Card Match History ── */
+.mc-match-row {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #eee);
+}
+.mc-match-left-bar {
+  width: 4px;
+  flex-shrink: 0;
+}
+.mc-match-win  .mc-match-left-bar { background: #2dce89; }
+.mc-match-loss .mc-match-left-bar { background: #e63757; }
+.mc-match-content {
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mc-match-teams { flex: 1; }
+.mc-match-pair {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text, #1a1a2e);
+}
+.mc-match-pair.opp {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted, #888);
+}
+.mc-match-vs {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #bbb;
+  margin: 2px 0;
+}
+.mc-match-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.mc-match-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.mc-match-badge.win  { background: rgba(45,206,137,0.15); color: #2dce89; }
+.mc-match-badge.loss { background: rgba(230,55,87,0.12);  color: #e63757; }
+.mc-match-delta {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.mc-match-delta.win  { color: #2dce89; }
+.mc-match-delta.loss { color: #e63757; }
+.mc-match-date {
+  font-size: 0.62rem;
+  color: #bbb;
+  font-weight: 600;
+}
