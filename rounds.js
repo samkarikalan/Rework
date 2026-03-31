@@ -562,17 +562,9 @@ if ( resetRest === true &&
 }
 
 function createRestQueue() {
-  // Sort players weak-to-strong by active rating once at session start.
-  // FIFO rotation then takes over naturally from here.
-  // This ensures rest groups are rating-spread rather than clustered,
-  // giving every round a balanced playing pool.
-  const players = [...schedulerState.activeplayers];
-  players.sort((a, b) => {
-    const ra = (typeof getActiveRating === 'function') ? getActiveRating(a) : 1.0;
-    const rb = (typeof getActiveRating === 'function') ? getActiveRating(b) : 1.0;
-    return ra - rb; // ascending: weakest first
-  });
-  return players;
+  // Return active players in their input order.
+  // FIFO rotation handles fair rest distribution from here.
+  return [...schedulerState.activeplayers];
 }
 
 function rebuildRestQueue(restQueue) {
