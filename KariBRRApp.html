@@ -553,43 +553,14 @@
     </div>
     <div class="pref-wrap">
 
-      <!-- TILE STYLE + LIVE PREVIEW -->
-      <div class="pref-section-label">Tile Style</div>
-      <div class="pref-card">
-        <div class="pref-row" style="gap:8px;flex-wrap:wrap;justify-content:center;">
-          <button id="styleBtn1" onclick="setTileStyle('flat')" class="tile-style-btn active">Flat</button>
-          <button id="styleBtn2" onclick="setTileStyle('glow')" class="tile-style-btn">Glow</button>
-          <button id="styleBtn3" onclick="setTileStyle('color')" class="tile-style-btn">Color</button>
-        </div>
-        <div class="pref-divider"></div>
-        <!-- Live Preview -->
-        <div class="style-preview-box" id="stylePreviewBox">
-          <div class="style-preview-label">Preview</div>
-          <div class="style-preview-grid">
-            <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
-            <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
-            <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
-          </div>
-          <div class="style-preview-wide">
-            <span class="spw-icon">◆</span>
-            <div class="spw-info"><div class="spw-name">Wide Tile</div><div class="spw-sub">Description</div></div>
-            <span class="spw-arr">›</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- SUBSCRIPTION / TRIAL -->
+      <!-- SUBSCRIPTION -->
       <div class="pref-section-label">Subscription</div>
       <div class="pref-card" id="settingsTrialCard">
         <div class="pref-row">
           <span class="pref-row-label" id="settingsTrialLabel">Free Trial</span>
           <span class="pref-row-value" id="settingsTrialValue">—</span>
         </div>
-      </div>
-
-      <!-- MODE -->
-      <div class="pref-section-label">Mode</div>
-      <div class="pref-card">
+        <div class="pref-divider"></div>
         <div class="pref-row pref-row-tap" onclick="openModeSwitcher()">
           <span class="pref-row-label">Current Mode</span>
           <span class="pref-row-value" id="settingsModeValue">—</span>
@@ -615,9 +586,11 @@
         </div>
       </div>
 
-      <!-- APPEARANCE -->
+      <!-- APPEARANCE — Theme + Font + Tile Style merged -->
       <div class="pref-section-label">Appearance</div>
       <div class="pref-card">
+
+        <!-- Theme -->
         <div class="pref-row">
           <span class="pref-row-label">Theme</span>
           <div class="pref-pill-group">
@@ -626,6 +599,8 @@
           </div>
         </div>
         <div class="pref-divider"></div>
+
+        <!-- Font Size -->
         <div class="pref-row">
           <span class="pref-row-label">Font Size</span>
           <div class="pref-pill-group">
@@ -634,6 +609,32 @@
             <button class="pref-pill" id="font_large" onclick="setFontSize('large')" style="font-size:1rem" data-i18n="large">L</button>
           </div>
         </div>
+        <div class="pref-divider"></div>
+
+        <!-- Tile Style -->
+        <div class="pref-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+          <span class="pref-row-label">Tile Style</span>
+          <div style="display:flex;gap:8px;">
+            <button id="styleBtn1" onclick="setTileStyle('flat')" class="tile-style-btn active">Flat</button>
+            <button id="styleBtn2" onclick="setTileStyle('glow')" class="tile-style-btn">Glow</button>
+            <button id="styleBtn3" onclick="setTileStyle('color')" class="tile-style-btn">Color</button>
+          </div>
+          <!-- Live Preview -->
+          <div class="style-preview-box" id="stylePreviewBox">
+            <div class="style-preview-label">Preview</div>
+            <div class="style-preview-grid">
+              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
+              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
+              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
+            </div>
+            <div class="style-preview-wide">
+              <span class="spw-icon">◆</span>
+              <div class="spw-info"><div class="spw-name">Wide Tile</div><div class="spw-sub">Description</div></div>
+              <span class="spw-arr">›</span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- RESET -->
