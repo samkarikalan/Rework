@@ -147,6 +147,8 @@ function newImportShowModal() {
   _newImportFilterToClub(); // filter both to current club (async, refreshes cards when done)
   newImportRefreshSelectCards();
   newImportRefreshSelectedCards();
+  // Ensure active tab matches displayed content
+  newImportShowSelectMode(newImportState.currentSelectMode || 'history');
   // Show Replace button only if players already in session
   var replaceBtn = document.getElementById('newImportReplaceBtn');
   if (replaceBtn) {

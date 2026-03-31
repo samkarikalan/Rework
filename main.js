@@ -76,55 +76,61 @@ function setViewerMode(isViewer) {
   });
 }
 
+function closeModeSheet() {
+  var o = document.getElementById('modeSheetOverlay');
+  if (o) o.remove();
+}
+
 function openModeSwitcher() {
-  // Remove existing sheet if any
+  // Remove existing if any
   const existing = document.getElementById('modeSheetOverlay');
   if (existing) { existing.remove(); return; }
 
   const overlay = document.createElement('div');
-  overlay.className = 'mode-sheet-overlay';
+  overlay.className = 'mode-launcher-fullscreen';
   overlay.id = 'modeSheetOverlay';
-  overlay.onclick = () => overlay.remove();
 
-  const sheet = document.createElement('div');
-  sheet.className = 'mode-switch-sheet';
-  sheet.innerHTML = `
-    <div class="mode-sheet-handle"></div>
-    <div class="mode-sheet-title">Switch Mode</div>
-    <div class="mode-sheet-options">
-      <button class="mode-sheet-btn viewer ${appMode === 'viewer' ? 'active-viewer' : ''}"
-              onclick="switchMode('viewer')">
-        <div class="mode-sheet-icon">👁</div>
-        <div class="mode-sheet-info">
-          <div class="mode-sheet-name">Viewer</div>
-          <div class="mode-sheet-desc">Watch live rounds &amp; scores</div>
-        </div>
-        ${appMode === 'viewer' ? '<span class="mode-sheet-check">✅</span>' : ''}
-      </button>
-      <button class="mode-sheet-btn organiser ${appMode === 'organiser' ? 'active-organiser' : ''}"
-              onclick="switchMode('organiser')">
-        <div class="mode-sheet-icon"><img src="win-cup.png" style="width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.25))"></div>
-        <div class="mode-sheet-info">
-          <div class="mode-sheet-name">Round Organiser</div>
-          <div class="mode-sheet-desc">Run session, score games, manage players</div>
-        </div>
-        ${appMode === 'organiser' ? '<span class="mode-sheet-check">✅</span>' : ''}
-      </button>
-      <button class="mode-sheet-btn vault ${appMode === 'vault' ? 'active-vault' : ''}"
-              onclick="requestVaultMode()">
-        <div class="mode-sheet-icon" style="background:rgba(245,158,11,0.18)">🔑</div>
-        <div class="mode-sheet-info">
-          <div class="mode-sheet-name">Vault Manager</div>
-          <div class="mode-sheet-desc">Club admin — players, requests, management</div>
-        </div>
-        ${appMode === 'vault' ? '<span class="mode-sheet-check">✅</span>' : ''}
-      </button>
+  const cancelBtn = appMode ? '<button class="ml-cancel" onclick="closeModeSheet()">Cancel</button>' : '';
+
+  overlay.innerHTML = `
+    <div class="ml-inner">
+      <div class="ml-logo">🏸</div>
+      <div class="ml-title">Sports Club Scheduler</div>
+      <div class="ml-sub">Choose how you are using the app</div>
+      <div class="ml-modes">
+        <button class="ml-mode viewer ${appMode === 'viewer' ? 'ml-active' : ''}"
+                onclick="switchMode('viewer')">
+          <div class="ml-mode-icon">👁</div>
+          <div class="ml-mode-info">
+            <div class="ml-mode-name">Viewer</div>
+            <div class="ml-mode-desc">Watch live rounds &amp; scores</div>
+          </div>
+          <span class="ml-arr">›</span>
+        </button>
+        <button class="ml-mode organiser ${appMode === 'organiser' ? 'ml-active' : ''}"
+                onclick="switchMode('organiser')">
+          <div class="ml-mode-icon">🏆</div>
+          <div class="ml-mode-info">
+            <div class="ml-mode-name">Organiser</div>
+            <div class="ml-mode-desc">Run sessions &amp; manage courts</div>
+          </div>
+          <span class="ml-arr">›</span>
+        </button>
+        <button class="ml-mode vault ${appMode === 'vault' ? 'ml-active' : ''}"
+                onclick="requestVaultMode()">
+          <div class="ml-mode-icon">🔑</div>
+          <div class="ml-mode-info">
+            <div class="ml-mode-name">Vault</div>
+            <div class="ml-mode-desc">Club admin &amp; player management</div>
+          </div>
+          <span class="ml-arr">›</span>
+        </button>
+      </div>
+      ${cancelBtn}
     </div>
   `;
-  overlay.appendChild(sheet);
+
   document.body.appendChild(overlay);
-  // Prevent sheet clicks from closing overlay
-  sheet.onclick = e => e.stopPropagation();
 }
 
 function switchMode(mode) {
