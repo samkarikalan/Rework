@@ -376,14 +376,14 @@
     <!-- ── VAULT MANAGER GRID (new) ── -->
     <div id="homeVaultGrid" style="display:none;">
 
-      <!-- Club status tile -->
-      <div class="vault-club-tile" id="vaultClubStatusTile">
+      <!-- Club status tile — fully clickable, no Change button -->
+      <div class="vault-club-tile" id="vaultClubStatusTile" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;">
         <div class="vct-dot" id="vctDot"></div>
         <div class="vct-info">
           <div class="vct-name" id="vctName">No club selected</div>
           <span class="vct-badge" id="vctBadge" style="display:none">ADMIN</span>
         </div>
-        <button class="vct-change-btn" onclick="homeGo('vaultClubMgmtPage',null)">Change</button>
+        <span style="color:var(--muted,#aaa);font-size:1rem;">›</span>
       </div>
 
       <div class="vault-tile-grid">
