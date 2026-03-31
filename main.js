@@ -187,6 +187,8 @@ function initModeOnLoad() {
   // Keep home hidden
   var homeEl = document.getElementById('homePageOverlay');
   if (homeEl) homeEl.style.display = 'none';
+  // Apply saved home style
+  loadHomeStyle();
   // Update mode pill to reflect saved mode
   const savedMode = localStorage.getItem('kbrr_app_mode') || 'organiser';
   updateModePill(savedMode);
@@ -579,6 +581,7 @@ function showPage(pageID, el) {
   if (pageID === "settingsPage") {
     if (typeof subShowTrialBanner === 'function') subShowTrialBanner();
     updateModePill(localStorage.getItem('kbrr_app_mode') || 'organiser');
+    loadHomeStyle();
   }
 
   if (pageID === "helpPage") {
@@ -1295,3 +1298,30 @@ document.addEventListener("click", function(e) {
   }
 });
 
+
+/* ── Tile Style System ── */
+function setTileStyle(style) {
+  document.body.classList.remove('tile-style-glow','tile-style-color');
+  if (style === 'glow')  document.body.classList.add('tile-style-glow');
+  if (style === 'color') document.body.classList.add('tile-style-color');
+  localStorage.setItem('kbrr_tile_style', style);
+
+  // Update buttons
+  ['flat','glow','color'].forEach(function(s, i) {
+    var btn = document.getElementById('styleBtn'+(i+1));
+    if (btn) btn.classList.toggle('active', s === style);
+  });
+
+  // Update preview box class instantly
+  var box = document.getElementById('stylePreviewBox');
+  if (box) {
+    box.classList.remove('glow','color');
+    if (style === 'glow')  box.classList.add('glow');
+    if (style === 'color') box.classList.add('color');
+  }
+}
+
+function loadHomeStyle() {
+  var style = localStorage.getItem('kbrr_tile_style') || 'flat';
+  setTileStyle(style);
+}
