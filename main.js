@@ -126,7 +126,10 @@ function openModeSwitcher() {
           <span class="ml-arr">›</span>
         </button>
       </div>
-      ${cancelBtn}
+      <div class="ml-footer">
+        <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage',null)">⚙️ Settings</button>
+        ${cancelBtn}
+      </div>
     </div>
   `;
 
@@ -807,6 +810,7 @@ function requestVaultMode() {
     sessionStorage.setItem('appMode', 'vault');
     localStorage.setItem('kbrr_app_mode', 'vault');
     applyMode('vault');
+    updateModePill('vault');
     if (typeof showHomeScreen === 'function') showHomeScreen();
     return;
   }
@@ -951,6 +955,7 @@ async function _clubSetupJoin() {
           sessionStorage.setItem('appMode', 'vault');
           localStorage.setItem('kbrr_app_mode', 'vault');
           applyMode('vault');
+          updateModePill('vault');
           if (typeof showHomeScreen === 'function') showHomeScreen();
         } else {
           _showVaultPasswordPrompt();

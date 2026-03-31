@@ -1980,3 +1980,24 @@ body.app-light .ml-mode-name { color: #1a1a2e; }
 body.app-light .ml-mode-desc { color: #aaa; }
 body.app-light .ml-arr { color: #ccc; }
 body.app-light .ml-cancel { border-color: #eee; color: #aaa; }
+
+/* ── Mode Launcher Footer ── */
+.ml-footer {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+.ml-settings-btn {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border, #2a2a40);
+  color: var(--muted, #555);
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ml-cancel { flex: 1; }
+body.app-light .ml-settings-btn { border-color: #eee; color: #aaa; }
