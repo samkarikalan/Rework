@@ -137,11 +137,14 @@ let neededFreePairs =
 requiredPairsCount - fixedPairsThisRound.length;
 
 // ── Rating-balanced sort (interleave strong + weak so DFS forms balanced pairs) ──
-// Only applies when there’s no matchup history yet (early rounds)
-if (schedulerState.allPlayers && schedulerState.pairPlayedSet && schedulerState.pairPlayedSet.size === 0) {
+// Only applies when there’s no matchup history yet (round 1)
+const pairHistorySize = schedulerState.pairPlayedSet ? schedulerState.pairPlayedSet.size : 0;
+if (schedulerState.allPlayers && pairHistorySize === 0) {
 const ratingMap = new Map(
-(schedulerState.allPlayers || []).map(p => [p.name, p.club_rating ?? p.rating ?? 0])
+schedulerState.allPlayers.map(p => [p.name, parseFloat(p.rating) || 0])
 );
+const hasRatings = schedulerState.allPlayers.some(p => parseFloat(p.rating) > 0);
+if (hasRatings) {
 const sorted = […freePlayersThisRound].sort((a, b) =>
 (ratingMap.get(b) || 0) - (ratingMap.get(a) || 0)
 );
@@ -152,6 +155,7 @@ if (lo === hi) { interleaved.push(sorted[lo]); lo++; }
 else { interleaved.push(sorted[lo], sorted[hi]); lo++; hi–; }
 }
 freePlayersThisRound = interleaved;
+}
 }
 
 let selectedPairs = findDisjointPairs(
