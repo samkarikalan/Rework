@@ -212,46 +212,9 @@ async function initAppFlow() {
     return;
   }
 
-  // ── Step 2: Show mode select if no saved mode ──
-  var savedMode = localStorage.getItem('kbrr_app_mode') || sessionStorage.getItem('appMode') || '';
-  if (!savedMode) {
-    // First launch — show mode select screen
-    var overlay = document.getElementById('modeSelectOverlay');
-    if (overlay) overlay.style.display = 'flex';
-    return;
-  }
-
-  // Vault requires admin auth, downgrade if needed
-  if (savedMode === 'vault' && localStorage.getItem('kbrr_club_mode') !== 'admin') {
-    savedMode = 'viewer';
-  }
-
-  // ── Step 3: Check club for organiser/vault ──
-  var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-
-  if (!club || !club.id) {
-    if (savedMode === 'viewer') {
-      selectMode('viewer');
-      return;
-    }
-    // Organiser or vault without club — show club setup
-    _showClubSetupSheet(savedMode);
-    return;
-  }
-
-  // ── Step 4: Check players (organiser only) ──
-  if (savedMode === 'organiser') {
-    try {
-      var players = await dbGetPlayers(true);
-      if (!players || players.length === 0) {
-        showOnboardingOverlay('noPlayers');
-        return;
-      }
-    } catch(e) {}
-  }
-
-  // ── All good — show home ──
-  selectMode(savedMode);
+  // ── Step 2: Always show mode select on load ──
+  var overlay = document.getElementById('modeSelectOverlay');
+  if (overlay) overlay.style.display = 'flex';
 }
 
 function showOnboardingOverlay(reason) {

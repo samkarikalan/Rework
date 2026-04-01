@@ -91,7 +91,7 @@
       <div class="auth-welcome-btns">
         <button class="auth-btn-primary" onclick="authShowScreen('login')">Login</button>
         <button class="auth-btn-secondary" onclick="authShowScreen('signup')">Create Account</button>
-        <button class="auth-btn-secondary" onclick="authShowScreen('claim')" style="margin-top:8px">Claim My Account</button>
+
       </div>
     </div>
 
@@ -535,12 +535,10 @@
   <!--         SETTINGS PAGE         -->
   <!-- ============================= -->
   <div id="settingsPage" class="page" style="display:none;">
-    <!--
     <div class="page-back-bar">
       <button class="page-back-btn" onclick="showHomeScreen()">‹ Home</button>
       <span class="page-back-title">⚙️ Settings</span>
     </div>
-    -->
     <div class="pref-wrap">
 
       <!-- SUBSCRIPTION -->
@@ -889,20 +887,11 @@
             <option value="">— Select club to delete —</option>
           </select>
         </div>
-        <div id="clubDeleteStep1">
-          <button class="btn-clear" style="width:100%;margin-top:8px" onclick="clubDeleteSendOtp()">📧 Send OTP to Club Email</button>
-        </div>
-        <div id="clubDeleteStep2" style="display:none">
-          <div class="club-row" style="margin-top:8px">
-            <input type="text" id="sbDeleteOtp" class="club-input"
-                   placeholder="Enter 8-digit OTP" maxlength="8"
-                   onkeydown="if(event.key==='Enter')clubDeleteVerify()">
-            <button class="btn-clear" onclick="clubDeleteVerify()">Verify &amp; Delete</button>
-          </div>
-          <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">
-            OTP sent to <span id="clubDeleteEmailMasked"></span>
-            · <button class="link-btn" onclick="clubDeleteResend()">Resend</button>
-          </div>
+        <div class="club-row" style="margin-top:8px">
+          <input type="password" id="sbDeleteAdminPw" class="club-input"
+                 placeholder="Admin password"
+                 onkeydown="if(event.key==='Enter')clubDeleteWithPassword()">
+          <button class="btn-clear" onclick="clubDeleteWithPassword()">Delete</button>
         </div>
         <div id="clubDeleteFeedback" style="font-size:0.78rem;margin-top:6px"></div>
       </div>

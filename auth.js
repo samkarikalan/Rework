@@ -208,6 +208,8 @@ function authLogout() {
   localStorage.removeItem('kbrr_my_club_id');
   localStorage.removeItem('kbrr_my_club_name');
   localStorage.removeItem('kbrr_my_player');
+  localStorage.removeItem('kbrr_app_mode');
+  if (typeof authShowScreen === 'function') authShowScreen('login');
 }
 
 /* ── Forgot password — send OTP ── */
