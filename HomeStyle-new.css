@@ -617,26 +617,6 @@ body.app-light .tile-settings { background: var(--surface3); }
 .home-grid-3col .home-tile-name { font-size: 0.83rem; }
 .home-grid-3col .home-tile-sub  { font-size: 0.68rem; }
 
-/* Viewer — override 3col to match organiser 2-col style */
-#homeViewerGrid .home-grid-3col {
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-#homeViewerGrid .home-grid-3col .home-tile      { padding: 18px 16px; border-radius: 20px; }
-#homeViewerGrid .home-grid-3col .home-tile-icon { width: 46px; height: 46px; border-radius: 13px; font-size: 1.45rem; margin-bottom: 6px; }
-#homeViewerGrid .home-grid-3col .home-tile-name { font-size: 0.98rem; }
-#homeViewerGrid .home-grid-3col .home-tile-sub  { font-size: 0.76rem; }
-
-/* Organiser — Dashboard tile spans full width */
-#homeOrgGrid .home-tile:last-child {
-  grid-column: span 2;
-}
-
-/* Organiser — Dashboard tile spans full width */
-#homeOrgGrid .home-tile:last-child {
-  grid-column: span 2;
-}
-
 /* ── Help button ── */
 .home-help-btn {
   display: block;
