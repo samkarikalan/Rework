@@ -351,7 +351,7 @@
     <!-- ── ORGANISER GRID ── -->
     <div id="homeOrgGrid" style="display:none;">
       <!-- Club status tile for organiser (separate from vault) -->
-      <div class="vault-club-tile org-club-tile" id="orgClubStatusTile" onclick="openOrgClubSheet()" style="cursor:pointer;">
+      <div class="vault-club-tile org-club-tile" id="orgClubStatusTile" onclick="homeGo('orgClubMgmtPage',null)" style="cursor:pointer;">
         <div class="vct-dot" id="orgVctDot"></div>
         <div class="vct-info">
           <div class="vct-name" id="orgVctName">No club selected</div>
@@ -910,6 +910,48 @@
           <button class="btn-clear" onclick="clubDeleteWithPassword()">Delete</button>
         </div>
         <div id="clubDeleteFeedback" style="font-size:0.78rem;margin-top:6px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── ORGANISER CLUB MANAGEMENT PAGE ── -->
+  <div id="orgClubMgmtPage" class="page" style="display:none;">
+    <div class="page-back-bar">
+      <button class="page-back-btn" onclick="showHomeScreen()">‹ Home</button>
+      <span class="page-back-title">🏆 Club — Round Organiser</span>
+    </div>
+    <div class="vault-wrap">
+
+      <!-- Club status card -->
+      <div class="vault-club-card" id="orgClubLoginCard">
+        <div id="orgClubLoggedInState" style="display:none">
+          <div class="vault-club-connected">
+            <div class="vault-club-left">
+              <div class="vault-status-dot" id="orgClubLoginDot"></div>
+              <div>
+                <div class="vault-club-name" id="orgClubLoginName"></div>
+                <span class="vault-club-role" id="orgClubLoginRole"></span>
+              </div>
+            </div>
+            <button class="vault-change-btn" onclick="orgClubLoginSwitch()">Change</button>
+          </div>
+        </div>
+        <div id="orgClubLoginForm">
+          <div class="vault-section-label">🏸 Connect to Club</div>
+          <div class="club-row">
+            <select id="orgClubSelect" class="club-select" style="flex:1">
+              <option value="">&#8212; Select club &#8212;</option>
+            </select>
+          </div>
+          <div class="club-row" style="margin-top:8px">
+            <input type="password" id="orgClubPassword" class="club-input"
+                   placeholder="Member password"
+                   onkeydown="if(event.key==='Enter')orgJoinClub()">
+            <button class="btn-save" onclick="orgJoinClub()">Join</button>
+          </div>
+          <div id="orgClubFeedback" style="font-size:0.78rem;margin-top:4px;color:var(--red)"></div>
+        </div>
       </div>
 
     </div>

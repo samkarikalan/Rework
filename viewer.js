@@ -430,3 +430,88 @@ async function viewerJoinClub() {
     if (typeof syncToLocal === 'function') syncToLocal();
   } catch (e) { setFb('❌ ' + e.message, false); }
 }
+
+/* ══════════════════════════════════════════════
+   ORGANISER CLUB LOGIN — uses member password
+   ══════════════════════════════════════════════ */
+
+function orgClubLoginRefresh() {
+  const club = (typeof getMyClub === 'function') ? getMyClub() : null;
+  const loggedIn = !!(club && club.id);
+
+  const loggedInState = document.getElementById('orgClubLoggedInState');
+  const loginForm     = document.getElementById('orgClubLoginForm');
+  if (loggedInState) loggedInState.style.display = loggedIn ? '' : 'none';
+  if (loginForm)     loginForm.style.display     = loggedIn ? 'none' : '';
+
+  if (loggedIn) {
+    const dot  = document.getElementById('orgClubLoginDot');
+    const name = document.getElementById('orgClubLoginName');
+    const role = document.getElementById('orgClubLoginRole');
+    if (name) name.textContent = club.name;
+    if (dot)  { dot.style.background = '#6c8cff'; dot.style.boxShadow = '0 0 0 3px rgba(108,140,255,0.2)'; }
+    if (role) {
+      role.textContent = 'SESSION';
+      role.style.background = 'rgba(108,140,255,0.18)';
+      role.style.color = '#6c8cff';
+      role.style.display = 'inline-block';
+    }
+  }
+}
+
+function orgClubLoginSwitch() {
+  const loggedInState = document.getElementById('orgClubLoggedInState');
+  const loginForm     = document.getElementById('orgClubLoginForm');
+  if (loggedInState) loggedInState.style.display = 'none';
+  if (loginForm)     loginForm.style.display     = '';
+  orgLoadClubs();
+}
+
+async function orgLoadClubs() {
+  const select   = document.getElementById('orgClubSelect');
+  const feedback = document.getElementById('orgClubFeedback');
+  const setFb = (msg, ok) => { if (feedback) { feedback.textContent = msg; feedback.style.color = ok ? '#2dce89' : '#e63757'; } };
+  if (!select) return;
+  select.innerHTML = '<option value="">— Loading clubs… —</option>';
+  try {
+    const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
+    select.innerHTML = '<option value="">— Select club —</option>';
+    if (!clubs.length) { setFb('No clubs found.', false); return; }
+    clubs.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      select.appendChild(opt);
+    });
+    const cur = (typeof getMyClub === 'function') ? getMyClub() : null;
+    if (cur && cur.id) select.value = cur.id;
+    setFb('', true);
+  } catch (e) {
+    select.innerHTML = '<option value="">— Select club —</option>';
+    setFb('❌ Could not load clubs: ' + e.message, false);
+  }
+}
+
+async function orgJoinClub() {
+  const select   = document.getElementById('orgClubSelect');
+  const pwInput  = document.getElementById('orgClubPassword');
+  const feedback = document.getElementById('orgClubFeedback');
+  const setFb = (msg, ok) => { if (feedback) { feedback.textContent = msg; feedback.style.color = ok ? '#2dce89' : '#e63757'; } };
+  if (!select || !select.value) { setFb('Please select a club.', false); return; }
+  const pw = pwInput ? pwInput.value.trim() : '';
+  if (!pw) { setFb('Enter member password.', false); return; }
+  try {
+    // Accept member password (not admin)
+    const clubs = await sbGet('clubs', `id=eq.${select.value}&select=id,name,member_password`);
+    if (!clubs.length) throw new Error('Club not found.');
+    if (clubs[0].member_password !== pw) throw new Error('Wrong password.');
+
+    if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
+    localStorage.setItem('kbrr_club_mode', 'user');
+    localStorage.setItem('kbrr_rating_field', 'club_rating');
+    if (pwInput) pwInput.value = '';
+    setFb('✅ Connected as Member', true);
+    orgClubLoginRefresh();
+    if (typeof syncToLocal === 'function') syncToLocal();
+    if (typeof homeRefreshScreen === 'function') homeRefreshScreen();
+  } catch (e) { setFb('❌ ' + e.message, false); }
+}

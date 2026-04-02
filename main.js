@@ -595,6 +595,11 @@ function showPage(pageID, el) {
     if (typeof sbPopulateDeleteDropdown === 'function') sbPopulateDeleteDropdown();
   }
 
+  if (pageID === "orgClubMgmtPage") {
+    if (typeof orgClubLoginRefresh === 'function') orgClubLoginRefresh();
+    if (typeof orgLoadClubs === 'function') orgLoadClubs();
+  }
+
   // Update last visited page
   lastPage = pageID;
 }
@@ -786,35 +791,6 @@ function requestVaultMode() {
 ============================================================= */
 var _clubSetupTargetMode = null; // mode to enter after club is set up
 var _clubSetupCreateEmail = '';  // email during create-club OTP flow
-
-function openOrgClubSheet() {
-  var club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (club && club.id && club.name) {
-    // Already connected — offer to disconnect or change
-    var overlay = document.createElement('div');
-    overlay.id = 'orgClubSheetOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)';
-    overlay.innerHTML = `
-      <div class="club-setup-sheet">
-        <div class="mode-sheet-handle"></div>
-        <div class="mode-sheet-title">🏆 Round Organiser</div>
-        <div style="display:flex;align-items:center;gap:10px;background:var(--surface2,#1a1a2e);border-radius:12px;padding:12px 16px;margin-bottom:16px;">
-          <span style="width:10px;height:10px;border-radius:50%;background:#6c8cff;display:inline-block;flex-shrink:0;"></span>
-          <span style="font-size:0.95rem;font-weight:700;color:var(--text,#fff);flex:1;">${club.name}</span>
-          <span style="font-size:0.72rem;color:#6c8cff;font-weight:700;background:rgba(108,140,255,0.15);padding:3px 8px;border-radius:6px;">SESSION</span>
-        </div>
-        <div style="display:flex;gap:10px;">
-          <button class="admin-modal-cancel" style="flex:1" onclick="document.getElementById('orgClubSheetOverlay').remove()">Cancel</button>
-          <button class="admin-modal-cancel" style="flex:1;color:#e63757;border-color:#e63757;" onclick="document.getElementById('orgClubSheetOverlay').remove();if(typeof clearMyClub==='function')clearMyClub();if(typeof homeRefreshScreen==='function')homeRefreshScreen();">Disconnect</button>
-          <button class="admin-modal-ok" style="flex:1" onclick="document.getElementById('orgClubSheetOverlay').remove();_showClubSetupSheet('organiser')">Change</button>
-        </div>
-      </div>`;
-    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
-  } else {
-    _showClubSetupSheet('organiser');
-  }
-}
 
 function _showClubSetupSheet(targetMode) {
   _clubSetupTargetMode = targetMode;
