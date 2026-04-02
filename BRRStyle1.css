@@ -1993,25 +1993,26 @@ body.app-light .ml-cancel { border-color: #eee; color: #aaa; }
 body.app-light .ml-settings-btn { border-color: #eee; color: #aaa; }
 
 /* ══════════════════════════════════════════════════════════
-   FRONT PAGE TILE STYLES
-   Covers both modeSelectOverlay (.mode-select-btn)
-   and modeSheetOverlay (.ml-mode)
-   Colors match home tiles: viewer=#6c8cff, organiser=#2dce89, vault=#f5a623
-   Settings is always flat — excluded from color/glow
+   FRONT PAGE TILE STYLES — matches settings preview exactly
+   Flat:  surface bg + border (default)
+   Glow:  dark bg + coloured top bar + glow
+   Color: solid colour bg + white text
+   Colors: viewer=#6c8cff  organiser=#2dce89  vault=#f5a623
+   Settings button: always flat/neutral, never styled
 ══════════════════════════════════════════════════════════ */
 
-/* ── FLAT: modeSelectOverlay ── */
-/* Already uses var(--surface) + border — looks correct by default */
-/* Fix: unify border accent colors to match home tile scheme */
-.mode-select-btn.viewer   { border-color: rgba(108,140,255,0.3); }
+/* ─── FLAT base: modeSelectOverlay ─── */
+.mode-select-btn.viewer    { border-color: rgba(108,140,255,0.3); }
 .mode-select-btn.organiser { border-color: rgba(45,206,137,0.3); }
-.mode-select-btn.vault    { border-color: rgba(245,166,35,0.3); }
-.mode-select-btn.viewer   .mode-select-btn-name { color: #6c8cff; }
+.mode-select-btn.vault     { border-color: rgba(245,166,35,0.3); }
+.mode-select-btn.viewer    .mode-select-btn-name { color: #6c8cff; }
 .mode-select-btn.organiser .mode-select-btn-name { color: #2dce89; }
-.mode-select-btn.vault    .mode-select-btn-name { color: #f5a623; }
+.mode-select-btn.vault     .mode-select-btn-name { color: #f5a623; }
+.mode-select-btn.viewer    .mode-select-btn-icon { background: rgba(108,140,255,0.12); }
+.mode-select-btn.organiser .mode-select-btn-icon { background: rgba(45,206,137,0.12); }
+.mode-select-btn.vault     .mode-select-btn-icon { background: rgba(245,166,35,0.12); }
 
-/* ── FLAT: modeSheetOverlay ── */
-/* ml-mode uses dark surface2 — make flat use surface + border like modeSelectOverlay */
+/* ─── FLAT base: modeSheetOverlay ─── */
 .ml-mode {
   background: var(--surface, #161625) !important;
   border: 1.5px solid var(--border2, #2a2a40) !important;
@@ -2022,34 +2023,47 @@ body.app-light .ml-settings-btn { border-color: #eee; color: #aaa; }
 .ml-mode.viewer    .ml-mode-name { color: #6c8cff; }
 .ml-mode.organiser .ml-mode-name { color: #2dce89; }
 .ml-mode.vault     .ml-mode-name { color: #f5a623; }
+.ml-mode.viewer    .ml-mode-icon { background: rgba(108,140,255,0.12); }
+.ml-mode.organiser .ml-mode-icon { background: rgba(45,206,137,0.12); }
+.ml-mode.vault     .ml-mode-icon { background: rgba(245,166,35,0.12); }
 
-/* ── GLOW: modeSelectOverlay ── */
+/* ─── GLOW: modeSelectOverlay ─── */
 body.tile-style-glow .mode-select-btn:not(.settings) {
-  background: var(--surface2, #1a1a2e) !important;
-  border-color: rgba(255,255,255,0.06) !important;
+  background: #1a1a2e !important;
+  border: 1px solid #2a2a40 !important;
   position: relative; overflow: hidden;
 }
 body.tile-style-glow .mode-select-btn:not(.settings)::after {
   content: ''; position: absolute;
   top: 0; left: 0; right: 0; height: 3px;
 }
-body.tile-style-glow .mode-select-btn.viewer::after    { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.7); }
-body.tile-style-glow .mode-select-btn.organiser::after { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.7); }
-body.tile-style-glow .mode-select-btn.vault::after     { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.7); }
-body.tile-style-glow .mode-select-btn-name { color: #fff !important; }
-body.tile-style-glow .mode-select-btn-desc { color: #555 !important; }
-body.tile-style-glow .mode-select-btn-arrow { color: #444 !important; }
+body.tile-style-glow .mode-select-btn.viewer::after    { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.8); }
+body.tile-style-glow .mode-select-btn.organiser::after { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.8); }
+body.tile-style-glow .mode-select-btn.vault::after     { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.8); }
+body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-name  { color: #fff !important; }
+body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-desc  { color: #555 !important; }
+body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-arrow { color: #444 !important; }
+body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-icon  { background: rgba(255,255,255,0.06) !important; }
 
-/* ── GLOW: modeSheetOverlay ── */
+/* ─── GLOW: modeSheetOverlay ─── */
 body.tile-style-glow .ml-mode {
-  background: var(--surface2, #1a1a2e) !important;
-  border-color: rgba(255,255,255,0.06) !important;
+  background: #1a1a2e !important;
+  border: 1px solid #2a2a40 !important;
+  position: relative; overflow: hidden;
 }
-body.tile-style-glow .ml-mode-name { color: #fff !important; }
-body.tile-style-glow .ml-mode-desc { color: #555 !important; }
-body.tile-style-glow .ml-arr { color: #444 !important; }
+body.tile-style-glow .ml-mode::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+}
+body.tile-style-glow .ml-mode.viewer::before    { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.8); }
+body.tile-style-glow .ml-mode.organiser::before { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.8); }
+body.tile-style-glow .ml-mode.vault::before     { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.8); }
+body.tile-style-glow .ml-mode .ml-mode-name { color: #fff !important; }
+body.tile-style-glow .ml-mode .ml-mode-desc { color: #555 !important; }
+body.tile-style-glow .ml-mode .ml-arr       { color: #444 !important; }
+body.tile-style-glow .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.06) !important; }
 
-/* ── COLOR: modeSelectOverlay ── */
+/* ─── COLOR: modeSelectOverlay ─── */
 body.tile-style-color .mode-select-btn:not(.settings) { border: none !important; }
 body.tile-style-color .mode-select-btn.viewer    { background: #6c8cff !important; }
 body.tile-style-color .mode-select-btn.organiser { background: #2dce89 !important; }
@@ -2059,12 +2073,12 @@ body.tile-style-color .mode-select-btn:not(.settings) .mode-select-btn-desc  { c
 body.tile-style-color .mode-select-btn:not(.settings) .mode-select-btn-arrow { color: rgba(255,255,255,0.6) !important; }
 body.tile-style-color .mode-select-btn:not(.settings) .mode-select-btn-icon  { background: rgba(255,255,255,0.2) !important; }
 
-/* ── COLOR: modeSheetOverlay ── */
+/* ─── COLOR: modeSheetOverlay ─── */
 body.tile-style-color .ml-mode { border: none !important; }
 body.tile-style-color .ml-mode.viewer    { background: #6c8cff !important; }
 body.tile-style-color .ml-mode.organiser { background: #2dce89 !important; }
 body.tile-style-color .ml-mode.vault     { background: #f5a623 !important; }
-body.tile-style-color .ml-mode-name { color: #fff !important; }
-body.tile-style-color .ml-mode-desc { color: rgba(255,255,255,0.75) !important; }
-body.tile-style-color .ml-arr { color: rgba(255,255,255,0.6) !important; }
-body.tile-style-color .ml-mode-icon { background: rgba(255,255,255,0.2) !important; }
+body.tile-style-color .ml-mode .ml-mode-name { color: #fff !important; }
+body.tile-style-color .ml-mode .ml-mode-desc { color: rgba(255,255,255,0.75) !important; }
+body.tile-style-color .ml-mode .ml-arr       { color: rgba(255,255,255,0.6) !important; }
+body.tile-style-color .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.2) !important; }
