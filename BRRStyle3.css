@@ -2604,7 +2604,7 @@ select.vm-field-input option { background: var(--surface2); }
 .vm-ghost { background: var(--surface2); border: 1px solid var(--border2); color: var(--text-dim); }
 .vm-ghost:hover { background: var(--surface3); color: var(--text); }
 
-/* Settings button on mode select */
-.mode-select-btn.settings { border-color: rgba(45,206,137,0.25); }
-.mode-select-btn.settings .mode-select-btn-icon { background: rgba(45,206,137,0.12); }
-.mode-select-btn.settings .mode-select-btn-name { color: #2dce89; }
+/* Settings button on mode select — flat style only */
+.mode-select-btn.settings { border-color: rgba(150,150,150,0.2); }
+.mode-select-btn.settings .mode-select-btn-icon { background: var(--surface2); }
+.mode-select-btn.settings .mode-select-btn-name { color: var(--text); }
