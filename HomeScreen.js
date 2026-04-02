@@ -471,38 +471,77 @@ function homeLangSelect() {}
 
 /* Called every time home screen opens — show/hide tile, refresh status */
 async function homeRefreshJoinClubTile() {
-  var sub = document.getElementById('tileSubJoinClub');
+  var sub     = document.getElementById('tileSubJoinClub');
+  var listEl  = document.getElementById('vcl-list-inner');
   if (!sub) return;
 
-  // Try to get all linked clubs from memberships
   var user = (typeof authGetUser === 'function') ? authGetUser() : null;
   if (user) {
     try {
       var memberships = await sbGet('memberships',
-        'user_account_id=eq.' + user.id + '&select=club_id');
-      if (memberships && memberships.length) {
-        var clubIds = memberships.map(function(m) { return m.club_id; });
-        var clubRows = await sbGet('clubs', 'id=in.(' + clubIds.join(',') + ')&select=id,name').catch(function(){ return []; });
-        var names = clubRows.map(function(c) { return c.name; }).filter(Boolean);
-        if (names.length) {
-          sub.textContent = names.join(' · ');
-          return;
+        'user_account_id=eq.' + user.id + '&select=club_id,nickname');
+      var pending = await sbGet('club_join_requests',
+        'user_account_id=eq.' + user.id + '&status=eq.pending&select=club_id').catch(function(){ return []; });
+      var pendingIds = (pending || []).map(function(p){ return p.club_id; });
+
+      var allIds = [...new Set([
+        ...(memberships||[]).map(function(m){ return m.club_id; }),
+        ...pendingIds
+      ])];
+
+      if (allIds.length) {
+        var clubRows = await sbGet('clubs', 'id=in.(' + allIds.join(',') + ')&select=id,name').catch(function(){ return []; });
+        var clubMap = {};
+        clubRows.forEach(function(c){ clubMap[c.id] = c.name; });
+
+        // Subtitle: count summary
+        var memCount = (memberships||[]).length;
+        var pendCount = pendingIds.filter(function(id){ return !(memberships||[]).find(function(m){ return m.club_id===id; }); }).length;
+        if (memCount > 0) {
+          sub.textContent = memCount + (memCount === 1 ? ' club' : ' clubs') + (pendCount > 0 ? ' · ' + pendCount + ' pending' : '');
+        } else if (pendCount > 0) {
+          sub.textContent = pendCount + ' pending';
         }
+
+        // Inline list (max 10)
+        if (listEl) {
+          var items = [];
+          (memberships||[]).slice(0,10).forEach(function(m) {
+            items.push({ name: clubMap[m.club_id]||m.club_id, nick: m.nickname, pending: false });
+          });
+          pendingIds.filter(function(id){ return !(memberships||[]).find(function(m){ return m.club_id===id; }); })
+            .slice(0, 10 - items.length).forEach(function(id) {
+              items.push({ name: clubMap[id]||id, nick: null, pending: true });
+            });
+
+          if (items.length > 0) {
+            listEl.innerHTML = items.map(function(item) {
+              return '<div class="vcl-row">' +
+                '<span class="vcl-dot">' + (item.pending ? '⏳' : '🏸') + '</span>' +
+                '<div class="vcl-row-info">' +
+                  '<span class="vcl-row-name">' + item.name + '</span>' +
+                  (item.nick ? '<span class="vcl-row-nick">as ' + item.nick + '</span>' : '') +
+                '</div>' +
+                (item.pending
+                  ? '<span class="vcl-badge vcl-badge-pending">Pending</span>'
+                  : '<span class="vcl-badge vcl-badge-member">Member</span>') +
+              '</div>';
+            }).join('');
+          } else {
+            listEl.innerHTML = '';
+          }
+        }
+        return;
       }
     } catch(e) { /* offline — fall through */ }
   }
 
-  // Fallback to cached single club
+  // Fallback
+  if (listEl) listEl.innerHTML = '';
   var club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (club && club.id && club.name) {
-    sub.textContent = '✅ ' + club.name;
-    return;
-  }
+  if (club && club.id && club.name) { sub.textContent = '✅ ' + club.name; return; }
   var pending = localStorage.getItem('kbrr_pending_club_name');
-  if (pending) {
-    sub.textContent = '⏳ Pending: ' + pending;
-    return;
-  }
+  if (pending) { sub.textContent = '⏳ Pending: ' + pending; return; }
   sub.textContent = 'Find & request';
 }
 

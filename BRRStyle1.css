@@ -1716,6 +1716,54 @@ body.app-light .vct-change-btn { background: #ffe8ec; color: #c0392b; border: no
 .auth-club-pick-btn strong { color: var(--text, #1a1a2e); font-weight: 700; }
 .auth-club-pick-btn span   { color: var(--muted, #888); font-size: 0.78rem; }
 
+/* ── My Clubs Viewer Tile ── */
+.vcl-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.vcl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  gap: 12px;
+}
+.vcl-header:active { background: var(--surface2); }
+.vcl-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+.vcl-icon { margin-bottom: 0 !important; flex-shrink: 0; }
+.vcl-arr { color: var(--muted); font-size: 1.1rem; flex-shrink: 0; }
+.vcl-list { padding: 0 12px 10px; display: flex; flex-direction: column; gap: 6px; }
+.vcl-list:empty { display: none; }
+.vcl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  background: var(--surface2);
+  border-radius: 12px;
+}
+.vcl-dot { font-size: 1rem; flex-shrink: 0; }
+.vcl-row-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.vcl-row-name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+.vcl-row-nick { font-size: 0.67rem; color: var(--muted); }
+.vcl-badge {
+  font-size: 0.58rem; font-weight: 700;
+  padding: 3px 7px; border-radius: 20px; flex-shrink: 0;
+}
+.vcl-badge-member  { background: rgba(45,206,137,0.15); color: #2dce89; }
+.vcl-badge-pending { background: rgba(245,166,35,0.15);  color: #f5a623; }
+body.app-light .vcl-tile  { background: #fff; border-color: #e8e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+body.app-light .vcl-row   { background: #f5f5fb; }
+body.app-light .vcl-row-name { color: #1a1a2e; }
+
 /* ── My Clubs Page ── */
 .jc-section-title {
   font-size: 0.65rem; font-weight: 700;

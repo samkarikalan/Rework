@@ -422,7 +422,7 @@
 
     <!-- ── VIEWER GRID ── -->
     <div id="homeViewerGrid" style="display:none;">
-      <div class="home-grid-3col">
+      <div class="home-grid">
         <div class="home-tile" onclick="homeGo('myCardPage',null)">
           <div class="home-tile-icon tile-profile">
             <img id="homeTileAvatarV" src="male.png" style="width:26px;height:26px;border-radius:50%;display:none;">
@@ -437,15 +437,20 @@
           <div class="home-tile-sub" id="tileSubDashboardV">Live sessions</div>
         </div>
       </div>
-      <!-- Join Club row -->
+      <!-- My Clubs expandable tile -->
       <div id="joinClubTileRow" style="margin:10px 16px 0;">
-        <div class="home-tile" id="tileJoinClub" onclick="homeGo('joinClubPage',null)" style="display:flex;flex-direction:row;align-items:center;gap:14px;padding:14px 16px;">
-          <div class="home-tile-icon" style="margin-bottom:0;flex-shrink:0;">🏢</div>
-          <div style="flex:1;">
-            <div class="home-tile-name">My Clubs</div>
-            <div class="home-tile-sub" id="tileSubJoinClub">Find &amp; request</div>
+        <div class="vcl-tile" id="tileJoinClub">
+          <div class="vcl-header" onclick="homeGo('joinClubPage',null)">
+            <div class="vcl-header-left">
+              <div class="home-tile-icon vcl-icon">🏢</div>
+              <div>
+                <div class="home-tile-name">My Clubs</div>
+                <div class="home-tile-sub" id="tileSubJoinClub">Find &amp; request</div>
+              </div>
+            </div>
+            <span class="vcl-arr">›</span>
           </div>
-          <span style="color:var(--muted);font-size:1.1rem;">›</span>
+          <div class="vcl-list" id="vcl-list-inner"></div>
         </div>
       </div>
     </div>
