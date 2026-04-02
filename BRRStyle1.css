@@ -2029,9 +2029,11 @@ body.app-light .ml-settings-btn { border-color: #eee; color: #aaa; }
 
 /* ─── GLOW: modeSelectOverlay ─── */
 body.tile-style-glow .mode-select-btn:not(.settings) {
+  position: relative; overflow: hidden;
+}
+body.tile-style-glow:not(.app-light) .mode-select-btn:not(.settings) {
   background: #1a1a2e !important;
   border: 1px solid #2a2a40 !important;
-  position: relative; overflow: hidden;
 }
 body.tile-style-glow .mode-select-btn:not(.settings)::after {
   content: ''; position: absolute;
@@ -2047,9 +2049,11 @@ body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-icon  { ba
 
 /* ─── GLOW: modeSheetOverlay ─── */
 body.tile-style-glow .ml-mode {
+  position: relative; overflow: hidden;
+}
+body.tile-style-glow:not(.app-light) .ml-mode {
   background: #1a1a2e !important;
   border: 1px solid #2a2a40 !important;
-  position: relative; overflow: hidden;
 }
 body.tile-style-glow .ml-mode::before {
   content: ''; position: absolute;
@@ -2058,10 +2062,10 @@ body.tile-style-glow .ml-mode::before {
 body.tile-style-glow .ml-mode.viewer::before    { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.8); }
 body.tile-style-glow .ml-mode.organiser::before { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.8); }
 body.tile-style-glow .ml-mode.vault::before     { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.8); }
-body.tile-style-glow .ml-mode .ml-mode-name { color: #fff !important; }
-body.tile-style-glow .ml-mode .ml-mode-desc { color: #555 !important; }
-body.tile-style-glow .ml-mode .ml-arr       { color: #444 !important; }
-body.tile-style-glow .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.06) !important; }
+body.tile-style-glow:not(.app-light) .ml-mode .ml-mode-name { color: #fff !important; }
+body.tile-style-glow:not(.app-light) .ml-mode .ml-mode-desc { color: #555 !important; }
+body.tile-style-glow:not(.app-light) .ml-mode .ml-arr       { color: #444 !important; }
+body.tile-style-glow:not(.app-light) .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.06) !important; }
 
 /* ─── COLOR: modeSelectOverlay ─── */
 body.tile-style-color .mode-select-btn:not(.settings) { border: none !important; }
