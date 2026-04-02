@@ -1118,8 +1118,8 @@ display: block;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  background: var(--surface2, #1a1a2e);
-  border: 1px solid var(--border, #2a2a40);
+  background: var(--surface);
+  border: 1px solid var(--border2);
   transition: transform 0.15s, box-shadow 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1202,9 +1202,9 @@ display: block;
 
 /* Dark mode */
 body:not(.app-light) .vault-club-tile {
-  background: var(--surface2, #1a1a2e);
-  border: 1px solid var(--border, #2a2a40);
-  box-shadow: 0 0 14px rgba(230,55,87,0.15);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  box-shadow: 0 0 14px rgba(230,55,87,0.12);
 }
 body:not(.app-light) .vault-club-tile::before {
   box-shadow: 0 0 14px rgba(230,55,87,0.8);
@@ -1932,7 +1932,7 @@ body.tile-style-color .vault-tile .vt-sub { color: #fff !important; }
   align-items: center;
 }
 .ml-logo  { font-size: 3rem; margin-bottom: 12px; }
-.ml-title { font-size: 1.4rem; font-weight: 800; color: var(--text, #fff); margin-bottom: 6px; text-align: center; }
+.ml-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--text, #fff); margin-bottom: 6px; text-align: center; letter-spacing: -0.01em; }
 .ml-sub   { font-size: 0.72rem; color: var(--muted, #555); margin-bottom: 36px; text-align: center; }
 
 .ml-modes { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
@@ -1940,8 +1940,8 @@ body.tile-style-color .vault-tile .vt-sub { color: #fff !important; }
 .ml-mode {
   display: flex; align-items: center; gap: 14px;
   padding: 16px; border-radius: 16px;
-  background: var(--surface2, #1a1a2e);
-  border: 1px solid var(--border, #2a2a40);
+  background: var(--surface);
+  border: 1px solid var(--border2);
   cursor: pointer; width: 100%; text-align: left;
   position: relative; overflow: hidden;
   transition: transform 0.1s;
@@ -1951,7 +1951,7 @@ body.tile-style-color .vault-tile .vt-sub { color: #fff !important; }
 
 .ml-mode-icon { font-size: 1.6rem; flex-shrink: 0; }
 .ml-mode-info { flex: 1; }
-.ml-mode-name { font-size: 0.9rem; font-weight: 700; color: var(--text, #fff); }
+.ml-mode-name { font-family: var(--font-display); font-size: 0.9rem; font-weight: 700; color: var(--text, #fff); }
 .ml-mode-desc { font-size: 0.65rem; color: var(--muted, #555); margin-top: 2px; }
 .ml-arr { color: var(--muted, #444); font-size: 1rem; }
 
