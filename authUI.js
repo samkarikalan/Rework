@@ -331,11 +331,13 @@ async function authDoRequestJoin(clubId, clubName) {
   var resultsEl = document.getElementById('joinClubResults');
   var errorEl   = document.getElementById('joinClubError');
   var pendingEl = document.getElementById('joinClubPending');
+  var nicknameEl = document.getElementById('joinClubNicknameInput');
 
   if (errorEl) { errorEl.style.display = 'none'; }
   if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-loading">Sending request...</div>';
 
-  var result = await authRequestJoin(clubId);
+  var chosenNickname = nicknameEl ? nicknameEl.value.trim() : '';
+  var result = await authRequestJoin(clubId, chosenNickname);
 
   if (result.error) {
     if (resultsEl) resultsEl.style.display = 'none';
