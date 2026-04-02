@@ -2001,3 +2001,34 @@ body.app-light .ml-cancel { border-color: #eee; color: #aaa; }
 }
 .ml-cancel { flex: 1; }
 body.app-light .ml-settings-btn { border-color: #eee; color: #aaa; }
+
+/* ── Tile style: mode select front page ── */
+body.tile-style-glow .mode-select-btn {
+  background: #0d0d1a;
+  border-color: rgba(255,255,255,0.08) !important;
+  position: relative; overflow: hidden;
+}
+body.tile-style-glow .mode-select-btn::after {
+  content: ''; position: absolute;
+  left: 0; top: 0; width: 4px; height: 100%;
+  border-radius: 4px 0 0 4px;
+}
+body.tile-style-glow .mode-select-btn.viewer::after    { background: #60a5fa; box-shadow: 0 0 8px rgba(96,165,250,0.7); }
+body.tile-style-glow .mode-select-btn.organiser::after { background: #6c63ff; box-shadow: 0 0 8px rgba(108,99,255,0.7); }
+body.tile-style-glow .mode-select-btn.vault::after     { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.7); }
+body.tile-style-glow .mode-select-btn.settings::after  { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.7); }
+body.tile-style-glow .mode-select-btn-name { color: #fff !important; }
+body.tile-style-glow .mode-select-btn-desc { color: #555 !important; }
+body.tile-style-glow .mode-select-btn-arrow { color: #444 !important; }
+body.tile-style-glow .mode-select-title { color: #fff !important; }
+body.tile-style-glow .mode-select-subtitle { color: #555 !important; }
+
+body.tile-style-color .mode-select-btn { border: none !important; }
+body.tile-style-color .mode-select-btn.viewer    { background: #60a5fa !important; }
+body.tile-style-color .mode-select-btn.organiser { background: #6c63ff !important; }
+body.tile-style-color .mode-select-btn.vault     { background: #f5a623 !important; }
+body.tile-style-color .mode-select-btn.settings  { background: #2dce89 !important; }
+body.tile-style-color .mode-select-btn-name  { color: #fff !important; }
+body.tile-style-color .mode-select-btn-desc  { color: rgba(255,255,255,0.75) !important; }
+body.tile-style-color .mode-select-btn-arrow { color: rgba(255,255,255,0.6) !important; }
+body.tile-style-color .mode-select-btn-icon  { background: rgba(255,255,255,0.2) !important; }

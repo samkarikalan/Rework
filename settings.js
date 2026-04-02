@@ -818,7 +818,7 @@ async function clubCreateVerify() { /* no longer needed */ }
 
 /* ── DELETE CLUB — Admin password check ── */
 async function clubDeleteWithPassword() {
-  const select = document.getElementById('sbDeleteClubSelect');
+  const select  = document.getElementById('sbDeleteClubSelect');
   const pwInput = document.getElementById('sbDeleteAdminPw');
   const fb      = document.getElementById('clubDeleteFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
@@ -836,11 +836,9 @@ async function clubDeleteWithPassword() {
     const clubName = clubs[0].name || '';
     await dbDeleteClub(select.value);
 
-    // If deleted club was active, clear session
     const myClub = getMyClub();
     if (myClub.id === select.value) sbClearClub();
 
-    // Reset
     select.value = '';
     if (pwInput) pwInput.value = '';
     await sbPopulateDeleteDropdown();
