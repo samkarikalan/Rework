@@ -72,33 +72,51 @@ async function updateProfileBtn() {
   if (tileRating) tileRating.textContent = 'Loading...';
 
   try {
-    const master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
-    const hp = master.find(function(h) {
-      return h.displayName && h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase();
-    });
-    const clubRating = parseFloat(hp && hp.clubRating) || 1.0;
+    let bestRating = null;
+    let wins = 0, losses = 0;
 
-    const club  = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    const today = new Date().toISOString().split('T')[0];
-    let wins = 0, losses = 0, hasSession = false;
-
-    if (club.id) {
-      const liveRows = await sbGet('live_sessions',
-        'player_name=ilike.' + encodeURIComponent(player.name) + '&club_id=eq.' + club.id + '&date=eq.' + today);
-      if (liveRows && liveRows.length) {
-        const matches = typeof liveRows[0].matches === 'string'
-          ? JSON.parse(liveRows[0].matches) : (liveRows[0].matches || []);
-        wins   = matches.filter(function(m) { return m.result === 'W'; }).length;
-        losses = matches.filter(function(m) { return m.result === 'L'; }).length;
-        hasSession = matches.length > 0;
+    // Auto-fetch from all memberships (works across multiple clubs, no live session needed)
+    const user = (typeof authGetUser === 'function') ? authGetUser() : null;
+    let bestClubName = null;
+    if (user) {
+      const mems = await sbGet('memberships',
+        'user_account_id=eq.' + user.id + '&select=club_rating,player_id,clubs(name)').catch(function(){ return []; });
+      if (mems && mems.length) {
+        let bestMem = null;
+        mems.forEach(function(m) {
+          const r = parseFloat(m.club_rating) || 1.0;
+          if (bestRating === null || r > bestRating) {
+            bestRating = r;
+            bestMem = m;
+          }
+        });
+        if (bestMem && bestMem.clubs && bestMem.clubs.name) {
+          bestClubName = bestMem.clubs.name;
+        }
+        const pid = mems[0].player_id;
+        if (pid) {
+          const prows = await sbGet('players', 'id=eq.' + pid + '&select=wins,losses').catch(function(){ return []; });
+          if (prows && prows[0]) {
+            wins   = prows[0].wins   || 0;
+            losses = prows[0].losses || 0;
+          }
+        }
       }
     }
 
-    if (tileRating) {
-      tileRating.textContent = hasSession
-        ? 'Club ' + clubRating.toFixed(1) + '  ·  W:' + wins + ' L:' + losses
-        : 'Club ' + clubRating.toFixed(1);
+    // Fallback to local cache
+    if (bestRating === null) {
+      const master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
+      const hp = master.find(function(h) {
+        return h.displayName && h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase();
+      });
+      bestRating = parseFloat(hp && hp.clubRating) || 1.0;
     }
+
+    const baseLabel = bestClubName ? bestClubName + '  ·  ' + bestRating.toFixed(1) : 'Club ' + bestRating.toFixed(1);
+    const label = wins || losses ? baseLabel + '  ·  W:' + wins + ' L:' + losses : baseLabel;
+    if (tileRating) tileRating.textContent = label;
+
   } catch(e) {
     const master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
     const hp = master.find(function(h) {

@@ -204,23 +204,13 @@ async function homeRefreshTiles() {
   var tileIconV   = document.getElementById('homeTileIconV');
   var player = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
 
-  function _setMyCardTile(name, avatar, icon, rating, p) {
+  function _setMyCardTileBase(name, avatar, icon, rating, p) {
     if (!name) return;
     if (p) {
       if (name)   name.textContent = p.name;
       if (avatar) { avatar.src = p.gender === 'Female' ? 'female.png' : 'male.png'; avatar.style.display = 'block'; }
       if (icon)   icon.style.display = 'none';
       if (rating) rating.textContent = 'Loading...';
-      try {
-        var master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
-        var hp = master.find(function(h) {
-          return h.displayName && h.displayName.trim().toLowerCase() === p.name.trim().toLowerCase();
-        });
-        var clubRating = parseFloat(hp && hp.clubRating) || 1.0;
-        if (rating) rating.textContent = 'Club ' + clubRating.toFixed(1);
-      } catch(e) {
-        if (rating) rating.textContent = 'Tap to view';
-      }
     } else {
       if (name)   name.textContent = 'My Card';
       if (avatar) avatar.style.display = 'none';
@@ -228,8 +218,72 @@ async function homeRefreshTiles() {
       if (rating) rating.textContent = 'Not selected';
     }
   }
-  _setMyCardTile(tileName,  tileAvatar,  tileIcon,  tileRating,  player);
-  _setMyCardTile(tileNameV, tileAvatarV, tileIconV, tileRatingV, player);
+  _setMyCardTileBase(tileName,  tileAvatar,  tileIcon,  tileRating,  player);
+  _setMyCardTileBase(tileNameV, tileAvatarV, tileIconV, tileRatingV, player);
+
+  // Auto-fetch rating from all memberships (no live session needed)
+  if (player) {
+    (async function() {
+      try {
+        var user = (typeof authGetUser === 'function') ? authGetUser() : null;
+        var bestRating = null;
+        var bestClubName = null;
+        var wins = 0, losses = 0;
+
+        if (user) {
+          // Fetch all memberships for this user with ratings
+          var mems = await sbGet('memberships',
+            'user_account_id=eq.' + user.id +
+            '&select=club_rating,nickname,player_id,clubs(name)').catch(function(){ return []; });
+
+          if (mems && mems.length) {
+            // Use the membership with the highest club_rating
+            var bestMem = null;
+            mems.forEach(function(m) {
+              var r = parseFloat(m.club_rating) || 1.0;
+              if (bestRating === null || r > bestRating) {
+                bestRating = r;
+                bestMem = m;
+              }
+            });
+
+            // Club name from the best membership
+            if (bestMem && bestMem.clubs && bestMem.clubs.name) {
+              bestClubName = bestMem.clubs.name;
+            }
+
+            // Wins/losses from the linked player record
+            var pid = mems[0].player_id;
+            if (pid) {
+              var prows = await sbGet('players', 'id=eq.' + pid + '&select=wins,losses').catch(function(){ return []; });
+              if (prows && prows[0]) {
+                wins   = prows[0].wins   || 0;
+                losses = prows[0].losses || 0;
+              }
+            }
+          }
+        }
+
+        // Fallback to local cache if Supabase gave nothing
+        if (bestRating === null) {
+          var master = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
+          var hp = master.find(function(h) {
+            return h.displayName && h.displayName.trim().toLowerCase() === player.name.trim().toLowerCase();
+          });
+          bestRating = parseFloat(hp && hp.clubRating) || 1.0;
+        }
+
+        var label = bestClubName ? bestClubName + '  ·  ' + bestRating.toFixed(1) : 'Club ' + bestRating.toFixed(1);
+        if (wins || losses) label += '  ·  W:' + wins + ' L:' + losses;
+
+        if (tileRating)  tileRating.textContent  = label;
+        if (tileRatingV) tileRatingV.textContent = label;
+      } catch(e) {
+        if (tileRating)  tileRating.textContent  = 'Tap to view';
+        if (tileRatingV) tileRatingV.textContent = 'Tap to view';
+      }
+    })();
+  }
 
   // ── Dashboard — async fetch live session count ──
   var dashSub  = document.getElementById('tileSubDashboard');
