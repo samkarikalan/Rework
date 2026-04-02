@@ -2014,8 +2014,8 @@ body.app-light .ml-settings-btn { border-color: #eee; color: #aaa; }
 
 /* ─── FLAT base: modeSheetOverlay ─── */
 .ml-mode {
-  background: var(--surface, #161625) !important;
-  border: 1.5px solid var(--border2, #2a2a40) !important;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
 }
 .ml-mode.viewer    { border-color: rgba(108,140,255,0.3) !important; }
 .ml-mode.organiser { border-color: rgba(45,206,137,0.3) !important; }
@@ -2041,8 +2041,8 @@ body.tile-style-glow .mode-select-btn.viewer::after    { background: #6c8cff; bo
 body.tile-style-glow .mode-select-btn.organiser::after { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.8); }
 body.tile-style-glow .mode-select-btn.vault::after     { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.8); }
 body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-name  { color: #fff !important; }
-body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-desc  { color: #555 !important; }
-body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-arrow { color: #444 !important; }
+body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-desc  { color: #888 !important; }
+body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-arrow { color: #555 !important; }
 body.tile-style-glow .mode-select-btn:not(.settings) .mode-select-btn-icon  { background: rgba(255,255,255,0.06) !important; }
 
 /* ─── GLOW: modeSheetOverlay ─── */
@@ -2059,8 +2059,8 @@ body.tile-style-glow .ml-mode.viewer::before    { background: #6c8cff; box-shado
 body.tile-style-glow .ml-mode.organiser::before { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.8); }
 body.tile-style-glow .ml-mode.vault::before     { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.8); }
 body.tile-style-glow .ml-mode .ml-mode-name { color: #fff !important; }
-body.tile-style-glow .ml-mode .ml-mode-desc { color: #555 !important; }
-body.tile-style-glow .ml-mode .ml-arr       { color: #444 !important; }
+body.tile-style-glow .ml-mode .ml-mode-desc { color: #888 !important; }
+body.tile-style-glow .ml-mode .ml-arr       { color: #555 !important; }
 body.tile-style-glow .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.06) !important; }
 
 /* ─── COLOR: modeSelectOverlay ─── */
@@ -2082,3 +2082,4 @@ body.tile-style-color .ml-mode .ml-mode-name { color: #fff !important; }
 body.tile-style-color .ml-mode .ml-mode-desc { color: rgba(255,255,255,0.75) !important; }
 body.tile-style-color .ml-mode .ml-arr       { color: rgba(255,255,255,0.6) !important; }
 body.tile-style-color .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.2) !important; }
+
