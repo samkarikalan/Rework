@@ -111,8 +111,8 @@ function openModeSwitcher() {
                 onclick="switchMode('organiser')">
           <div class="ml-mode-icon">🏆</div>
           <div class="ml-mode-info">
-            <div class="ml-mode-name">Organiser</div>
-            <div class="ml-mode-desc">Run sessions &amp; manage courts</div>
+            <div class="ml-mode-name">Round Organiser</div>
+            <div class="ml-mode-desc">Run session, score games, manage players</div>
           </div>
           <span class="ml-arr">›</span>
         </button>
@@ -120,16 +120,16 @@ function openModeSwitcher() {
                 onclick="requestVaultMode()">
           <div class="ml-mode-icon">🔑</div>
           <div class="ml-mode-info">
-            <div class="ml-mode-name">Vault</div>
-            <div class="ml-mode-desc">Club admin &amp; player management</div>
+            <div class="ml-mode-name">Vault Manager</div>
+            <div class="ml-mode-desc">Club admin — players, requests, management</div>
           </div>
           <span class="ml-arr">›</span>
         </button>
       </div>
       <div class="ml-footer">
         <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage',null)">⚙️ Settings</button>
-        ${cancelBtn}
       </div>
+      ${cancelBtn ? `<div class="ml-footer" style="margin-top:8px">${cancelBtn}</div>` : ''}
     </div>
   `;
 
