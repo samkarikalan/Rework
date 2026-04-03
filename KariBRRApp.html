@@ -350,16 +350,12 @@
 
     <!-- ── ORGANISER GRID ── -->
     <div id="homeOrgGrid" style="display:none;">
-      <!-- Club status tile for organiser (separate from vault) -->
-      <div class="vault-club-tile org-club-tile" id="orgClubStatusTile" onclick="homeGo('orgClubMgmtPage',null)" style="cursor:pointer;">
-        <div class="vct-dot" id="orgVctDot"></div>
-        <div class="vct-info">
-          <div class="vct-name" id="orgVctName">No club selected</div>
-          <span class="vct-badge org-badge" id="orgVctBadge" style="display:none">SESSION</span>
-        </div>
-        <span style="color:var(--muted,#aaa);font-size:1rem;">›</span>
-      </div>
       <div class="home-grid">
+        <div class="home-tile" onclick="homeGo('orgClubMgmtPage',null)">
+          <div class="home-tile-icon tile-pairs" id="orgTileIcon">🏢</div>
+          <div class="home-tile-name" id="orgVctName">Club</div>
+          <div class="home-tile-sub" id="orgVctBadge">Tap to connect</div>
+        </div>
         <div class="home-tile" onclick="homeGo('playersPage','tabBtnPlayers')">
           <div class="home-tile-icon tile-players">👥</div>
           <div class="home-tile-name">Players</div>

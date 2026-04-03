@@ -501,9 +501,8 @@ async function orgJoinClub() {
   if (!pw) { setFb('Enter member password.', false); return; }
   try {
     // Accept member password (not admin)
-    const clubs = await sbGet('clubs', `id=eq.${select.value}&select=id,name,member_password`);
-    if (!clubs.length) throw new Error('Club not found.');
-    if (clubs[0].member_password !== pw) throw new Error('Wrong password.');
+    const clubs = await sbGet('clubs', `id=eq.${select.value}&select_password=eq.${encodeURIComponent(pw)}&select=id,name`);
+    if (!clubs.length) throw new Error('Wrong password.');
 
     if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
     localStorage.setItem('kbrr_club_mode', 'user');

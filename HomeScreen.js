@@ -151,24 +151,19 @@ async function homeRefreshTiles() {
     }
   }
 
-  // ── Organiser club status tile (independent from vault) ──
+  // ── Organiser club tile (home-tile style) ──
   var orgVctName  = document.getElementById('orgVctName');
   var orgVctBadge = document.getElementById('orgVctBadge');
-  var orgVctDot   = document.getElementById('orgVctDot');
+  var orgTileIcon = document.getElementById('orgTileIcon');
   if (orgVctName) {
     if (club && club.name) {
-      orgVctName.textContent = club.name;
-      if (orgVctDot) orgVctDot.style.background = '#6c8cff';
-      if (orgVctBadge) {
-        orgVctBadge.textContent = 'SESSION';
-        orgVctBadge.style.background = 'rgba(108,140,255,0.18)';
-        orgVctBadge.style.color = '#6c8cff';
-        orgVctBadge.style.display = '';
-      }
+      orgVctName.textContent  = club.name;
+      if (orgVctBadge) orgVctBadge.textContent = '✅ Connected';
+      if (orgTileIcon) orgTileIcon.textContent  = '🏢';
     } else {
-      orgVctName.textContent = 'No club — tap to connect';
-      if (orgVctBadge) orgVctBadge.style.display = 'none';
-      if (orgVctDot) orgVctDot.style.background = '#888';
+      orgVctName.textContent  = 'Club';
+      if (orgVctBadge) orgVctBadge.textContent = 'Tap to connect';
+      if (orgTileIcon) orgTileIcon.textContent  = '🏢';
     }
   }
 
