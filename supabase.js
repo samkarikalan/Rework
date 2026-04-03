@@ -92,6 +92,10 @@ function getMyClub() {
 function setMyClub(id, name) {
   localStorage.setItem("kbrr_my_club_id",   id);
   localStorage.setItem("kbrr_my_club_name", name);
+  // Refresh all tiles immediately whenever club changes
+  if (typeof homeRefreshTiles        === 'function') homeRefreshTiles();
+  if (typeof homeRefreshJoinClubTile === 'function') homeRefreshJoinClubTile();
+  if (typeof vaultSyncStatus         === 'function') vaultSyncStatus();
 }
 
 function clearMyClub() {

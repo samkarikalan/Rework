@@ -130,6 +130,23 @@ async function homeRefreshTiles() {
     }
   }
 
+  // ── Vault — show/hide no-club state vs tiles ──
+  var vaultNoClub  = document.getElementById('vaultNoClubState');
+  var vaultTileGrid = document.getElementById('vaultTileGrid');
+  var vaultStatusTile = document.getElementById('vaultClubStatusTile');
+
+  if (club && club.id) {
+    // Has club — show tiles, hide create form
+    if (vaultNoClub)    vaultNoClub.style.display    = 'none';
+    if (vaultTileGrid)  vaultTileGrid.style.display  = '';
+    if (vaultStatusTile) vaultStatusTile.style.display = '';
+  } else {
+    // No club — show create form, hide tiles
+    if (vaultNoClub)    vaultNoClub.style.display    = '';
+    if (vaultTileGrid)  vaultTileGrid.style.display  = 'none';
+    if (vaultStatusTile) vaultStatusTile.style.display = 'none';
+  }
+
   // ── Vault club status tile ──
   var vctName  = document.getElementById('vctName');
   var vctBadge = document.getElementById('vctBadge');
@@ -958,4 +975,36 @@ async function homeRefreshVaultTiles(clubId) {
     var vtBadgeReq = document.getElementById('vtBadgeRequests');
     if (vtBadgeReq) vtBadgeReq.style.display = reqCount > 0 ? '' : 'none';
   } catch(e) { /* silent */ }
+}
+
+/* ── Quick Create Club from Vault home (first time user) ── */
+async function vaultQuickCreateClub() {
+  var name    = (document.getElementById('vaultQuickClubName')?.value || '').trim();
+  var memberPw = (document.getElementById('vaultQuickMemberPw')?.value || '').trim();
+  var adminPw  = (document.getElementById('vaultQuickAdminPw')?.value || '').trim();
+  var fb = document.getElementById('vaultQuickFeedback');
+  var setFb = function(msg, ok) {
+    if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green,#2dce89)' : 'var(--red,#e63757)'; }
+  };
+
+  if (!name)    { setFb('Enter club name.', false); return; }
+  if (!memberPw) { setFb('Enter member password.', false); return; }
+  if (!adminPw)  { setFb('Enter admin password.', false); return; }
+  if (memberPw === adminPw) { setFb('Member and admin passwords must be different.', false); return; }
+
+  setFb('Creating…', true);
+  try {
+    var club = await dbAddClub(name, memberPw, adminPw);
+    if (typeof setMyClub  === 'function') setMyClub(club.id, club.name);
+    localStorage.setItem('kbrr_club_mode', 'admin');
+    setFb('✅ ' + club.name + ' created!', true);
+    // Clear fields
+    document.getElementById('vaultQuickClubName').value  = '';
+    document.getElementById('vaultQuickMemberPw').value  = '';
+    document.getElementById('vaultQuickAdminPw').value   = '';
+    // Refresh home to show vault tiles
+    setTimeout(function() { homeRefreshTiles(); }, 600);
+  } catch(e) {
+    setFb('❌ ' + e.message, false);
+  }
 }

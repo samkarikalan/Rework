@@ -378,7 +378,7 @@
     <div id="homeVaultGrid" style="display:none;">
 
       <!-- Club status tile — fully clickable, no Change button -->
-      <div class="vault-club-tile" id="vaultClubStatusTile" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;">
+      <div class="vault-club-tile" id="vaultClubStatusTile" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;display:none;">
         <div class="vct-dot" id="vctDot"></div>
         <div class="vct-info">
           <div class="vct-name" id="vctName">No club selected</div>
@@ -387,7 +387,23 @@
         <span style="color:var(--muted,#aaa);font-size:1rem;">›</span>
       </div>
 
-      <div class="vault-tile-grid">
+      <!-- No club state — shown to first time users -->
+      <div id="vaultNoClubState" style="display:none; padding:20px 16px;">
+        <div style="text-align:center; padding:20px 0 24px;">
+          <div style="font-size:2.5rem; margin-bottom:10px;">🏢</div>
+          <div style="font-size:1rem; font-weight:700; color:var(--text); margin-bottom:6px;">Create Your Club</div>
+          <div style="font-size:0.78rem; color:var(--muted); line-height:1.5;">No club yet — create one to get started</div>
+        </div>
+        <div class="pref-card" style="padding:14px;">
+          <input type="text" id="vaultQuickClubName" class="auth-input" placeholder="Club name" style="width:100%;margin-bottom:8px;">
+          <input type="password" id="vaultQuickMemberPw" class="auth-input" placeholder="Member password" style="width:100%;margin-bottom:8px;">
+          <input type="password" id="vaultQuickAdminPw" class="auth-input" placeholder="Admin password" style="width:100%;margin-bottom:8px;">
+          <button onclick="vaultQuickCreateClub()" style="width:100%;padding:12px;background:var(--accent,#6c63ff);color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;">Create Club</button>
+          <div id="vaultQuickFeedback" style="font-size:0.78rem;margin-top:8px;text-align:center;"></div>
+        </div>
+      </div>
+
+      <div id="vaultTileGrid" class="vault-tile-grid">
 
         <div class="vault-tile vt-playing" onclick="homeGo('vaultPlayingPage',null)">
           <div class="vt-badge" id="vtBadgePlaying" style="display:none">LIVE</div>
@@ -419,10 +435,8 @@
           <div class="vt-sub">pending approval</div>
         </div>
 
-
-
-      </div>
-    </div>
+      </div><!-- end vaultTileGrid -->
+    </div><!-- end homeVaultGrid -->
 
     <!-- ── VIEWER GRID ── -->
     <div id="homeViewerGrid" style="display:none;">
