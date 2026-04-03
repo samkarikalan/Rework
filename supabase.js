@@ -312,7 +312,8 @@ async function dbSyncRatings(updatedRatings) {
             wins:          (todayEntry.wins || 0) + (update.wins || 0),
             losses:        (todayEntry.losses || 0) + (update.losses || 0),
             points_earned: Math.round(((parseFloat(todayEntry.points_earned) || 0) + pointsDelta) * 10) / 10,
-            club_rating:   rounded
+            club_rating:   rounded,
+            cost_per_player: parseFloat(todayEntry.cost_per_player) || null
           };
 
           await sbPatch('players', `id=eq.${m.player_id}`, {
@@ -714,7 +715,12 @@ async function dbCompleteSession(shuttleData = null) {
           losses:        (todayEntry.losses || 0) + (p.losses || 0),
           points_earned: Math.round(((parseFloat(todayEntry.points_earned) || 0) + (parseFloat(mrows[0].club_points) || 0)) * 10) / 10,
           club_rating:   parseFloat(mrows[0].club_rating) || 1.0,
-          cost_per_player: shuttleData ? ((parseFloat(todayEntry.cost_per_player) || 0) + (parseFloat(shuttleData.cost_per_player) || 0)) : (parseFloat(todayEntry.cost_per_player) || null)
+          cost_per_player: (() => {
+            const prev = parseFloat(todayEntry.cost_per_player) || 0;
+            const newCost = shuttleData ? (parseFloat(shuttleData.cost_per_player) || 0) : 0;
+            const total = prev + newCost;
+            return total > 0 ? Math.round(total) : null;
+          })()
         };
         await sbPatch('players', `id=eq.${playerId}`, {
           sessions: [entry, ...otherDays].slice(0, 30)
