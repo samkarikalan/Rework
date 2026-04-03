@@ -80,20 +80,19 @@ async function updateProfileBtn() {
     let bestClubName = null;
     if (user) {
       const mems = await sbGet('memberships',
-        'user_account_id=eq.' + user.id + '&select=club_rating,player_id,clubs(name)').catch(function(){ return []; });
+        'user_account_id=eq.' + user.id + '&select=club_id,club_rating,player_id,clubs(name)').catch(function(){ return []; });
       if (mems && mems.length) {
-        let bestMem = null;
-        mems.forEach(function(m) {
-          const r = parseFloat(m.club_rating) || 1.0;
-          if (bestRating === null || r > bestRating) {
-            bestRating = r;
-            bestMem = m;
-          }
-        });
-        if (bestMem && bestMem.clubs && bestMem.clubs.name) {
-          bestClubName = bestMem.clubs.name;
-        }
-        const pid = mems[0].player_id;
+        // Use the ACTIVE club specifically
+        const activeClub = (typeof getMyClub === 'function') ? getMyClub() : null;
+        const activeMem = activeClub && activeClub.id
+          ? mems.find(function(m){ return m.club_id === activeClub.id; })
+          : null;
+        const bestMem = activeMem || mems.reduce(function(best, m) {
+          return (!best || parseFloat(m.club_rating) > parseFloat(best.club_rating)) ? m : best;
+        }, null);
+        bestRating = parseFloat(bestMem.club_rating) || 1.0;
+        if (bestMem.clubs && bestMem.clubs.name) bestClubName = bestMem.clubs.name;
+        const pid = bestMem.player_id;
         if (pid) {
           const prows = await sbGet('players', 'id=eq.' + pid + '&select=wins,losses').catch(function(){ return []; });
           if (prows && prows[0]) {

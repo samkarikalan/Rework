@@ -247,29 +247,26 @@ async function homeRefreshTiles() {
         var wins = 0, losses = 0;
 
         if (user) {
-          // Fetch all memberships for this user with ratings
+          // Use the ACTIVE club specifically, not the highest-rated one
+          var activeClub = (typeof getMyClub === 'function') ? getMyClub() : null;
           var mems = await sbGet('memberships',
             'user_account_id=eq.' + user.id +
-            '&select=club_rating,nickname,player_id,clubs(name)').catch(function(){ return []; });
+            '&select=club_id,club_rating,nickname,player_id,clubs(name)').catch(function(){ return []; });
 
           if (mems && mems.length) {
-            // Use the membership with the highest club_rating
-            var bestMem = null;
-            mems.forEach(function(m) {
-              var r = parseFloat(m.club_rating) || 1.0;
-              if (bestRating === null || r > bestRating) {
-                bestRating = r;
-                bestMem = m;
-              }
-            });
+            // Find the active club's membership first, fall back to highest rating
+            var activeMem = activeClub && activeClub.id
+              ? mems.find(function(m){ return m.club_id === activeClub.id; })
+              : null;
+            var bestMem = activeMem || mems.reduce(function(best, m) {
+              return (!best || parseFloat(m.club_rating) > parseFloat(best.club_rating)) ? m : best;
+            }, null);
 
-            // Club name from the best membership
-            if (bestMem && bestMem.clubs && bestMem.clubs.name) {
-              bestClubName = bestMem.clubs.name;
-            }
+            bestRating = parseFloat(bestMem.club_rating) || 1.0;
+            if (bestMem.clubs && bestMem.clubs.name) bestClubName = bestMem.clubs.name;
 
             // Wins/losses from the linked player record
-            var pid = mems[0].player_id;
+            var pid = bestMem.player_id;
             if (pid) {
               var prows = await sbGet('players', 'id=eq.' + pid + '&select=wins,losses').catch(function(){ return []; });
               if (prows && prows[0]) {
