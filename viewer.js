@@ -368,6 +368,12 @@ function clubLoginRefresh() {
       role.style.display = 'inline-block';
     }
   }
+
+  // Refresh all home tiles to reflect new club
+  if (typeof homeRefreshTiles        === 'function') homeRefreshTiles();
+  if (typeof homeRefreshJoinClubTile === 'function') homeRefreshJoinClubTile();
+  if (typeof vaultSyncStatus         === 'function') vaultSyncStatus();
+  if (typeof updateModePill          === 'function') updateModePill(localStorage.getItem('kbrr_app_mode') || 'viewer');
 }
 
 function clubLoginSwitch() {
