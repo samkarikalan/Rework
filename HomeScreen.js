@@ -540,6 +540,17 @@ function homeLangSelect() {}
    ══════════════════════════════════════════════ */
 
 /* Called every time home screen opens — show/hide tile, refresh status */
+async function vclSetActiveClub(clubId, clubName) {
+  if (typeof setMyClub === 'function') setMyClub(clubId, clubName);
+  localStorage.setItem('kbrr_club_mode', 'user');
+  // Sync players from the newly active club
+  if (typeof syncToLocal === 'function') syncToLocal();
+  // Refresh home screen — updates My Card rating + club tile highlight
+  if (typeof homeRefreshScreen === 'function') await homeRefreshScreen();
+  // Refresh join club tile to re-render active highlight
+  await homeRefreshJoinClubTile();
+}
+
 async function homeRefreshJoinClubTile() {
   var sub     = document.getElementById('tileSubJoinClub');
   var listEl  = document.getElementById('vcl-list-inner');
@@ -575,26 +586,32 @@ async function homeRefreshJoinClubTile() {
 
         // Inline list (max 10)
         if (listEl) {
+          var activeClubId = (typeof getMyClub === 'function') ? (getMyClub().id || null) : null;
           var items = [];
           (memberships||[]).slice(0,10).forEach(function(m) {
-            items.push({ name: clubMap[m.club_id]||m.club_id, nick: m.nickname, pending: false });
+            items.push({ id: m.club_id, name: clubMap[m.club_id]||m.club_id, nick: m.nickname, pending: false });
           });
           pendingIds.filter(function(id){ return !(memberships||[]).find(function(m){ return m.club_id===id; }); })
             .slice(0, 10 - items.length).forEach(function(id) {
-              items.push({ name: clubMap[id]||id, nick: null, pending: true });
+              items.push({ id: id, name: clubMap[id]||id, nick: null, pending: true });
             });
 
           if (items.length > 0) {
             listEl.innerHTML = items.map(function(item) {
-              return '<div class="vcl-row">' +
-                '<span class="vcl-dot">' + (item.pending ? '⏳' : '🏸') + '</span>' +
+              var isActive = item.id === activeClubId;
+              var activeClass = isActive ? ' vcl-row-active' : '';
+              var clickHandler = item.pending ? '' : ' onclick="vclSetActiveClub(\'' + item.id + '\',\'' + item.name.replace(/'/g,"\\\'" ) + '\')"';
+              return '<div class="vcl-row' + activeClass + '"' + clickHandler + '>' +
+                '<span class="vcl-dot">' + (item.pending ? '⏳' : (isActive ? '✅' : '🏸')) + '</span>' +
                 '<div class="vcl-row-info">' +
                   '<span class="vcl-row-name">' + item.name + '</span>' +
                   (item.nick ? '<span class="vcl-row-nick">as ' + item.nick + '</span>' : '') +
                 '</div>' +
                 (item.pending
                   ? '<span class="vcl-badge vcl-badge-pending">Pending</span>'
-                  : '<span class="vcl-badge vcl-badge-member">Member</span>') +
+                  : (isActive
+                    ? '<span class="vcl-badge vcl-badge-active">Active</span>'
+                    : '<span class="vcl-badge vcl-badge-member">Member</span>')) +
               '</div>';
             }).join('');
           } else {

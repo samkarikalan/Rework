@@ -1778,6 +1778,13 @@ body.app-light .org-club-tile {
 }
 .vcl-badge-member  { background: rgba(45,206,137,0.15); color: #2dce89; }
 .vcl-badge-pending { background: rgba(245,166,35,0.15);  color: #f5a623; }
+.vcl-badge-active  { background: rgba(108,140,255,0.2);  color: #6c8cff; font-weight: 800; }
+.vcl-row-active {
+  background: rgba(108,140,255,0.12) !important;
+  border: 1px solid rgba(108,140,255,0.3);
+}
+.vcl-row-active .vcl-row-name { color: #6c8cff !important; }
+body.app-light .vcl-row-active { background: rgba(108,140,255,0.08) !important; border-color: rgba(108,140,255,0.25); }
 body.app-light .vcl-tile  { background: #fff; border-color: #e8e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 body.app-light .vcl-row   { background: #f5f5fb; }
 body.app-light .vcl-row-name { color: #1a1a2e; }
