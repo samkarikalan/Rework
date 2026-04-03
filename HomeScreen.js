@@ -542,10 +542,12 @@ async function vclSetActiveClub(clubId, clubName) {
   localStorage.setItem('kbrr_club_mode', 'user');
   // Sync players from the newly active club
   if (typeof syncToLocal === 'function') syncToLocal();
-  // Refresh home screen — updates My Card rating + club tile highlight
-  if (typeof homeRefreshScreen === 'function') await homeRefreshScreen();
-  // Refresh join club tile to re-render active highlight
+  // Refresh join club tile first to re-render active highlight immediately
   await homeRefreshJoinClubTile();
+  // Then refresh full home screen — updates My Card rating to active club
+  if (typeof homeRefreshScreen === 'function') await homeRefreshScreen();
+  // Also update profile button in top bar
+  if (typeof updateProfileBtn === 'function') updateProfileBtn();
 }
 
 async function homeRefreshJoinClubTile() {
