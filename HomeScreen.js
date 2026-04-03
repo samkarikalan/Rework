@@ -1008,3 +1008,11 @@ async function vaultQuickCreateClub() {
     setFb('❌ ' + e.message, false);
   }
 }
+
+/* ── Vault — Leave/Logout Club ── */
+function vaultLogoutClub() {
+  if (!confirm('Leave this club? You will need to reconnect to access Vault.')) return;
+  if (typeof sbClearClub === 'function') sbClearClub();
+  homeRefreshTiles();
+  homeRefreshJoinClubTile();
+}

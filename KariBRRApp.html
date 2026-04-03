@@ -377,14 +377,15 @@
     <!-- ── VAULT MANAGER GRID (new) ── -->
     <div id="homeVaultGrid" style="display:none;">
 
-      <!-- Club status tile — fully clickable, no Change button -->
-      <div class="vault-club-tile" id="vaultClubStatusTile" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;display:none;">
-        <div class="vct-dot" id="vctDot"></div>
-        <div class="vct-info">
+      <!-- Club status tile — clickable, with logout -->
+      <div class="vault-club-tile" id="vaultClubStatusTile" style="display:none;">
+        <div class="vct-dot" id="vctDot" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;"></div>
+        <div class="vct-info" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;flex:1;">
           <div class="vct-name" id="vctName">No club selected</div>
           <span class="vct-badge" id="vctBadge" style="display:none">ADMIN</span>
         </div>
-        <span style="color:var(--muted,#aaa);font-size:1rem;">›</span>
+        <button onclick="vaultLogoutClub()" style="background:none;border:1px solid var(--red,#e63757);color:var(--red,#e63757);border-radius:8px;padding:5px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;flex-shrink:0;">Leave</button>
+        <span onclick="homeGo('vaultClubMgmtPage',null)" style="color:var(--muted,#aaa);font-size:1rem;cursor:pointer;margin-left:6px;">›</span>
       </div>
 
       <!-- No club state — shown to first time users -->
