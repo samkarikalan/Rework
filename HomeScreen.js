@@ -251,9 +251,15 @@ async function homeRefreshTiles() {
           var activeClub = (typeof getMyClub === 'function') ? getMyClub() : null;
           var mems = await sbGet('memberships',
             'user_account_id=eq.' + user.id +
-            '&select=club_id,club_rating,nickname,player_id,clubs(name)').catch(function(){ return []; });
+            '&select=club_id,club_rating,nickname,player_id').catch(function(){ return []; });
 
           if (mems && mems.length) {
+            // Fetch club names separately
+            var clubIds = mems.map(function(m){ return m.club_id; });
+            var clubRows = await sbGet('clubs', 'id=in.(' + clubIds.join(',') + ')&select=id,name').catch(function(){ return []; });
+            var clubMap = {};
+            (clubRows || []).forEach(function(c){ clubMap[c.id] = c.name; });
+
             // Find the active club's membership first, fall back to highest rating
             var activeMem = activeClub && activeClub.id
               ? mems.find(function(m){ return m.club_id === activeClub.id; })
@@ -263,7 +269,7 @@ async function homeRefreshTiles() {
             }, null);
 
             bestRating = parseFloat(bestMem.club_rating) || 1.0;
-            if (bestMem.clubs && bestMem.clubs.name) bestClubName = bestMem.clubs.name;
+            bestClubName = clubMap[bestMem.club_id] || null;
 
             // Wins/losses from the linked player record
             var pid = bestMem.player_id;
