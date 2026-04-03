@@ -853,74 +853,97 @@
     </div>
     <div class="vault-wrap">
 
-      <!-- Club status card -->
-      <div class="vault-club-card" id="clubLoginCard">
-        <div id="clubLoggedInState" style="display:none">
-          <div class="vault-club-connected">
-            <div class="vault-club-left">
-              <div class="vault-status-dot" id="clubLoginDot"></div>
-              <div>
-                <div class="vault-club-name" id="clubLoginName"></div>
-                <span class="vault-club-role" id="clubLoginRole"></span>
+      <!-- 3 action tiles -->
+      <div class="vault-tile-grid" style="margin-bottom:14px;">
+        <div class="vault-tile vt-register" onclick="clubMgmtShowPanel('connect')" style="min-height:90px;">
+          <div class="vt-icon">🔗</div>
+          <div class="vt-name">Connect</div>
+          <div class="vt-sub">join a club</div>
+        </div>
+        <div class="vault-tile vt-modify" onclick="clubMgmtShowPanel('create')" style="min-height:90px;">
+          <div class="vt-icon">➕</div>
+          <div class="vt-name">Create</div>
+          <div class="vt-sub">new club</div>
+        </div>
+        <div class="vault-tile vt-requests" onclick="clubMgmtShowPanel('delete')" style="min-height:90px;">
+          <div class="vt-icon">🗑️</div>
+          <div class="vt-name">Delete</div>
+          <div class="vt-sub">remove club</div>
+        </div>
+      </div>
+
+      <!-- CONNECT PANEL -->
+      <div id="clubMgmtConnectPanel" style="display:none;">
+        <div class="vault-club-card" id="clubLoginCard">
+          <div id="clubLoggedInState" style="display:none">
+            <div class="vault-club-connected">
+              <div class="vault-club-left">
+                <div class="vault-status-dot" id="clubLoginDot"></div>
+                <div>
+                  <div class="vault-club-name" id="clubLoginName"></div>
+                  <span class="vault-club-role" id="clubLoginRole"></span>
+                </div>
               </div>
+              <button class="vault-change-btn" onclick="clubLoginSwitch()">Change</button>
             </div>
-            <button class="vault-change-btn" onclick="clubLoginSwitch()">Change</button>
+          </div>
+          <div id="clubLoginForm">
+            <div class="vault-section-label">&#127970; Connect to Club</div>
+            <div class="club-row">
+              <select id="sbClubSelectViewer" class="club-select" style="flex:1">
+                <option value="">&#8212; Select club &#8212;</option>
+              </select>
+            </div>
+            <div class="club-row" style="margin-top:8px">
+              <input type="password" id="sbPasswordInputViewer" class="club-input"
+                     placeholder="Admin password"
+                     onkeydown="if(event.key==='Enter')viewerJoinClub()">
+              <button class="btn-save" onclick="viewerJoinClub()">Join</button>
+            </div>
+            <div id="sbClubFeedbackViewer" style="font-size:0.78rem;margin-top:4px;color:var(--red)"></div>
           </div>
         </div>
-        <div id="clubLoginForm">
-          <div class="vault-section-label">&#127970; Connect to Club</div>
+        <div class="vault-sync-row">
+          <span id="sbSyncStatus" class="vault-sync-text"></span>
+          <button class="vault-sync-btn" onclick="syncToLocal()">&#8635; Sync</button>
+        </div>
+      </div>
+
+      <!-- CREATE PANEL -->
+      <div id="clubMgmtCreatePanel" style="display:none;">
+        <div class="settings-card" style="padding:14px;">
+          <div class="manage-section-title">Create New Club</div>
           <div class="club-row">
-            <select id="sbClubSelectViewer" class="club-select" style="flex:1">
-              <option value="">&#8212; Select club &#8212;</option>
+            <input type="text" id="sbNewClubName" class="club-input" placeholder="Club name">
+          </div>
+          <div class="club-row" style="margin-top:6px">
+            <input type="password" id="sbNewClubSelectPw" class="club-input" placeholder="Member password">
+          </div>
+          <div class="club-row" style="margin-top:6px">
+            <input type="password" id="sbNewClubAdminPw" class="club-input" placeholder="Admin password">
+          </div>
+          <button class="btn-save" style="width:100%;margin-top:8px" onclick="clubCreateSendOtp()">Create Club</button>
+          <div id="clubCreateFeedback" style="font-size:0.78rem;margin-top:6px"></div>
+        </div>
+      </div>
+
+      <!-- DELETE PANEL -->
+      <div id="clubMgmtDeletePanel" style="display:none;">
+        <div class="settings-card" style="padding:14px;">
+          <div class="manage-section-title manage-section-danger">Delete Club</div>
+          <div class="club-row">
+            <select id="sbDeleteClubSelect" class="club-select">
+              <option value="">— Select club to delete —</option>
             </select>
           </div>
           <div class="club-row" style="margin-top:8px">
-            <input type="password" id="sbPasswordInputViewer" class="club-input"
+            <input type="password" id="sbDeleteAdminPw" class="club-input"
                    placeholder="Admin password"
-                   onkeydown="if(event.key==='Enter')viewerJoinClub()">
-            <button class="btn-save" onclick="viewerJoinClub()">Join</button>
+                   onkeydown="if(event.key==='Enter')clubDeleteWithPassword()">
+            <button class="btn-clear" onclick="clubDeleteWithPassword()">Delete</button>
           </div>
-          <div id="sbClubFeedbackViewer" style="font-size:0.78rem;margin-top:4px;color:var(--red)"></div>
+          <div id="clubDeleteFeedback" style="font-size:0.78rem;margin-top:6px"></div>
         </div>
-      </div>
-
-      <!-- Sync -->
-      <div class="vault-sync-row">
-        <span id="sbSyncStatus" class="vault-sync-text"></span>
-        <button class="vault-sync-btn" onclick="syncToLocal()">&#8635; Sync</button>
-      </div>
-
-      <!-- CREATE CLUB -->
-      <div class="settings-card" style="padding:14px;margin-top:10px;">
-        <div class="manage-section-title">Create New Club</div>
-        <div class="club-row">
-          <input type="text" id="sbNewClubName" class="club-input" placeholder="Club name">
-        </div>
-        <div class="club-row" style="margin-top:6px">
-          <input type="password" id="sbNewClubSelectPw" class="club-input" placeholder="Member password">
-        </div>
-        <div class="club-row" style="margin-top:6px">
-          <input type="password" id="sbNewClubAdminPw" class="club-input" placeholder="Admin password">
-        </div>
-        <button class="btn-save" style="width:100%;margin-top:8px" onclick="clubCreateSendOtp()">Create Club</button>
-        <div id="clubCreateFeedback" style="font-size:0.78rem;margin-top:6px"></div>
-      </div>
-
-      <!-- DELETE CLUB -->
-      <div class="settings-card" style="padding:14px;margin-top:10px;">
-        <div class="manage-section-title manage-section-danger">Delete Club</div>
-        <div class="club-row">
-          <select id="sbDeleteClubSelect" class="club-select">
-            <option value="">— Select club to delete —</option>
-          </select>
-        </div>
-        <div class="club-row" style="margin-top:8px">
-          <input type="password" id="sbDeleteAdminPw" class="club-input"
-                 placeholder="Admin password"
-                 onkeydown="if(event.key==='Enter')clubDeleteWithPassword()">
-          <button class="btn-clear" onclick="clubDeleteWithPassword()">Delete</button>
-        </div>
-        <div id="clubDeleteFeedback" style="font-size:0.78rem;margin-top:6px"></div>
       </div>
 
     </div>

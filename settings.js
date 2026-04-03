@@ -1146,6 +1146,13 @@ function sbClearClub() {
   vaultSyncStatus();
   if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
   updateRegisterTabVisibility();
+
+  // Reset app mode to viewer after club logout
+  localStorage.setItem('kbrr_app_mode', 'viewer');
+  sessionStorage.setItem('appMode', 'viewer');
+  if (typeof appMode !== 'undefined') appMode = 'viewer';
+  if (typeof updateModePill === 'function') updateModePill('viewer');
+  if (typeof showHomeScreen === 'function') showHomeScreen();
 }
 
 // sbDeleteClub replaced by clubDeleteSendOtp/clubDeleteVerify (OTP flow)

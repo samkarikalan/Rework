@@ -591,8 +591,11 @@ function showPage(pageID, el) {
 
   if (pageID === "vaultClubMgmtPage") {
     if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
-    if (typeof viewerLoadClubs === 'function') viewerLoadClubs();
-    if (typeof sbPopulateDeleteDropdown === 'function') sbPopulateDeleteDropdown();
+    // All panels hidden on open — user taps a tile to open one
+    ['Connect','Create','Delete'].forEach(function(p) {
+      var el = document.getElementById('clubMgmt' + p + 'Panel');
+      if (el) el.style.display = 'none';
+    });
   }
 
   if (pageID === "orgClubMgmtPage") {
@@ -933,6 +936,7 @@ async function _clubSetupJoin() {
         sessionStorage.setItem('appMode', mode);
         localStorage.setItem('kbrr_app_mode', mode);
         applyMode(mode);
+        updateModePill(mode);
         if (typeof showHomeScreen === 'function') showHomeScreen();
       }
     }, 700);

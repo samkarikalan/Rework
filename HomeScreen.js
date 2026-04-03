@@ -1016,3 +1016,15 @@ function vaultLogoutClub() {
   homeRefreshTiles();
   homeRefreshJoinClubTile();
 }
+
+/* ── Club Management — show panel by tile tap ── */
+function clubMgmtShowPanel(panel) {
+  ['connect','create','delete'].forEach(function(p) {
+    var el = document.getElementById('clubMgmt' + p.charAt(0).toUpperCase() + p.slice(1) + 'Panel');
+    if (el) el.style.display = p === panel ? '' : 'none';
+  });
+  // Load clubs for connect panel
+  if (panel === 'connect' && typeof viewerLoadClubs === 'function') viewerLoadClubs();
+  // Load clubs for delete panel
+  if (panel === 'delete' && typeof sbPopulateDeleteDropdown === 'function') sbPopulateDeleteDropdown();
+}
