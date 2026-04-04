@@ -152,7 +152,7 @@ function setLanguage(lang) {
     el.placeholder = translations[lang][key] || "";
   });
   
-   loadHelp(currentHelpSection);
+   if (typeof loadHelp === "function") loadHelp(currentHelpSection);
 }
 
 function updateRoundTitle(round) {
