@@ -91,8 +91,8 @@ function playerAvailDot(displayName) {
   const busy = (newImportState.unavailablePlayers || new Set())
     .has((displayName || "").trim().toLowerCase());
   return busy
-    ? `<span class="avail-dot busy" title="Already playing in another session">🔴</span>`
-    : `<span class="avail-dot free" title="Available">🟢</span>`;
+    ? `<span class="avail-dot busy" title="${t('alreadyPlayingSession')}">🔴</span>`
+    : `<span class="avail-dot free" title="${t('availableStatus')}">🟢</span>`;
 }
 function playerIsBusy(displayName) {
   return (newImportState.unavailablePlayers || new Set())
@@ -348,7 +348,7 @@ function newImportRefreshSelectCards() {
               <button class="newImport-set-player-add-btn ${busy ? 'disabled-btn' : ''}"
                 data-name="${p.displayName.replace(/"/g, '&quot;')}"
                 data-gender="${p.gender}"
-                ${busy ? "disabled title='Already playing in another session'" : ""}>+</button>
+                ${busy ? "disabled title=t('alreadyPlayingSession')" : ""}>+</button>
             </div>`;
           }).join("")}
           <div class="newImport-set-addplayer-row" style="position:relative">
@@ -356,7 +356,7 @@ function newImportRefreshSelectCards() {
               class="newImport-set-addplayer-input"
               data-setname="${safeName}"
               autocomplete="off"
-              placeholder="Search to add player...">
+              placeholder="${t('searchToAddPlayer')}">
             <div class="newImport-set-addplayer-dropdown" data-setname="${safeName}" style="display:none"></div>
           </div>
         </div>
@@ -398,8 +398,8 @@ function newImportRefreshSelectCards() {
       card.className = "newImport-player-card" + (busy ? " player-busy" : "") + (added ? " player-added" : "") + (inSession ? " player-in-session" : "");
       const rating1 = getActiveRating(p.displayName).toFixed(1);
       const statusDot = busy
-        ? `<span class="avail-dot busy" title="Already playing in another session">🔴</span>`
-        : `<span class="avail-dot free" title="Available">🟢</span>`;
+        ? `<span class="avail-dot busy" title="${t('alreadyPlayingSession')}">🔴</span>`
+        : `<span class="avail-dot free" title="${t('availableStatus')}">🟢</span>`;
 
       card.innerHTML = `
         <div class="newImport-player-top">
@@ -507,7 +507,7 @@ function newImportHandleSetClick(e) {
     ).slice(0, 8);
 
     if (!matches.length) {
-      dropdown.innerHTML = "<div class='set-add-dropdown-empty'>No registered players found</div>";
+      dropdown.innerHTML = "<div class='set-add-dropdown-empty'>' + t('noRegisteredPlayers') + '</div>";
       dropdown.style.display = "block";
       return;
     }
@@ -763,14 +763,14 @@ function newImportClearSelected() {
    CLEAR LISTS
 ========================= */
 function newImportClearHistory() {
-  if (!confirm("Clear history?")) return;
+  if (!confirm(t("clearHistoryConfirm"))) return;
   newImportState.historyPlayers = [];
   localStorage.setItem("newImportHistory", "[]");
   newImportRefreshSelectCards();
 }
 
 function newImportClearFavorites() {
-  if (!confirm("Clear favorites?")) return;
+  if (!confirm(t("clearFavoritesConfirm"))) return;
   newImportState.favoritePlayers = [];
   localStorage.setItem("newImportFavorites", "[]");
   newImportRefreshSelectCards();
@@ -832,7 +832,7 @@ function newImportSaveFavoriteSet() {
   );
   if (existingIdx >= 0) {
     // Same name exists — ask user to confirm overwrite or pick a new name
-    const overwrite = confirm(`A set named "${sets[existingIdx].name}" already exists.\nOverwrite it?`);
+    const overwrite = confirm(`"${sets[existingIdx].name}" ${t('alreadyExists')}.\n${t('replaceBtn')}?`);
     if (!overwrite) {
       setNameInput.focus();
       setNameInput.select();
@@ -1135,14 +1135,14 @@ function regRenderStaging() {
     const cardClass = done ? "newImport-player-card reg-card-done" : "newImport-player-card";
     const genderImg = p.gender === "Female" ? "female.png" : "male.png";
     const busyNote  = (!done && playerIsBusy(p.name))
-      ? `<span class="avail-dot busy" title="Currently playing in another session">🔴</span>`
+      ? `<span class="avail-dot busy" title="${t('currentlyPlayingSession')}">🔴</span>`
       : "";
 
     return `
       <div class="${cardClass}" id="regCard-${i}">
         <div class="newImport-player-top">
           <img src="${genderImg}"
-               ${!done ? `onclick="regToggleGender(${i})" title="Tap to toggle gender" style="cursor:pointer"` : ""}
+               ${!done ? `onclick="regToggleGender(${i})" title="${t('tapToToggleGender')}" style="cursor:pointer"` : ""}
                >
           <div class="newImport-player-name">
             ${done
@@ -1157,7 +1157,7 @@ function regRenderStaging() {
         <div class="newImport-player-actions">
           <input class="reg-rating-badge-input" type="number"
                  value="${p.rating}" min="1.0" max="5.0" step="0.1"
-                 title="Starting rating"
+                 title="${t('startingRating')}"
                  onchange="regUpdateRating(${i}, this.value)"
                  ${done ? "disabled" : ""}>
           ${statusBadge}
@@ -1376,7 +1376,7 @@ function addPlayersBrowseRender(players) {
           </button>
           <button class="circle-btn add ${isSelected ? 'active-added' : ''} ${busy ? 'disabled-btn' : ''}"
             data-browse-action="${busy ? '' : 'add'}" data-browse-player="${nameSafe}"
-            ${busy ? "disabled title='Already playing in another session'" : ""}>
+            ${busy ? "disabled title=t('alreadyPlayingSession')" : ""}>
             ${isSelected ? "−" : "+"}
           </button>
         </div>

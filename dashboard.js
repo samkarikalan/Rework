@@ -206,7 +206,7 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
 
   const myPlayer = (typeof getMyPlayer === 'function') ? getMyPlayer() : null;
   const myName   = myPlayer ? myPlayer.name.toLowerCase() : '';
-  const dateLabel = isLive ? 'Today' : _formatDate(date || updatedAt);
+  const dateLabel = isLive ? t('today') : _formatDate(date || updatedAt);
   // Show club name on card (useful when viewer sees multiple clubs)
   const displayClub = clubName || '';
 
@@ -289,7 +289,7 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
     forceEndBtn.textContent = t('forceEndSession');
     forceEndBtn.onclick = async (e) => {
       e.stopPropagation();
-      if (!confirm('Force end this session? This cannot be undone.')) return;
+      if (!confirm(t('forceEndConfirm'))) return;
       forceEndBtn.textContent = t('ending');
       forceEndBtn.disabled = true;
       try {
@@ -319,8 +319,8 @@ function _formatDate(dateStr) {
   const d     = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
   const today = new Date();
   const diff  = Math.floor((today - d) / (1000*60*60*24));
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
+  if (diff === 0) return t('today');
+  if (diff === 1) return t('yesterday');
   if (diff < 7)  return `${diff} days ago`;
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }

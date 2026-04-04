@@ -140,7 +140,7 @@ function _vElapsed(isoStr) {
   if (!isoStr) return '';
   const ms = Date.now() - new Date(isoStr).getTime();
   const m  = Math.floor(ms / 60000);
-  if (m < 1)  return 'just started';
+  if (m < 1)  return t('justStarted');
   if (m < 60) return m + 'm';
   return Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
 }
@@ -395,7 +395,7 @@ async function viewerLoadClubs() {
   try {
     const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
     select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
-    if (!clubs.length) { setFb('No clubs found.', false); return; }
+    if (!clubs.length) { setFb(t('noClubsFoundDot'), false); return; }
     clubs.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id; opt.textContent = c.name;
@@ -406,7 +406,7 @@ async function viewerLoadClubs() {
     if (cur && cur.id) select.value = cur.id;
   } catch (e) {
     select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
-    setFb('❌ Could not load clubs: ' + e.message, false);
+    setFb(t('couldNotLoadClubsErr') + ' ' + e.message, false);
     console.warn('viewerLoadClubs:', e.message);
   }
 }
@@ -417,13 +417,13 @@ async function viewerJoinClub() {
   const feedback = document.getElementById('sbClubFeedbackViewer');
   const status   = document.getElementById('sbClubStatusViewer');
   const setFb = (msg, ok) => { if (feedback) { feedback.textContent = msg; feedback.style.color = ok ? '#2dce89' : '#e63757'; } };
-  if (!select || !select.value) { setFb('Please select a club.', false); return; }
+  if (!select || !select.value) { setFb(t('pleaseSelectClub'), false); return; }
   const pw = pwInput ? pwInput.value.trim() : '';
-  if (!pw) { setFb('Enter password.', false); return; }
+  if (!pw) { setFb(t('enterPasswordHint'), false); return; }
   try {
     // Club Management only accepts admin password
     const clubs = await sbGet('clubs', `id=eq.${select.value}&admin_password=eq.${encodeURIComponent(pw)}&select=id,name`);
-    if (!clubs.length) throw new Error('Wrong password.');
+    if (!clubs.length) throw new Error(t('wrongPasswordHint'));
 
     const role = 'admin';
 
@@ -431,7 +431,7 @@ async function viewerJoinClub() {
     localStorage.setItem('kbrr_club_mode', role);
     localStorage.setItem('kbrr_rating_field', 'club_rating');
     if (pwInput) pwInput.value = '';
-    setFb(role === 'admin' ? '✅ Joined as Admin' : '✅ Joined successfully', true);
+    setFb(role === 'admin' ? '✅ Joined as Admin' : t('joinedSuccessfully'), true);
     clubLoginRefresh();
     if (typeof syncToLocal === 'function') syncToLocal();
   } catch (e) { setFb('❌ ' + e.message, false); }
@@ -482,7 +482,7 @@ async function orgLoadClubs() {
   try {
     const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
     select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
-    if (!clubs.length) { setFb('No clubs found.', false); return; }
+    if (!clubs.length) { setFb(t('noClubsFoundDot'), false); return; }
     clubs.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id; opt.textContent = c.name;
@@ -493,7 +493,7 @@ async function orgLoadClubs() {
     setFb('', true);
   } catch (e) {
     select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
-    setFb('❌ Could not load clubs: ' + e.message, false);
+    setFb(t('couldNotLoadClubsErr') + ' ' + e.message, false);
   }
 }
 
@@ -502,19 +502,19 @@ async function orgJoinClub() {
   const pwInput  = document.getElementById('orgClubPassword');
   const feedback = document.getElementById('orgClubFeedback');
   const setFb = (msg, ok) => { if (feedback) { feedback.textContent = msg; feedback.style.color = ok ? '#2dce89' : '#e63757'; } };
-  if (!select || !select.value) { setFb('Please select a club.', false); return; }
+  if (!select || !select.value) { setFb(t('pleaseSelectClub'), false); return; }
   const pw = pwInput ? pwInput.value.trim() : '';
-  if (!pw) { setFb('Enter member password.', false); return; }
+  if (!pw) { setFb(t('enterMemberPwHint'), false); return; }
   try {
     // Accept member password (not admin)
     const clubs = await sbGet('clubs', `id=eq.${select.value}&select_password=eq.${encodeURIComponent(pw)}&select=id,name`);
-    if (!clubs.length) throw new Error('Wrong password.');
+    if (!clubs.length) throw new Error(t('wrongPasswordHint'));
 
     if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
     localStorage.setItem('kbrr_club_mode', 'user');
     localStorage.setItem('kbrr_rating_field', 'club_rating');
     if (pwInput) pwInput.value = '';
-    setFb('✅ Connected as Member', true);
+    setFb(t('connectedAsMember'), true);
     orgClubLoginRefresh();
     if (typeof syncToLocal === 'function') syncToLocal();
     if (typeof homeRefreshScreen === 'function') homeRefreshScreen();

@@ -22,11 +22,11 @@ function clearMyPlayer() {
 
 /* ── Tier label from rating ── */
 function ratingTierLabel(r) {
-  if (r < 2.0) return { label: 'Rookie',       color: '#9e9e9e' };
+  if (r < 2.0) return { label: t('rookie'),       color: '#9e9e9e' };
   if (r < 3.0) return { label: 'Club',          color: '#4a9eff' };
-  if (r < 4.0) return { label: 'Competitive',   color: '#2dce89' };
-  if (r < 4.5) return { label: 'Advanced',      color: '#f5a623' };
-  return             { label: 'Elite',           color: '#e63757' };
+  if (r < 4.0) return { label: t('competitiveLevel'),   color: '#2dce89' };
+  if (r < 4.5) return { label: t('advancedLevel'),      color: '#f5a623' };
+  return             { label: t('eliteLevel'),           color: '#e63757' };
 }
 
 /* ── Update header profile button appearance ── */
@@ -61,15 +61,15 @@ async function updateProfileBtn() {
   if (!player) {
     if (tileAvatar) tileAvatar.style.display = 'none';
     if (tileIcon)   { tileIcon.style.display = ''; tileIcon.textContent = '👤'; }
-    if (tileName)   tileName.textContent = 'My Profile';
-    if (tileRating) tileRating.textContent = 'Not selected';
+    if (tileName)   tileName.textContent = t('myProfile');
+    if (tileRating) tileRating.textContent = t('notSelectedProfile');
     return;
   }
 
   if (tileAvatar) { tileAvatar.src = src; tileAvatar.style.display = 'block'; }
   if (tileIcon)   tileIcon.style.display = 'none';
   if (tileName)   tileName.textContent = player.name;
-  if (tileRating) tileRating.textContent = 'Loading...';
+  if (tileRating) tileRating.textContent = t('loading');
 
   try {
     let bestRating = null;
@@ -172,7 +172,7 @@ function showProfilePicker() {
   document.getElementById('pinScreenView').style.display    = 'none';
 
   const list = document.getElementById('profilePickerList');
-  list.innerHTML = '<div class="profile-sessions-loading">Loading players...</div>';
+  list.innerHTML = '<div class="profile-sessions-loading">' + t('loadingPlayers') + '</div>';
 
   // Clear search box
   const searchEl = document.getElementById('profileSearch');
@@ -204,7 +204,7 @@ function renderPickerList(players) {
   list.innerHTML = '';
 
   if (!players.length) {
-    list.innerHTML = '<div class="profile-picker-empty">No players found in your club.</div>';
+    list.innerHTML = '<div class="profile-picker-empty">' + t('noPlayersInClub') + '</div>';
     return;
   }
 
@@ -260,11 +260,11 @@ function showPinSetup(p) {
     <div class="pin-name">${p.name}</div>
     <p class="pin-hint">First time? Set a 4-digit PIN and a recovery word.</p>
     <input id="pinSetupPin" type="password" inputmode="numeric" maxlength="4"
-      class="pin-input" placeholder="Set PIN (4 digits)">
+      class="pin-input" placeholder=t("setPinTitle")>
     <input id="pinSetupConfirm" type="password" inputmode="numeric" maxlength="4"
-      class="pin-input" placeholder="Confirm PIN">
+      class="pin-input" placeholder=t("confirmPin")>
     <input id="pinSetupRecovery" type="text" class="pin-input"
-      placeholder="Recovery word (secret)">
+      placeholder="${t('recoveryWordSecret')}">
     <div id="pinSetupError" class="pin-error"></div>
     <button class="pin-btn" onclick="confirmPinSetup('${p.name.replace(/'/g,"\\'")}')">Save & Continue</button>
   `);
@@ -276,11 +276,11 @@ async function confirmPinSetup(name) {
   const recovery = document.getElementById('pinSetupRecovery').value.trim().toLowerCase();
   const err     = document.getElementById('pinSetupError');
 
-  if (!/^\d{4}$/.test(pin))       { err.textContent = 'PIN must be exactly 4 digits.'; return; }
-  if (pin !== confirm)             { err.textContent = 'PINs do not match.'; return; }
-  if (recovery.length < 3)        { err.textContent = 'Recovery word too short.'; return; }
+  if (!/^\d{4}$/.test(pin))       { err.textContent = t('pinMustBe4'); return; }
+  if (pin !== confirm)             { err.textContent = t('pinsNotMatch'); return; }
+  if (recovery.length < 3)        { err.textContent = t('recoveryTooShort'); return; }
 
-  err.textContent = '⏳ Saving...';
+  err.textContent = t('savingPin');
   try {
     // PIN/recovery stored in user_accounts via auth system — no DB patch needed here
     // Just update local cache
@@ -290,7 +290,7 @@ async function confirmPinSetup(name) {
     err.textContent = '';
     _completeProfileSelection(name);
   } catch(e) {
-    err.textContent = 'Failed to save. Try again.';
+    err.textContent = t('failedSave');
   }
 }
 
@@ -300,7 +300,7 @@ function showPinLogin(p) {
     <div class="pin-name">${p.name}</div>
     <p class="pin-hint">Enter your PIN to continue.</p>
     <input id="pinLoginPin" type="password" inputmode="numeric" maxlength="4"
-      class="pin-input" placeholder="Enter PIN">
+      class="pin-input" placeholder=t("enterPin")>
     <div id="pinLoginError" class="pin-error"></div>
     <button class="pin-btn" onclick="confirmPinLogin('${p.name.replace(/'/g,"\\'")}')">Continue</button>
     <button class="pin-btn-secondary" onclick="showPinRecovery('${p.name.replace(/'/g,"\\'")}')">Forgot PIN?</button>
@@ -318,8 +318,8 @@ function confirmPinLogin(name) {
   const entered = document.getElementById('pinLoginPin').value.trim();
   const err     = document.getElementById('pinLoginError');
   const p       = _pickerAllPlayers.find(x => x.name === name);
-  if (!p) { err.textContent = 'Player not found.'; return; }
-  if (entered !== p.pin) { err.textContent = '❌ Wrong PIN. Try again.'; return; }
+  if (!p) { err.textContent = t('playerNotFoundPin'); return; }
+  if (entered !== p.pin) { err.textContent = t('wrongPin'); return; }
   _completeProfileSelection(name);
 }
 
@@ -328,11 +328,11 @@ function showPinRecovery(name) {
   _showPinScreen(`
     <div class="pin-name">${name}</div>
     <p class="pin-hint">Enter your recovery word to reset your PIN.</p>
-    <input id="pinRecoveryWord" type="text" class="pin-input" placeholder="Recovery word">
+    <input id="pinRecoveryWord" type="text" class="pin-input" placeholder=t("recoveryWord")>
     <input id="pinRecoveryNew" type="password" inputmode="numeric" maxlength="4"
-      class="pin-input" placeholder="New PIN (4 digits)">
+      class="pin-input" placeholder=t("newPin")>
     <input id="pinRecoveryConfirm" type="password" inputmode="numeric" maxlength="4"
-      class="pin-input" placeholder="Confirm new PIN">
+      class="pin-input" placeholder=t("confirmNewPin")>
     <div id="pinRecoveryError" class="pin-error"></div>
     <button class="pin-btn" onclick="confirmPinRecovery('${name.replace(/'/g,"\\'")}')">Reset PIN</button>
     <button class="pin-btn-secondary" onclick="showProfilePicker()">Back</button>
@@ -346,21 +346,21 @@ async function confirmPinRecovery(name) {
   const err     = document.getElementById('pinRecoveryError');
   const p       = _pickerAllPlayers.find(x => x.name === name);
 
-  if (!p) { err.textContent = 'Player not found.'; return; }
+  if (!p) { err.textContent = t('playerNotFoundPin'); return; }
   if (word !== (p.recovery_word || '').toLowerCase()) {
-    err.textContent = '❌ Wrong recovery word.'; return;
+    err.textContent = t('wrongRecovery'); return;
   }
-  if (!/^\d{4}$/.test(newPin))    { err.textContent = 'PIN must be 4 digits.'; return; }
-  if (newPin !== confirm)          { err.textContent = 'PINs do not match.'; return; }
+  if (!/^\d{4}$/.test(newPin))    { err.textContent = t('pinMust4'); return; }
+  if (newPin !== confirm)          { err.textContent = t('pinsNotMatch'); return; }
 
-  err.textContent = '⏳ Saving...';
+  err.textContent = t('savingPin');
   try {
     // PIN stored in user_accounts — no direct players patch needed
     p.pin = newPin;
     err.textContent = '';
     _completeProfileSelection(name);
   } catch(e) {
-    err.textContent = 'Failed to save. Try again.';
+    err.textContent = t('failedSave');
   }
 }
 

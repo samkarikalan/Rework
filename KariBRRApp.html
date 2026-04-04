@@ -137,8 +137,8 @@
         <div class="auth-field">
           <label class="auth-label" data-i18n="gender">Gender</label>
           <select id="signupGender" class="auth-input">
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
+            <option value="Male" data-i18n="genderMale">Male</option>
+            <option value="Female" data-i18n="genderFemale">Female</option>
           </select>
         </div>
         <div class="auth-field">
@@ -753,16 +753,16 @@
       <!-- Filter row -->
       <div class="vm-filter-row">
         <select id="vmFilterGender" class="vm-filter-select" onchange="vaultModifyFilter()">
-          <option value="">All</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
+          <option value="" data-i18n="genderAll">All</option>
+          <option value="Male" data-i18n="genderMale">Male</option>
+          <option value="Female" data-i18n="genderFemale">Female</option>
         </select>
         <button class="vault-sync-btn" onclick="vaultRenderModify()">↻</button>
       </div>
       <!-- Search -->
       <div class="vm-search-wrap">
         <span class="vm-search-icon">🔍</span>
-        <input id="vmSearchInput" class="vm-search-input" type="text" placeholder="Search players…" oninput="vaultModifyFilter()">
+        <input id="vmSearchInput" class="vm-search-input" type="text" placeholder="Search players…" data-i18n-placeholder="searchPlayers" oninput="vaultModifyFilter()">
       </div>
       <!-- Count + list -->
       <div class="vm-count-row">
@@ -789,8 +789,8 @@
         <div class="vm-field-group" style="flex:1">
           <label class="vm-field-label" data-i18n="gender">Gender</label>
           <select id="vmEditGender" class="vm-field-input">
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
+            <option value="Male" data-i18n="genderMale">Male</option>
+            <option value="Female" data-i18n="genderFemale">Female</option>
           </select>
         </div>
         <div class="vm-field-group" style="flex:1">
@@ -1347,7 +1347,7 @@
         <input type="text"
                id="newImportSearch"
                class="newImport-search"
-               placeholder="Search players">
+               placeholder="Search players" data-i18n-placeholder="searchPlayers">
 
         <div class="newImport-list-actions">
           <button id="newImportClearHistoryBtn"
@@ -1377,8 +1377,8 @@
               <textarea id="players-names" rows="3" placeholder="John&#10;Mike&#10;Sarah"></textarea>
               <div class="addplayer-row">
                 <select id="player-gender" class="addplayer-select">
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
+                  <option value="Male" data-i18n="genderMale">Male</option>
+                  <option value="Female" data-i18n="genderFemale">Female</option>
                 </select>
               </div>
               <div class="addplayer-row">
@@ -1449,7 +1449,7 @@
       <p class="profile-picker-hint" data-i18n="selectNameProfile">Select your name to personalise your profile</p>
       <div class="profile-picker-search-wrap">
         <input type="text" id="profileSearch" class="profile-picker-search"
-          placeholder="🔍 Search player..."
+          placeholder="🔍 Search player..." data-i18n-placeholder="searchPlayerDot"
           oninput="filterPickerList(this.value)">
       </div>
       <div id="profilePickerList" class="profile-picker-list"></div>

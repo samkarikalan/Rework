@@ -14,8 +14,8 @@ var _homeCurrentStep = 0;
 var STEP_DEFS = [
   {
     icon: '👥',
-    title: 'Select Players',
-    activeSub: 'Add at least 4 players to begin',
+    title: t('selectPlayersStep'),
+    activeSub: t('addAtLeast4Step'),
     doneSub: function() {
       var n = schedulerState.activeplayers.length;
       return n + ' player' + (n !== 1 ? 's' : '') + ' selected';
@@ -25,23 +25,23 @@ var STEP_DEFS = [
   },
   {
     icon: '🤝',
-    title: 'Fixed Pairs',
-    activeSub: 'Optional — pair players who always play together',
+    title: t('fixedPairsStep'),
+    activeSub: t('fixedPairsOptional'),
     doneSub: function() {
       var n = schedulerState.fixedPairs.length;
-      return n ? n + ' pair' + (n !== 1 ? 's' : '') + ' set' : 'Skipped (optional)';
+      return n ? n + ' pair' + (n !== 1 ? 's' : '') + ' set' : t('skippedOptional');
     },
     isDone: function() { return _stepPairsSeen; },
     go: function() { homeGo('fixedPairsPage', 'tabBtnFixedPairs'); }
   },
   {
     icon: '🏟',
-    title: 'Court Settings',
-    activeSub: 'Set courts and play mode',
+    title: t('courtSettings'),
+    activeSub: t('setCourtMode'),
     doneSub: function() {
       var c = parseInt(document.getElementById('num-courts').textContent) || 1;
       var tog = document.getElementById('modeToggle');
-      var mode = (tog && tog.checked) ? 'Competitive' : 'Random';
+      var mode = (tog && tog.checked) ? 'Competitive' : t('randomMode');
       return c + ' court' + (c !== 1 ? 's' : '') + ' \u00b7 ' + mode;
     },
     isDone: function() { return _stepCourtsSet; },
@@ -49,9 +49,9 @@ var STEP_DEFS = [
   },
   {
     icon: '🏸',
-    title: 'Start Rounds',
-    activeSub: 'All set — ready to play!',
-    doneSub: function() { return 'Session in progress'; },
+    title: t('startRoundsStep'),
+    activeSub: t('allSetReady'),
+    doneSub: function() { return t('sessionInProgress'); },
     isDone: function() { return Array.isArray(allRounds) && allRounds.length > 0; },
     go: function() { homeGo('roundsPage', 'tabBtnRounds'); }
   }
@@ -124,7 +124,7 @@ async function homeRefreshTiles() {
   var vaultSub = document.getElementById('tileSubVault');
   if (vaultSub) {
     if (club && club.name) {
-      vaultSub.textContent = club.name + (isAdmin ? ' · Admin' : ' · User');
+      vaultSub.textContent = club.name + (isAdmin ? ' ' + t('adminRole') : ' ' + t('userRole'));
     } else {
       vaultSub.textContent = t('notConnected') || 'Not connected';
     }
@@ -210,7 +210,7 @@ async function homeRefreshTiles() {
       ? schedulerState.fixedPairs.length : 0;
     pairsSub.textContent = pairCount > 0
       ? pairCount + ' pair' + (pairCount !== 1 ? 's' : '') + ' set'
-      : 'Optional';
+      : t('optional');
   }
 
   // ── Settings ──
@@ -310,7 +310,7 @@ async function homeRefreshTiles() {
         }
 
         var label = bestClubName ? bestClubName + '  ·  ' + bestRating.toFixed(1) : 'Club ' + bestRating.toFixed(1);
-        if (wins || losses) label += '  ·  W:' + wins + ' L:' + losses;
+        if (wins || losses) label += '  ·  ' + t('winsShort') + ':' + wins + ' ' + t('lossesShort') + ':' + losses;
 
         if (tileRating)  tileRating.textContent  = label;
         if (tileRatingV) tileRatingV.textContent = label;
@@ -331,8 +331,8 @@ async function homeRefreshTiles() {
       var sessions = (typeof dbGetLiveSessions === 'function') ? await dbGetLiveSessions() : [];
       var count = (sessions || []).length;
       var dashText = count > 0
-        ? count + ' live session' + (count !== 1 ? 's' : '')
-        : 'No live sessions';
+        ? count + ' ' + t('liveSession') + (count !== 1 ? 's' : '')
+        : t('noLiveSessions');
       if (dashSub)  dashSub.textContent  = dashText;
       if (dashSubV) dashSubV.textContent = dashText;
     } catch(e) {
@@ -415,7 +415,7 @@ function homeUpdateStepper() {
 
   if (icon)  icon.textContent  = step.icon;
   if (title) title.textContent = isDoneCurrent && current === STEP_DEFS.length - 1
-    ? 'Session Active!' : step.title;
+    ? t('sessionActive') : step.title;
   if (sub)   sub.textContent   = isDoneCurrent ? step.doneSub() : step.activeSub;
 
   if (btn) {
@@ -627,13 +627,13 @@ async function homeRefreshJoinClubTile() {
                 '<span class="vcl-dot">' + (item.pending ? '⏳' : (isActive ? '✅' : '🏸')) + '</span>' +
                 '<div class="vcl-row-info">' +
                   '<span class="vcl-row-name">' + item.name + '</span>' +
-                  (item.nick ? '<span class="vcl-row-nick">as ' + item.nick + '</span>' : '') +
+                  (item.nick ? '<span class="vcl-row-nick">' + t('asNick') + ' ' + item.nick + '</span>' : '') +
                 '</div>' +
                 (item.pending
-                  ? '<span class="vcl-badge vcl-badge-pending">Pending</span>'
+                  ? '<span class="vcl-badge vcl-badge-pending">' + t('badgePending') + '</span>'
                   : (isActive
-                    ? '<span class="vcl-badge vcl-badge-active">Active</span>'
-                    : '<span class="vcl-badge vcl-badge-member">Member</span>')) +
+                    ? '<span class="vcl-badge vcl-badge-active">' + t('badgeActive') + '</span>'
+                    : '<span class="vcl-badge vcl-badge-member">' + t('badgeMember') + '</span>')) +
               '</div>';
             }).join('');
           } else {
@@ -718,9 +718,9 @@ async function _renderMyClubsList() {
         '<div class="jc-club-icon">🏸</div>' +
         '<div class="jc-club-info">' +
           '<div class="jc-club-name">' + cname + '</div>' +
-          '<div class="jc-club-nick">as ' + m.nickname + '</div>' +
+          '<div class="jc-club-nick">' + t('asNick') + ' ' + m.nickname + '</div>' +
         '</div>' +
-        '<span class="jc-club-badge">Member</span>' +
+        '<span class="jc-club-badge">' + t('badgeMember') + '</span>' +
       '</div>';
     });
 
@@ -732,9 +732,9 @@ async function _renderMyClubsList() {
         '<div class="jc-club-icon">⏳</div>' +
         '<div class="jc-club-info">' +
           '<div class="jc-club-name">' + cname + '</div>' +
-          '<div class="jc-club-nick">Request pending</div>' +
+          '<div class="jc-club-nick">' + t('requestPendingText') + '</div>' +
         '</div>' +
-        '<span class="jc-club-pending">Pending</span>' +
+        '<span class="jc-club-pending">' + t('badgePending') + '</span>' +
       '</div>';
     });
 
@@ -761,7 +761,7 @@ function _joinClubShowStatus(state, clubName) {
   } else if (state === 'pending') {
     if (icon)  icon.textContent  = '⏳';
     if (title) title.textContent = t('requestPending');
-    if (msg)   msg.textContent   = 'Your request to join "' + clubName + '" is awaiting admin approval. Check back soon.';
+    if (msg)   msg.textContent   = t('yourRequestToJoin') + ' "' + clubName + '" ' + t('awaitingApproval');
     if (leave) leave.style.display = '';
     if (card)  card.style.borderColor = '#e6a817';
   }
@@ -841,7 +841,7 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
 
   var result = (typeof authRequestJoin === 'function')
     ? await authRequestJoin(clubId, customNickname)
-    : { error: 'Not available' };
+    : { error: t('notAvailable') };
 
   if (result.alreadyMember) {
     _joinClubShowStatus('joined', clubName);
@@ -904,7 +904,7 @@ function joinClubSubmitNickname() {
   var nickname = inputEl ? inputEl.value.trim() : '';
   if (!nickname) {
     var errEl = document.getElementById('joinClubPageError');
-    if (errEl) { errEl.textContent = 'Please enter a nickname.'; errEl.style.display = ''; }
+    if (errEl) { errEl.textContent = t('nicknameNotFound') || 'Please enter a nickname.'; errEl.style.display = ''; }
     return;
   }
   joinClubPageRequest(_pendingJoinClubId, _pendingJoinClubName, nickname);
@@ -912,7 +912,7 @@ function joinClubSubmitNickname() {
 
 /* ── Leave club ── */
 async function joinClubLeave() {
-  if (!confirm('Leave this club?')) return;
+  if (!confirm(t('leaveClubConfirm'))) return;
 
   var pendingClubId = localStorage.getItem('kbrr_pending_club_id');
   var myClub = (typeof getMyClub === 'function') ? getMyClub() : null;
@@ -987,12 +987,12 @@ async function vaultQuickCreateClub() {
     if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green,#2dce89)' : 'var(--red,#e63757)'; }
   };
 
-  if (!name)    { setFb('Enter club name.', false); return; }
-  if (!memberPw) { setFb('Enter member password.', false); return; }
-  if (!adminPw)  { setFb('Enter admin password.', false); return; }
-  if (memberPw === adminPw) { setFb('Member and admin passwords must be different.', false); return; }
+  if (!name)    { setFb(t('enterClubName'), false); return; }
+  if (!memberPw) { setFb(t('enterMemberPw'), false); return; }
+  if (!adminPw)  { setFb(t('enterAdminPw'), false); return; }
+  if (memberPw === adminPw) { setFb(t('memberAdminDiff'), false); return; }
 
-  setFb('Creating…', true);
+  setFb(t('creatingClub'), true);
   try {
     var club = await dbAddClub(name, memberPw, adminPw);
     if (typeof setMyClub  === 'function') setMyClub(club.id, club.name);
@@ -1011,7 +1011,7 @@ async function vaultQuickCreateClub() {
 
 /* ── Vault — Leave/Logout Club ── */
 function vaultLogoutClub() {
-  if (!confirm('Leave this club? You will need to reconnect to access Vault.')) return;
+  if (!confirm(t('leaveVaultConfirm'))) return;
   if (typeof sbClearClub === 'function') sbClearClub();
   homeRefreshTiles();
   homeRefreshJoinClubTile();
