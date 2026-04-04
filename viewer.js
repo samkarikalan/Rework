@@ -201,7 +201,7 @@ function _vBuildRound(data) {
       if (si === 0) {
         const vs = document.createElement('div');
         vs.className = 'vs-divider';
-        vs.innerHTML = '<div class="vs-line"></div><span>VS</span><div class="vs-line"></div>';
+        vs.innerHTML = `<div class="vs-line"></div><span>${t('vsLabel')}</span><div class="vs-line"></div>`;
         teamsDiv.appendChild(vs);
       }
     });
@@ -457,7 +457,7 @@ function orgClubLoginRefresh() {
     if (name) name.textContent = club.name;
     if (dot)  { dot.style.background = '#6c8cff'; dot.style.boxShadow = '0 0 0 3px rgba(108,140,255,0.2)'; }
     if (role) {
-      role.textContent = 'SESSION';
+      role.textContent = t('sessionBadge');
       role.style.background = 'rgba(108,140,255,0.18)';
       role.style.color = '#6c8cff';
       role.style.display = 'inline-block';

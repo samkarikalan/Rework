@@ -1464,7 +1464,7 @@ function renderGames(data, roundIndex) {
 
     const vsDivider = document.createElement('div');
     vsDivider.className = 'vs-divider';
-    vsDivider.innerHTML = '<div class="vs-line"></div><span>VS</span><div class="vs-line"></div>';
+    vsDivider.innerHTML = `<div class="vs-line"></div><span>${t('vsLabel')}</span><div class="vs-line"></div>`;
 
     teamsDiv.append(teamLeft, vsDivider, teamRight);
     courtDiv.append(courtName, teamsDiv);
@@ -1616,7 +1616,7 @@ function goodrenderGames(data, roundIndex) {
 
     const vsDivider = document.createElement('div');
     vsDivider.className = 'vs-divider';
-    vsDivider.innerHTML = '<div class="vs-line"></div><span>VS</span><div class="vs-line"></div>';
+    vsDivider.innerHTML = `<div class="vs-line"></div><span>${t('vsLabel')}</span><div class="vs-line"></div>`;
 
     teamsDiv.append(teamLeft, vsDivider, teamRight);
     courtDiv.append(courtName, teamsDiv);
@@ -1776,7 +1776,7 @@ function renderGames2(data, index) {
 
     const vsDivider = document.createElement('div');
     vsDivider.className = 'vs-divider';
-    vsDivider.innerHTML = '<div class="vs-line"></div><span>VS</span><div class="vs-line"></div>';
+    vsDivider.innerHTML = `<div class="vs-line"></div><span>${t('vsLabel')}</span><div class="vs-line"></div>`;
 
     teamsDiv.append(teamLeft, vsDivider, teamRight);
     courtDiv.append(courtName, teamsDiv);

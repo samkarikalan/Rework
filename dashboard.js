@@ -70,8 +70,8 @@ async function renderDashboard() {
     container.innerHTML = `
       <div class="dash-empty">
         <div class="dash-empty-icon">👤</div>
-        <p>Set up your profile first.</p>
-        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">Tap the profile icon to select your name.</p>
+        <p>${t("setupProfileFirst")}</p>
+        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">${t("tapProfileIcon")}</p>
       </div>`;
     return;
   }
@@ -79,8 +79,8 @@ async function renderDashboard() {
     container.innerHTML = `
       <div class="dash-empty">
         <div class="dash-empty-icon">🏟️</div>
-        <p>No club selected.</p>
-        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">Go to Club tab to join a club.</p>
+        <p>${t("noClubSelectedDash")}</p>
+        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">${t("goToClubTab")}</p>
       </div>`;
     return;
   }
@@ -121,7 +121,7 @@ async function renderDashboard() {
     // ── Live Section ──
     const liveSection = document.createElement('div');
     liveSection.className = 'dash-section';
-    liveSection.innerHTML = `<div class="dash-section-title"><span class="dash-live-dot"></span> Live Now</div>`;
+    liveSection.innerHTML = `<div class="dash-section-title"><span class="dash-live-dot"></span> ${t("liveNowTitle")}</div>`;
 
     if (liveSessions.length) {
       liveSessions.forEach(sess => {
@@ -141,14 +141,14 @@ async function renderDashboard() {
         liveSection.appendChild(card);
       });
     } else {
-      liveSection.innerHTML += `<div class="dash-empty-inline">No active sessions right now</div>`;
+      liveSection.innerHTML += `<div class="dash-empty-inline">${t("noActiveSessions")}</div>`;
     }
     container.appendChild(liveSection);
 
     // ── Past Sessions ──
     const pastSection = document.createElement('div');
     pastSection.className = 'dash-section';
-    pastSection.innerHTML = `<div class="dash-section-title">📅 Recent Sessions</div>`;
+    pastSection.innerHTML = `<div class="dash-section-title">📅 ${t("recentSessions")}</div>`;
 
     if (pastSessions.length) {
       pastSessions.forEach(sess => {
@@ -167,7 +167,7 @@ async function renderDashboard() {
         pastSection.appendChild(card);
       });
     } else {
-      pastSection.innerHTML += `<div class="dash-empty-inline">No recent sessions found</div>`;
+      pastSection.innerHTML += `<div class="dash-empty-inline">${t("noRecentSessions")}</div>`;
     }
     container.appendChild(pastSection);
 
@@ -178,9 +178,9 @@ async function renderDashboard() {
     container.innerHTML = `
       <div class="dash-empty">
         <div class="dash-empty-icon">📡</div>
-        <p>Could not load sessions.</p>
-        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">Check your connection.</p>
-        <button class="help-retry-btn" onclick="renderDashboard()" style="margin-top:12px">↺ Retry</button>
+        <p>${t("couldNotLoadSessions")}</p>
+        <p style="font-size:0.78rem;color:var(--text-dim);margin-top:4px">${t("checkConnection")}</p>
+        <button class="help-retry-btn" onclick="renderDashboard()" style="margin-top:12px">${t("retryBtn")}</button>
       </div>`;
   }
 }
@@ -214,7 +214,7 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
   const top = document.createElement('div');
   top.className = 'dash-card-top';
   top.innerHTML = `
-    <div class="dash-card-club">${clubName || 'Club'}</div>
+    <div class="dash-card-club">${clubName || t('clubLabel')}</div>
     ${isLive
       ? `<div class="dash-live-badge"><div class="dash-live-dot-sm"></div>LIVE</div>`
       : `<div class="dash-past-badge">${dateLabel}</div>`}
@@ -225,8 +225,8 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
   const meta = document.createElement('div');
   meta.className = 'dash-card-meta';
   meta.innerHTML = `
-    <span>👥 ${players.length} players</span>
-    ${totalRounds ? `<span>🔄 ${totalRounds} rounds</span>` : ''}
+    <span>👥 ${players.length} ${t("playersCount")}</span>
+    ${totalRounds ? `<span>🔄 ${totalRounds} ${t("roundsCount")}</span>` : ''}
     ${starter ? `<span>▶ ${starter}</span>` : ''}
   `;
   card.appendChild(meta);

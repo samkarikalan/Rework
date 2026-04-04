@@ -242,7 +242,7 @@ function showOnboardingOverlay(reason) {
     if (btn)   { btn.textContent = 'Connect to Club'; btn.onclick = goToVault; }
   } else if (reason === 'noPlayers') {
     if (title) title.textContent = t('noPlayersFoundWarn');
-    if (msg)   msg.textContent   = 'Your club has no players yet. Add players in the Vault to get started.';
+    if (msg)   msg.textContent   = t('noPlayersYetVault');
     if (btn)   { btn.textContent = t('goToVault'); btn.onclick = goToVault; }
   }
   overlay.style.display = 'flex';
@@ -824,7 +824,7 @@ function _showClubSetupSheet(targetMode) {
         <select id="csJoinClubSelect" class="auth-input" style="margin-bottom:10px">
           <option value="">— Loading clubs… —</option>
         </select>
-        <input type="password" id="csJoinPassword" class="auth-input" placeholder="Club password" style="margin-bottom:10px">
+        <input type="password" id="csJoinPassword" class="auth-input" placeholder="${t('clubPasswordPh')}" style="margin-bottom:10px">
         <div id="csJoinFeedback" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
         <div style="display:flex;gap:10px">
           <button class="admin-modal-cancel" style="flex:1" onclick="document.getElementById('clubSetupSheetOverlay').remove()">Cancel</button>
@@ -835,8 +835,8 @@ function _showClubSetupSheet(targetMode) {
       <!-- CREATE PANEL -->
       <div id="clubSetupPanelCreate" style="display:none;margin-top:14px">
         <div id="clubSetupPanelCreateForm">
-          <input type="text"     id="csCreateName"    class="auth-input" placeholder="Club name"      style="margin-bottom:8px">
-          <input type="password" id="csCreateUserPw"  class="auth-input" placeholder="Member password" style="margin-bottom:8px">
+          <input type="text"     id="csCreateName"    class="auth-input" placeholder="${t('clubNamePh')}"      style="margin-bottom:8px">
+          <input type="password" id="csCreateUserPw"  class="auth-input" placeholder="${t('memberPasswordPh')}" style="margin-bottom:8px">
           <input type="password" id="csCreateAdminPw" class="auth-input" placeholder="${t('enterAdminPasswordPh')}"  style="margin-bottom:10px">
           <div id="csCreateFeedback" style="font-size:0.82rem;min-height:18px;margin-bottom:10px"></div>
           <div style="display:flex;gap:10px">
@@ -1040,7 +1040,7 @@ async function verifyVaultPassword() {
     if (ov) ov.remove();
     switchMode('vault');
   } catch(e) {
-    if (errEl) errEl.textContent = 'Error: ' + e.message;
+    if (errEl) errEl.textContent = t('errorPrefix') + e.message;
   }
 }
 

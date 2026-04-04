@@ -650,7 +650,7 @@ async function homeRefreshJoinClubTile() {
   var club = (typeof getMyClub === 'function') ? getMyClub() : null;
   if (club && club.id && club.name) { sub.textContent = '✅ ' + club.name; return; }
   var pending = localStorage.getItem('kbrr_pending_club_name');
-  if (pending) { sub.textContent = '⏳ Pending: ' + pending; return; }
+  if (pending) { sub.textContent = t('pendingPrefix') + pending; return; }
   sub.textContent = t('findRequest');
 }
 

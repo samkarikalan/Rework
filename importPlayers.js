@@ -850,7 +850,7 @@ function newImportSaveFavoriteSet() {
 }
 
 function newImportDeleteFavoriteSet(setName) {
-  if (!confirm(`Delete set "${setName}"?`)) return;
+  if (!confirm(`${t("deleteSetConfirm")} "${setName}"?`)) return;
   const sets = newImportLoadFavoriteSets().filter(s => s.name !== setName);
   newImportSaveFavoriteSets(sets);
   newImportRefreshSelectCards();
@@ -1044,7 +1044,7 @@ function newImportRenderRegister(keepStaging = false) {
       <div class="register-club-label">
         ${club.name
           ? `🏸 Registering for: <strong>${club.name}</strong>`
-          : `⚠️ No club selected. Go to Settings → Club Admin first.`}
+          : t("noClubSelectedWarn2")}
       </div>
       ${club.name ? `
       <div class="register-field">
@@ -1196,12 +1196,12 @@ async function regRegisterAll() {
   const feedback = document.getElementById("registerFeedback");
   const btn = document.getElementById("regRegisterAllBtn");
   if (!club.id) {
-    if (feedback) { feedback.textContent = "⚠️ No club selected."; feedback.className = "register-feedback error"; }
+    if (feedback) { feedback.textContent = t("noClubSelectedWarn2"); feedback.className = "register-feedback error"; }
     return;
   }
 
   if (typeof isAdminMode === "function" && !isAdminMode()) {
-    if (feedback) { feedback.textContent = "⚠️ Admin mode required."; feedback.className = "register-feedback error"; }
+    if (feedback) { feedback.textContent = t("adminModeRequired"); feedback.className = "register-feedback error"; }
     return;
   }
 
