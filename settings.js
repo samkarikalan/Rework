@@ -595,6 +595,13 @@ async function vaultRenderModify() {
   try {
     const clubPlayers = await dbGetPlayers(true);
 
+    // Fetch memberships to get user_account_id for each player
+    const mems = await sbGet('memberships',
+      'club_id=eq.' + club.id + '&select=nickname,user_account_id'
+    ).catch(() => []);
+    const memMap = {};
+    (mems || []).forEach(m => { if (m.nickname) memMap[m.nickname.toLowerCase()] = m.user_account_id; });
+
     _vmAllPlayers = (clubPlayers || []).map(p => ({
       id:            p.membershipId || p.id,
       playerId:      p.id,
@@ -603,6 +610,7 @@ async function vaultRenderModify() {
       rating:        parseFloat(p.clubRating) || parseFloat(p.rating) || 1.0,
       wins:          p.wins   || 0,
       losses:        p.losses || 0,
+      userId:        memMap[(p.name || '').toLowerCase()] || null,
     })).sort((a, b) => a.displayName.localeCompare(b.displayName));
 
     vaultModifyFilter();
