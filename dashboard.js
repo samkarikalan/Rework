@@ -286,17 +286,17 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
     footer.className = 'dash-card-footer';
     const forceEndBtn = document.createElement('button');
     forceEndBtn.className = 'dash-force-end-btn';
-    forceEndBtn.textContent = '⏹ Force End Session';
+    forceEndBtn.textContent = t('forceEndSession');
     forceEndBtn.onclick = async (e) => {
       e.stopPropagation();
       if (!confirm('Force end this session? This cannot be undone.')) return;
-      forceEndBtn.textContent = 'Ending…';
+      forceEndBtn.textContent = t('ending');
       forceEndBtn.disabled = true;
       try {
         await dbForceCompleteSession(sessionId);
         renderDashboard();
       } catch(err) {
-        forceEndBtn.textContent = '⏹ Force End Session';
+        forceEndBtn.textContent = t('forceEndSession');
         forceEndBtn.disabled = false;
         alert('Failed: ' + err.message);
       }

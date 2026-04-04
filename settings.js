@@ -277,7 +277,7 @@ function playerSubtabShow(tab) {
 
 async function playerPlayingRenderList() {
   const container = document.getElementById('playerPlayingList');
-  container.innerHTML = '<p style="color:#aaa;font-size:0.85rem">Loading...</p>';
+  container.innerHTML = '<p style="color:#aaa;font-size:0.85rem">' + t('loading') + '</p>';
   const admin = isAdminMode();
 
   try {
@@ -290,12 +290,12 @@ async function playerPlayingRenderList() {
       );
       rows = (rows || []).map(m => ({ name: m.nickname, gender: m.players?.gender || 'Male' }));
     } else {
-      container.innerHTML = '<p class="player-mgmt-empty">Join a club to view playing players.</p>';
+      container.innerHTML = '<p class="player-mgmt-empty">' + t('joinClubToPlay') + '</p>';
       return;
     }
 
     if (!rows || !rows.length) {
-      container.innerHTML = '<p class="player-mgmt-empty">No players currently locked.</p>';
+      container.innerHTML = '<p class="player-mgmt-empty">' + t('noPlayersLocked') + '</p>';
       return;
     }
 
@@ -308,7 +308,7 @@ async function playerPlayingRenderList() {
       const releaseAllBtn = document.createElement('button');
       releaseAllBtn.className = 'player-mgmt-add-btn';
       releaseAllBtn.style.background = '#e63757';
-      releaseAllBtn.textContent = '🔓 Release All (' + rows.length + ')';
+      releaseAllBtn.textContent = t('releaseAll') + ' (' + rows.length + ')';
       releaseAllBtn.onclick = playerPlayingReleaseAll;
       bar.appendChild(releaseAllBtn);
       container.appendChild(bar);
@@ -351,7 +351,7 @@ async function playerPlayingRenderList() {
     });
 
   } catch(e) {
-    container.innerHTML = '<p class="player-mgmt-empty">Failed to load. Check connection.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('failedLoadConnection') + '</p>';
     console.error('playerPlayingRenderList error:', e);
   }
 }
@@ -380,7 +380,7 @@ async function playerPlayingReleaseAll() {
 // ── Render master player list ──
 async function playerMgmtRenderList() {
   const container = document.getElementById("playerMgmtList");
-  container.innerHTML = "<p style='color:#aaa;font-size:0.85rem'>Loading...</p>";
+  container.innerHTML = "<p style='color:#aaa;font-size:0.85rem'>" + t('loading') + "</p>";
 
   // Always use syncToLocal as single source of truth — never fetch directly
   if (!newImportState.historyPlayers || !newImportState.historyPlayers.length) {
@@ -391,7 +391,7 @@ async function playerMgmtRenderList() {
   container.innerHTML = "";
 
   if (players.length === 0) {
-    container.innerHTML = '<p class="player-mgmt-empty">No players in database yet.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('noPlayersInDb') + '</p>';
     return;
   }
 
@@ -580,17 +580,17 @@ async function vaultRenderModify() {
   if (!container) return;
 
   if (!(typeof isAdminMode === 'function' && isAdminMode())) {
-    container.innerHTML = '<p class="player-mgmt-empty">🔒 Admin access required.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('adminAccessRequired') + '</p>';
     return;
   }
 
   const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
   if (!club.id) {
-    container.innerHTML = '<p class="player-mgmt-empty">Join a club to manage players.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('joinClubToManage') + '</p>';
     return;
   }
 
-  container.innerHTML = '<p class="player-mgmt-empty"><span class="vm-spinner"></span> Loading…</p>';
+  container.innerHTML = '<p class="player-mgmt-empty"><span class="vm-spinner"></span> ' + t('loading') + '</p>';
 
   try {
     const clubPlayers = await dbGetPlayers(true);
@@ -615,7 +615,7 @@ async function vaultRenderModify() {
 
     vaultModifyFilter();
   } catch(e) {
-    container.innerHTML = '<p class="player-mgmt-empty">Failed to load players.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('failedLoadPlayers') + '</p>';
     console.error('vaultRenderModify error:', e);
   }
 }
@@ -631,10 +631,10 @@ function vaultModifyFilter() {
   if (search) filtered = filtered.filter(p => p.displayName.toLowerCase().includes(search));
   if (gender) filtered = filtered.filter(p => (p.gender || 'Male') === gender);
 
-  if (countEl) countEl.textContent = filtered.length + ' player' + (filtered.length !== 1 ? 's' : '');
+  if (countEl) countEl.textContent = filtered.length + ' ' + (filtered.length !== 1 ? t('playerPlural') : t('playerSingular'));
 
   if (!filtered.length) {
-    container.innerHTML = '<p class="player-mgmt-empty">No players match your search.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('noPlayersMatch') + '</p>';
     return;
   }
 
@@ -860,7 +860,7 @@ function vaultRenderRegister() {
   const club = (typeof getMyClub === 'function') ? getMyClub() : { name: null };
 
   if (!club.name) {
-    container.innerHTML = '<div class="register-club-label">⚠️ No club selected. Join a club first.</div>';
+    container.innerHTML = '<div class="register-club-label">' + t('noClubSelectedJoin') + '</div>';
     return;
   }
 
@@ -1091,14 +1091,14 @@ function vaultSyncStatus() {
     if (strip) strip.style.borderColor = 'rgba(45,206,137,0.2)';
     if (role) {
       role.style.display = 'inline-block';
-      if (mode === 'admin') { role.textContent = 'ADMIN'; role.style.background = '#2dce89'; role.style.color = '#000'; }
-      else                  { role.textContent = 'USER';  role.style.background = 'var(--accent)'; role.style.color = '#fff'; }
+      if (mode === 'admin') { role.textContent = t('adminBadge')||'ADMIN'; role.style.background = '#2dce89'; role.style.color = '#000'; }
+      else                  { role.textContent = t('userBadge')||'USER';  role.style.background = 'var(--accent)'; role.style.color = '#fff'; }
     }
     // Modify tab — admin only
     const modifyBtn = document.getElementById('vaultTabModifyBtn');
     if (modifyBtn) modifyBtn.style.display = mode === 'admin' ? '' : 'none';
   } else {
-    if (name)  name.textContent  = 'No club selected';
+    if (name)  name.textContent  = t('noClubSelected');
     if (dot)   { dot.style.background = 'var(--muted)'; dot.style.boxShadow = 'none'; }
     if (role)  role.style.display = 'none';
   }
@@ -1170,7 +1170,7 @@ async function sbPopulateDeleteDropdown() {
   if (!select) return;
   try {
     const clubs = await dbGetClubs();
-    select.innerHTML = '<option value="">— Select club to delete —</option>';
+    select.innerHTML = '<option value="">' + (t('selectClubDelete')||'— Select club to delete —') + '</option>';
     clubs.forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.id;
@@ -1209,7 +1209,7 @@ async function showPlayerStats(name) {
   const content  = document.getElementById("playerStatsContent");
   if (!modal || !content) return;
 
-  content.innerHTML = "<div class='stats-loading'>Loading...</div>";
+  content.innerHTML = "<div class='stats-loading'>" + t('loading') + "</div>";
   modal.style.display = "flex";
 
   try {
@@ -1218,7 +1218,7 @@ async function showPlayerStats(name) {
       `name=ilike.${encodeURIComponent(name)}&select=name,gender,wins,losses,sessions`
     );
     if (!rows || !rows.length) {
-      content.innerHTML = "<div class='stats-loading'>Player not found.</div>";
+      content.innerHTML = "<div class='stats-loading'>" + t('playerNotFound') + "</div>";
       return;
     }
     const p      = rows[0];

@@ -75,7 +75,7 @@ function _vRender(roundsData) {
   if (!container) return;
   container.innerHTML = '';
   if (!roundsData || !roundsData.length) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:0.85rem;">No rounds yet</div>';
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:0.85rem;">' + t('noRoundsYet') + '</div>';
     return;
   }
   container.appendChild(_vBuildSubTabs());
@@ -156,7 +156,7 @@ function _vBuildRound(data) {
 
   const header = document.createElement('div');
   header.className = 'round-header';
-  header.textContent = (tr.roundno || 'Round ') + data.round;
+  header.textContent = (tr.roundno || (t('round') + ' ')) + data.round;
   wrapper.appendChild(header);
 
   (data.games || []).forEach((game, gi) => {
@@ -215,7 +215,7 @@ function _vBuildRound(data) {
     const restRow = document.createElement('div');
     restRow.className = 'round-header';
     restRow.style.paddingLeft = '12px';
-    restRow.textContent = tr2.sittingOut || 'Resting';
+    restRow.textContent = tr2.sittingOut || t('resting');
     const restBox = document.createElement('div');
     restBox.className = 'rest-box';
     data.resting.forEach(name => {
@@ -299,7 +299,7 @@ function _vRenderSummary(container) {
   const roundsTitle = document.createElement('div');
   roundsTitle.className = 'round-header';
   roundsTitle.style.margin = '16px 4px 6px';
-  roundsTitle.textContent = tr.rounds || 'Rounds';
+  roundsTitle.textContent = tr.rounds || t('roundsLabel');
   container.appendChild(roundsTitle);
 
   for (let i = _vRoundsData.length - 1; i >= 0; i--) {
@@ -362,7 +362,7 @@ function clubLoginRefresh() {
     if (name) name.textContent = club.name;
     if (dot)  { dot.style.background = '#2dce89'; dot.style.boxShadow = '0 0 0 3px rgba(45,206,137,0.2)'; }
     if (role) {
-      role.textContent = mode === 'admin' ? 'ADMIN' : 'USER';
+      role.textContent = mode === 'admin' ? (t('adminBadge')||'ADMIN') : (t('userBadge')||'USER');
       role.style.background = mode === 'admin' ? '#2dce89' : 'var(--accent)';
       role.style.color = mode === 'admin' ? '#000' : '#fff';
       role.style.display = 'inline-block';
@@ -391,10 +391,10 @@ async function viewerLoadClubs() {
   const feedback = document.getElementById('sbClubFeedbackViewer');
   const setFb = (msg, ok) => { if (feedback) { feedback.textContent = msg; feedback.style.color = ok ? '#2dce89' : '#e63757'; } };
   if (!select) return;
-  select.innerHTML = '<option value="">— Loading clubs… —</option>';
+  select.innerHTML = '<option value="">' + (t('loadingClubs')||'— Loading clubs… —') + '</option>';
   try {
     const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
-    select.innerHTML = '<option value="">— Select club —</option>';
+    select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
     if (!clubs.length) { setFb('No clubs found.', false); return; }
     clubs.forEach(c => {
       const opt = document.createElement('option');
@@ -405,7 +405,7 @@ async function viewerLoadClubs() {
     const cur = (typeof getMyClub === 'function') ? getMyClub() : null;
     if (cur && cur.id) select.value = cur.id;
   } catch (e) {
-    select.innerHTML = '<option value="">— Select club —</option>';
+    select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
     setFb('❌ Could not load clubs: ' + e.message, false);
     console.warn('viewerLoadClubs:', e.message);
   }
@@ -478,10 +478,10 @@ async function orgLoadClubs() {
   const feedback = document.getElementById('orgClubFeedback');
   const setFb = (msg, ok) => { if (feedback) { feedback.textContent = msg; feedback.style.color = ok ? '#2dce89' : '#e63757'; } };
   if (!select) return;
-  select.innerHTML = '<option value="">— Loading clubs… —</option>';
+  select.innerHTML = '<option value="">' + (t('loadingClubs')||'— Loading clubs… —') + '</option>';
   try {
     const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
-    select.innerHTML = '<option value="">— Select club —</option>';
+    select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
     if (!clubs.length) { setFb('No clubs found.', false); return; }
     clubs.forEach(c => {
       const opt = document.createElement('option');
@@ -492,7 +492,7 @@ async function orgLoadClubs() {
     if (cur && cur.id) select.value = cur.id;
     setFb('', true);
   } catch (e) {
-    select.innerHTML = '<option value="">— Select club —</option>';
+    select.innerHTML = '<option value="">' + (t('selectClub')||'— Select club —') + '</option>';
     setFb('❌ Could not load clubs: ' + e.message, false);
   }
 }
