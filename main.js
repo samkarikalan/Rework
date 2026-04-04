@@ -90,20 +90,20 @@ function openModeSwitcher() {
   overlay.className = 'mode-launcher-fullscreen';
   overlay.id = 'modeSheetOverlay';
 
-  const cancelBtn = appMode ? '<button class="ml-cancel" onclick="closeModeSheet()">Cancel</button>' : '';
+  const cancelBtn = appMode ? `<button class="ml-cancel" onclick="closeModeSheet()">${t('cancel')}</button>` : '';
 
   overlay.innerHTML = `
     <div class="ml-inner">
       <div class="ml-logo">🏸</div>
-      <div class="ml-title">Sports Club Scheduler</div>
-      <div class="ml-sub">Choose how you are using the app</div>
+      <div class="ml-title">${t('appTitle')}</div>
+      <div class="ml-sub">${t('howUsingApp')}</div>
       <div class="ml-modes">
         <button class="ml-mode viewer ${appMode === 'viewer' ? 'ml-active' : ''}"
                 onclick="switchMode('viewer')">
           <div class="ml-mode-icon">👁</div>
           <div class="ml-mode-info">
-            <div class="ml-mode-name">Viewer</div>
-            <div class="ml-mode-desc">Watch live rounds &amp; scores</div>
+            <div class="ml-mode-name">${t('viewer')}</div>
+            <div class="ml-mode-desc">${t('watchLiveDesc')}</div>
           </div>
           <span class="ml-arr">›</span>
         </button>
@@ -111,8 +111,8 @@ function openModeSwitcher() {
                 onclick="switchMode('organiser')">
           <div class="ml-mode-icon">🏆</div>
           <div class="ml-mode-info">
-            <div class="ml-mode-name">Round Organiser</div>
-            <div class="ml-mode-desc">Run session, score games, manage players</div>
+            <div class="ml-mode-name">${t('roundOrganiser')}</div>
+            <div class="ml-mode-desc">${t('roundOrganiserDesc')}</div>
           </div>
           <span class="ml-arr">›</span>
         </button>
@@ -120,14 +120,14 @@ function openModeSwitcher() {
                 onclick="requestVaultMode()">
           <div class="ml-mode-icon">🔑</div>
           <div class="ml-mode-info">
-            <div class="ml-mode-name">Vault Manager</div>
-            <div class="ml-mode-desc">Club admin — players, requests, management</div>
+            <div class="ml-mode-name">${t('vaultManager')}</div>
+            <div class="ml-mode-desc">${t('vaultManagerDesc')}</div>
           </div>
           <span class="ml-arr">›</span>
         </button>
       </div>
       <div class="ml-footer">
-        <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage',null)">⚙️ Settings</button>
+        <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage',null)">⚙️ ${t('settings')}</button>
       </div>
       ${cancelBtn ? `<div class="ml-footer" style="margin-top:8px">${cancelBtn}</div>` : ''}
     </div>
