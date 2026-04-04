@@ -376,6 +376,11 @@ async function authRequestJoin(clubId, chosenNickname) {
         for (var i = 0; i < others.length; i++) {
           await sbPatch('memberships', 'id=eq.' + others[i].id, { user_account_id: user.id }).catch(function(){});
         }
+        // Also update players table — mark as registered
+        await sbPatch('players',
+          'club_id=eq.' + clubId + '&name=ilike.' + encodeURIComponent(nickname),
+          { user_account_id: user.id }
+        ).catch(function(){});
         // Get club name and auto-join
         var clubInfo = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name').catch(function(){ return []; });
         var cname = (clubInfo && clubInfo.length) ? clubInfo[0].name : '';
@@ -445,13 +450,20 @@ async function authAcceptRequest(requestId, clubId, userAccountId, nickname, gen
     if (memberships && memberships.length) {
       // Link existing membership to user account
       await sbPatch('memberships', 'id=eq.' + memberships[0].id, { user_account_id: userAccountId });
+      // Also update players table — mark as registered
+      await sbPatch('players',
+        'club_id=eq.' + clubId + '&name=ilike.' + encodeURIComponent(nickname),
+        { user_account_id: userAccountId }
+      ).catch(function(){});
     } else {
       // Create player + membership (player not pre-registered)
       var created = await sbPost('players', {
-        name:          nickname,
-        gender:        gender || 'Male',
-        global_rating: 1.0,
-        global_points: 0
+        name:            nickname,
+        gender:          gender || 'Male',
+        club_id:         clubId,
+        global_rating:   1.0,
+        global_points:   0,
+        user_account_id: userAccountId
       });
       await sbPost('memberships', {
         player_id:       created[0].id,
