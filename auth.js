@@ -504,14 +504,19 @@ authHandleInviteLink();
    OTP VERIFICATION — via Supabase Edge Functions + Resend
    ============================================================ */
 
-const EDGE_BASE = 'https://hplkoxdorbfjhwbvqatn.supabase.co/functions/v1';
+const EDGE_BASE    = 'https://hplkoxdorbfjhwbvqatn.supabase.co/functions/v1';
+const EDGE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwbGtveGRvcmJmamh3YnZxYXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MTcyOTgsImV4cCI6MjA5MDE5MzI5OH0.G-04VeYkUGMF93qw61ryTaQ0Q7xK3dOAHLDvG6l31vc';
 
 /* Send OTP to email */
 async function authSendOtp(email) {
   try {
     const res = await fetch(EDGE_BASE + '/send-otp', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + EDGE_ANON_KEY,
+        'apikey': EDGE_ANON_KEY
+      },
       body: JSON.stringify({ email: email.toLowerCase().trim() })
     });
     const data = await res.json();
@@ -527,7 +532,11 @@ async function authVerifyOtp(email, otp) {
   try {
     const res = await fetch(EDGE_BASE + '/verify-otp', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + EDGE_ANON_KEY,
+        'apikey': EDGE_ANON_KEY
+      },
       body: JSON.stringify({ email: email.toLowerCase().trim(), otp: otp.trim() })
     });
     const data = await res.json();
