@@ -643,7 +643,7 @@ function vaultModifyFilter() {
     const ini = (p.displayName || '?')[0].toUpperCase();
     const rating = p.rating.toFixed(1);
     const userIdTag = p.userId
-      ? `<span class="vm-userid-chip">@${_vmEsc(p.userId)}</span>`
+      ? `<span class="vm-userid-chip">✅ registered</span>`
       : `<span class="vm-userid-chip vm-unlinked">no account</span>`;
     const safeId = _vmEsc(p.id);
     return `<div class="vm-player-row ${g}">
