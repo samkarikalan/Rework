@@ -271,7 +271,10 @@ const translations = {
     "subFeature3": "✓ Organiser mode — run sessions",
     "subFeature4": "✓ Players & Fixed Pairs management",
     "subFeature5": "✓ Viewer mode — watch live scores",
-    "backHome": "‹ Home"
+    "backHome": "‹ Home",
+    "notConnected": "Not connected",
+    "setupBadge": "SETUP",
+    "memberMsg": "You are a member of this club."
   },
   "jp": {
     "home": "ホーム",
@@ -540,7 +543,10 @@ const translations = {
     "verifyEmail": "メールを認証",
     "viewerBadge": "VIEWER",
     "watchLiveDesc": "ライブラウンド＆スコアを観戦",
-    "welcomeTitle": "ようこそ"
+    "welcomeTitle": "ようこそ",
+    "notConnected": "未接続",
+    "setupBadge": "SETUP",
+    "memberMsg": "このクラブのメンバーです。"
   },
   "kr": {
     "home": "홈",
@@ -809,7 +815,10 @@ const translations = {
     "verifyEmail": "이메일 인증",
     "viewerBadge": "VIEWER",
     "watchLiveDesc": "라이브 라운드 & 점수 관전",
-    "welcomeTitle": "환영합니다"
+    "welcomeTitle": "환영합니다",
+    "notConnected": "연결되지 않음",
+    "setupBadge": "SETUP",
+    "memberMsg": "이 클럽의 회원입니다."
   },
   "vi": {
     "home": "Trang chủ",
@@ -1078,7 +1087,10 @@ const translations = {
     "verifyEmail": "Xác minh email",
     "viewerBadge": "VIEWER",
     "watchLiveDesc": "Xem vòng đấu & điểm số trực tiếp",
-    "welcomeTitle": "Chào mừng"
+    "welcomeTitle": "Chào mừng",
+    "notConnected": "Chưa kết nối",
+    "setupBadge": "SETUP",
+    "memberMsg": "Bạn là thành viên của CLB này."
   },
   "zh": {
     "home": "首页",
@@ -1347,6 +1359,9 @@ const translations = {
     "verifyEmail": "验证邮箱",
     "viewerBadge": "VIEWER",
     "watchLiveDesc": "观看实时回合与比分",
-    "welcomeTitle": "欢迎"
+    "welcomeTitle": "欢迎",
+    "notConnected": "未连接",
+    "setupBadge": "SETUP",
+    "memberMsg": "您是该俱乐部的成员。"
   }
 };

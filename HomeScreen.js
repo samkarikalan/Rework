@@ -85,7 +85,7 @@ function showHomeScreen() {
     if (statusName) statusName.textContent = player.displayName;
     if (statusBar)  statusBar.classList.remove('disconnected');
   } else {
-    if (statusName) statusName.textContent = 'Not connected';
+    if (statusName) statusName.textContent = t('notConnected') || 'Not connected';
     if (statusBar)  statusBar.classList.add('disconnected');
   }
 
@@ -126,7 +126,7 @@ async function homeRefreshTiles() {
     if (club && club.name) {
       vaultSub.textContent = club.name + (isAdmin ? ' · Admin' : ' · User');
     } else {
-      vaultSub.textContent = 'Not connected';
+      vaultSub.textContent = t('notConnected') || 'Not connected';
     }
   }
 
@@ -156,13 +156,13 @@ async function homeRefreshTiles() {
       vctName.textContent = club.name;
       if (vctDot) vctDot.style.background = '#2dce89';
       if (vctBadge) {
-        vctBadge.textContent = 'ADMIN';
+        vctBadge.textContent = t('adminBadge') || 'ADMIN';
         vctBadge.style.background = '#2dce89';
         vctBadge.style.color = '#000';
         vctBadge.style.display = '';
       }
     } else {
-      vctName.textContent = 'No club selected';
+      vctName.textContent = t('noClubSelected');
       if (vctBadge) vctBadge.style.display = 'none';
       if (vctDot) vctDot.style.background = '#888';
     }
@@ -175,11 +175,11 @@ async function homeRefreshTiles() {
   if (orgVctName) {
     if (club && club.name) {
       orgVctName.textContent  = club.name;
-      if (orgVctBadge) orgVctBadge.textContent = '✅ Connected';
+      if (orgVctBadge) orgVctBadge.textContent = '✅ ' + (t('connectClub') || 'Connected');
       if (orgTileIcon) orgTileIcon.textContent  = '🏢';
     } else {
-      orgVctName.textContent  = 'Club';
-      if (orgVctBadge) orgVctBadge.textContent = 'Tap to connect';
+      orgVctName.textContent  = t('clubLabel') || 'Club';
+      if (orgVctBadge) orgVctBadge.textContent = t('tapConnect');
       if (orgTileIcon) orgTileIcon.textContent  = '🏢';
     }
   }
@@ -199,7 +199,7 @@ async function homeRefreshTiles() {
         ? total + ' players · ' + active + ' active'
         : 'Add · Remove';
     } else {
-      playersSub.textContent = 'Add · Remove';
+      playersSub.textContent = t('addRemove');
     }
   }
 
@@ -243,12 +243,12 @@ async function homeRefreshTiles() {
       if (name)   name.textContent = p.name;
       if (avatar) { avatar.src = p.gender === 'Female' ? 'female.png' : 'male.png'; avatar.style.display = 'block'; }
       if (icon)   icon.style.display = 'none';
-      if (rating) rating.textContent = 'Loading...';
+      if (rating) rating.textContent = t('loading');
     } else {
-      if (name)   name.textContent = 'My Card';
+      if (name)   name.textContent = t('myCard');
       if (avatar) avatar.style.display = 'none';
       if (icon)   { icon.style.display = ''; icon.textContent = '👤'; }
-      if (rating) rating.textContent = 'Not selected';
+      if (rating) rating.textContent = t('notSelected');
     }
   }
   _setMyCardTileBase(tileName,  tileAvatar,  tileIcon,  tileRating,  player);
@@ -315,8 +315,8 @@ async function homeRefreshTiles() {
         if (tileRating)  tileRating.textContent  = label;
         if (tileRatingV) tileRatingV.textContent = label;
       } catch(e) {
-        if (tileRating)  tileRating.textContent  = 'Tap to view';
-        if (tileRatingV) tileRatingV.textContent = 'Tap to view';
+        if (tileRating)  tileRating.textContent  = t('loading') || 'Tap to view';
+        if (tileRatingV) tileRatingV.textContent = t('loading') || 'Tap to view';
       }
     })();
   }
@@ -325,8 +325,8 @@ async function homeRefreshTiles() {
   var dashSub  = document.getElementById('tileSubDashboard');
   var dashSubV = document.getElementById('tileSubDashboardV');
   if (dashSub || dashSubV) {
-    if (dashSub)  dashSub.textContent  = 'Loading...';
-    if (dashSubV) dashSubV.textContent = 'Loading...';
+    if (dashSub)  dashSub.textContent  = t('loading');
+    if (dashSubV) dashSubV.textContent = t('loading');
     try {
       var sessions = (typeof dbGetLiveSessions === 'function') ? await dbGetLiveSessions() : [];
       var count = (sessions || []).length;
@@ -336,8 +336,8 @@ async function homeRefreshTiles() {
       if (dashSub)  dashSub.textContent  = dashText;
       if (dashSubV) dashSubV.textContent = dashText;
     } catch(e) {
-      if (dashSub)  dashSub.textContent  = 'Live sessions';
-      if (dashSubV) dashSubV.textContent = 'Live sessions';
+      if (dashSub)  dashSub.textContent  = t('liveSessions');
+      if (dashSubV) dashSubV.textContent = t('liveSessions');
     }
   }
 }
@@ -651,7 +651,7 @@ async function homeRefreshJoinClubTile() {
   if (club && club.id && club.name) { sub.textContent = '✅ ' + club.name; return; }
   var pending = localStorage.getItem('kbrr_pending_club_name');
   if (pending) { sub.textContent = '⏳ Pending: ' + pending; return; }
-  sub.textContent = 'Find & request';
+  sub.textContent = t('findRequest');
 }
 
 /* ── Join Club Page — initialise when page opens ── */
@@ -755,7 +755,7 @@ function _joinClubShowStatus(state, clubName) {
   if (state === 'joined') {
     if (icon)  icon.textContent  = '✅';
     if (title) title.textContent = 'Joined: ' + clubName;
-    if (msg)   msg.textContent   = 'You are a member of this club. Switch to Organiser mode to manage sessions.';
+    if (msg)   msg.textContent   = t('memberMsg') || 'You are a member of this club.';
     if (leave) leave.style.display = '';
     if (card)  card.style.borderColor = '#2dce89';
   } else if (state === 'pending') {

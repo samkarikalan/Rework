@@ -165,7 +165,7 @@ function _vBuildRound(data) {
 
     const courtName = document.createElement('div');
     courtName.className = 'courtname';
-    courtName.textContent = 'Court ' + (gi + 1);
+    courtName.textContent = (t('court') || 'Court') + ' ' + (gi + 1);
     courtDiv.appendChild(courtName);
 
     const teamsDiv = document.createElement('div');

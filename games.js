@@ -2429,13 +2429,13 @@ function _syncModeBanner() {
 
   if (currentState === "active") {
     badge.className = 'mode-banner-badge live-mode';
-    badge.textContent = 'LIVE';
+    badge.textContent = t('liveBadge') || 'LIVE';
   } else if (!interactionLocked) {
     badge.className = 'mode-banner-badge setup-mode';
-    badge.textContent = 'SETUP';
+    badge.textContent = t('setupBadge') || 'SETUP';
   } else {
     badge.className = 'mode-banner-badge ready-mode';
-    badge.textContent = 'READY';
+    badge.textContent = t('readyBadge') || 'READY';
   }
 }
 
