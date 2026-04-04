@@ -88,7 +88,6 @@ async function authDoLogin() {
 }
 
 /* ── Do Sign Up ── */
-// Store pending signup data while waiting for OTP
 var _pendingSignup = null;
 
 async function authDoSignup() {
@@ -102,17 +101,13 @@ async function authDoSignup() {
   if (!email) { authShowError('signupError', 'Email is required'); return; }
   if (password !== confirm) { authShowError('signupError', 'Passwords do not match'); return; }
 
-  // Step 1 — Send OTP to verify email
+  // Send OTP first
   authSetLoading('#authSignup .auth-btn-primary', true);
   var otpResult = await authSendOtp(email);
   authSetLoading('#authSignup .auth-btn-primary', false);
 
-  if (otpResult.error) {
-    authShowError('signupError', otpResult.error);
-    return;
-  }
+  if (otpResult.error) { authShowError('signupError', '❌ ' + otpResult.error); return; }
 
-  // Store signup data and show OTP screen
   _pendingSignup = { email, displayName, gender, password, recoveryWord };
   authShowOtpScreen(email, 'signup');
 }
@@ -121,18 +116,13 @@ async function authCompleteSignup(otp) {
   if (!_pendingSignup) return;
   var { email, displayName, gender, password, recoveryWord } = _pendingSignup;
 
-  // Verify OTP
   var btn = document.getElementById('authOtpSubmitBtn');
   if (btn) btn.disabled = true;
   var verifyResult = await authVerifyOtp(email, otp);
   if (btn) btn.disabled = false;
 
-  if (verifyResult.error) {
-    authShowError('authOtpError', verifyResult.error);
-    return;
-  }
+  if (verifyResult.error) { authShowError('authOtpError', '❌ ' + verifyResult.error); return; }
 
-  // OTP verified — create account
   var result = await authSignUp(email, password, displayName, gender, recoveryWord);
   if (result.error) { authShowError('authOtpError', result.error); return; }
 
