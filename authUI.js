@@ -142,6 +142,9 @@ async function authAfterLogin(user) {
   }
   if (typeof updateProfileBtn === 'function') updateProfileBtn();
 
+  // Silent background sync — link players rows where nickname matches but user_account_id is null
+  authSyncPlayerLinks(user).catch(function(){});
+
   // Check for pending invite
   var pending = (typeof authGetPendingInvite === 'function') ? authGetPendingInvite() : null;
   if (pending) {

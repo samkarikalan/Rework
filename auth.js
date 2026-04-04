@@ -558,3 +558,36 @@ async function authVerifyOtp(email, otp) {
     return { error: 'Network error: ' + e.message };
   }
 }
+
+/* ── Silent background sync — link players rows on every login ──
+   Finds all memberships for this user → finds matching players rows
+   where user_account_id is null → patches them
+   Runs silently on every login so existing members get linked too */
+async function authSyncPlayerLinks(user) {
+  try {
+    if (!user || !user.id) return;
+
+    // Get all memberships for this user
+    var memberships = await sbGet('memberships',
+      'user_account_id=eq.' + user.id + '&select=club_id,nickname'
+    ).catch(function(){ return []; });
+
+    if (!memberships || !memberships.length) return;
+
+    // For each membership — find unlinked player row with matching name
+    for (var i = 0; i < memberships.length; i++) {
+      var m = memberships[i];
+      if (!m.club_id || !m.nickname) continue;
+
+      await sbPatch(
+        'players',
+        'club_id=eq.' + m.club_id +
+        '&name=ilike.' + encodeURIComponent(m.nickname) +
+        '&user_account_id=is.null',
+        { user_account_id: user.id }
+      ).catch(function(){});
+    }
+  } catch(e) {
+    // Silent — never block login
+  }
+}
