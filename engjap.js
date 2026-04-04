@@ -189,7 +189,10 @@ const translations = {
     "minSixChars": "min 6 characters",
     "toResetPassword": "to reset password if forgotten",
     "yourNameAlias": "your name or alias",
-    "defaultPassword": "Default Password"
+    "defaultPassword": "Default Password",
+    "tile": "Tile",
+    "wideTile": "Wide Tile",
+    "description": "Description"
   },
   "jp": {
     "home": "ホーム",
@@ -374,7 +377,10 @@ const translations = {
     "minSixChars": "6文字以上",
     "toResetPassword": "パスワードリセット用",
     "yourNameAlias": "あなたの名前またはニックネーム",
-    "defaultPassword": "デフォルトパスワード"
+    "defaultPassword": "デフォルトパスワード",
+    "tile": "タイル",
+    "wideTile": "ワイドタイル",
+    "description": "説明"
   },
   "kr": {
     "home": "홈",
@@ -559,7 +565,10 @@ const translations = {
     "minSixChars": "최소 6자",
     "toResetPassword": "비밀번호 재설정용",
     "yourNameAlias": "이름 또는 별명",
-    "defaultPassword": "기본 비밀번호"
+    "defaultPassword": "기본 비밀번호",
+    "tile": "타일",
+    "wideTile": "와이드 타일",
+    "description": "설명"
   },
   "vi": {
     "home": "Trang chủ",
@@ -744,7 +753,10 @@ const translations = {
     "minSixChars": "tối thiểu 6 ký tự",
     "toResetPassword": "để đặt lại mật khẩu nếu quên",
     "yourNameAlias": "tên hoặc bí danh của bạn",
-    "defaultPassword": "Mật Khẩu Mặc Định"
+    "defaultPassword": "Mật Khẩu Mặc Định",
+    "tile": "Ô",
+    "wideTile": "Ô Rộng",
+    "description": "Mô tả"
   },
   "zh": {
     "home": "首页",
@@ -929,6 +941,9 @@ const translations = {
     "minSixChars": "最少6个字符",
     "toResetPassword": "用于重置密码",
     "yourNameAlias": "您的姓名或别名",
-    "defaultPassword": "默认密码"
+    "defaultPassword": "默认密码",
+    "tile": "磁贴",
+    "wideTile": "宽磁贴",
+    "description": "描述"
   }
 };

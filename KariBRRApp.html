@@ -569,7 +569,7 @@
     <div class="pref-wrap">
 
       <!-- SUBSCRIPTION -->
-      <div class="pref-section-label">Subscription</div>
+      <div class="pref-section-label" data-i18n="subscription">Subscription</div>
       <div class="pref-card" id="settingsTrialCard">
         <div class="pref-row">
           <span class="pref-row-label" id="settingsTrialLabel">Free Trial</span>
@@ -577,17 +577,17 @@
         </div>
         <div class="pref-divider"></div>
         <div class="pref-row pref-row-tap" onclick="openModeSwitcher()">
-          <span class="pref-row-label">Current Mode</span>
+          <span class="pref-row-label" data-i18n="currentMode">Current Mode</span>
           <span class="pref-row-value" id="settingsModeValue">—</span>
           <span class="pref-row-chevron">›</span>
         </div>
       </div>
 
       <!-- LANGUAGE -->
-      <div class="pref-section-label">Language</div>
+      <div class="pref-section-label" data-i18n="language">Language</div>
       <div class="pref-card">
         <div class="pref-row pref-row-tap" onclick="settingsToggleLangPicker()">
-          <span class="pref-row-label">Language</span>
+          <span class="pref-row-label" data-i18n="language">Language</span>
           <span class="pref-row-value" id="settingsLangValue">🇺🇸 English</span>
           <span class="pref-row-chevron">›</span>
         </div>
@@ -602,12 +602,12 @@
       </div>
 
       <!-- APPEARANCE — Theme + Font + Tile Style merged -->
-      <div class="pref-section-label">Appearance</div>
+      <div class="pref-section-label" data-i18n="appearance">Appearance</div>
       <div class="pref-card">
 
         <!-- Theme -->
         <div class="pref-row">
-          <span class="pref-row-label">Theme</span>
+          <span class="pref-row-label" data-i18n="theme">Theme</span>
           <div class="pref-pill-group">
             <button class="pref-pill active" id="theme_light" onclick="setTheme('light')" data-i18n="light">Light</button>
             <button class="pref-pill" id="theme_dark" onclick="setTheme('dark')" data-i18n="dark">Dark</button>
@@ -617,7 +617,7 @@
 
         <!-- Font Size -->
         <div class="pref-row">
-          <span class="pref-row-label">Font Size</span>
+          <span class="pref-row-label" data-i18n="fontSize">Font Size</span>
           <div class="pref-pill-group">
             <button class="pref-pill active" id="font_small" onclick="setFontSize('small')" style="font-size:0.78rem" data-i18n="small">S</button>
             <button class="pref-pill" id="font_medium" onclick="setFontSize('medium')" style="font-size:0.9rem" data-i18n="medium">M</button>
@@ -628,23 +628,23 @@
 
         <!-- Tile Style -->
         <div class="pref-row" style="flex-direction:column;align-items:stretch;gap:10px;">
-          <span class="pref-row-label">Tile Style</span>
+          <span class="pref-row-label" data-i18n="tileStyle">Tile Style</span>
           <div style="display:flex;gap:8px;">
-            <button id="styleBtn1" onclick="setTileStyle('flat')" class="tile-style-btn active">Flat</button>
-            <button id="styleBtn2" onclick="setTileStyle('glow')" class="tile-style-btn">Glow</button>
-            <button id="styleBtn3" onclick="setTileStyle('color')" class="tile-style-btn">Color</button>
+            <button id="styleBtn1" onclick="setTileStyle('flat')" class="tile-style-btn active" data-i18n="flat">Flat</button>
+            <button id="styleBtn2" onclick="setTileStyle('glow')" class="tile-style-btn" data-i18n="glow">Glow</button>
+            <button id="styleBtn3" onclick="setTileStyle('color')" class="tile-style-btn" data-i18n="color">Color</button>
           </div>
           <!-- Live Preview -->
           <div class="style-preview-box" id="stylePreviewBox">
-            <div class="style-preview-label">Preview</div>
+            <div class="style-preview-label" data-i18n="preview">Preview</div>
             <div class="style-preview-grid">
-              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
-              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
-              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name">Tile</div><div class="spt-sub">Info</div></div>
+              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name" data-i18n="tile">Tile</div><div class="spt-sub" data-i18n="info">Info</div></div>
+              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name" data-i18n="tile">Tile</div><div class="spt-sub" data-i18n="info">Info</div></div>
+              <div class="spt"><div class="spt-icon">◆</div><div class="spt-name" data-i18n="tile">Tile</div><div class="spt-sub" data-i18n="info">Info</div></div>
             </div>
             <div class="style-preview-wide">
               <span class="spw-icon">◆</span>
-              <div class="spw-info"><div class="spw-name">Wide Tile</div><div class="spw-sub">Description</div></div>
+              <div class="spw-info"><div class="spw-name" data-i18n="wideTile">Wide Tile</div><div class="spw-sub" data-i18n="description">Description</div></div>
               <span class="spw-arr">›</span>
             </div>
           </div>
@@ -653,7 +653,7 @@
       </div>
 
       <!-- RESET -->
-      <div class="pref-section-label">Reset</div>
+      <div class="pref-section-label" data-i18n="reset">Reset</div>
       <div class="pref-card">
         <div class="pref-row pref-row-tap pref-row-danger" onclick="showConfirm('confirmResetAll', ResetAll)">
           <span class="pref-row-label" data-i18n="resetAll">Reset All</span>
