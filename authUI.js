@@ -88,6 +88,9 @@ async function authDoLogin() {
 }
 
 /* ── Do Sign Up ── */
+// Store pending signup data while waiting for OTP
+var _pendingSignup = null;
+
 async function authDoSignup() {
   var email        = (document.getElementById('signupEmail')?.value || '').trim();
   var displayName  = (document.getElementById('signupDisplayName')?.value || '').trim();
@@ -96,28 +99,48 @@ async function authDoSignup() {
   var confirm      = (document.getElementById('signupConfirm')?.value || '');
   var recoveryWord = (document.getElementById('signupRecoveryWord')?.value || '').trim();
 
-  if (password !== confirm) {
-    authShowError('signupError', 'Passwords do not match');
-    return;
-  }
+  if (!email) { authShowError('signupError', 'Email is required'); return; }
+  if (password !== confirm) { authShowError('signupError', 'Passwords do not match'); return; }
 
+  // Step 1 — Send OTP to verify email
   authSetLoading('#authSignup .auth-btn-primary', true);
-  var result = await authSignUp(email, password, displayName, gender, recoveryWord);
+  var otpResult = await authSendOtp(email);
   authSetLoading('#authSignup .auth-btn-primary', false);
 
-  if (result.error) {
-    authShowError('signupError', result.error);
+  if (otpResult.error) {
+    authShowError('signupError', otpResult.error);
     return;
   }
 
-  // Auto login after signup
+  // Store signup data and show OTP screen
+  _pendingSignup = { email, displayName, gender, password, recoveryWord };
+  authShowOtpScreen(email, 'signup');
+}
+
+async function authCompleteSignup(otp) {
+  if (!_pendingSignup) return;
+  var { email, displayName, gender, password, recoveryWord } = _pendingSignup;
+
+  // Verify OTP
+  var btn = document.getElementById('authOtpSubmitBtn');
+  if (btn) btn.disabled = true;
+  var verifyResult = await authVerifyOtp(email, otp);
+  if (btn) btn.disabled = false;
+
+  if (verifyResult.error) {
+    authShowError('authOtpError', verifyResult.error);
+    return;
+  }
+
+  // OTP verified — create account
+  var result = await authSignUp(email, password, displayName, gender, recoveryWord);
+  if (result.error) { authShowError('authOtpError', result.error); return; }
+
   var loginResult = await authLogin(email, password);
-  if (loginResult.error) {
-    authShowError('signupError', 'Account created! Please login.');
-    authShowScreen('login');
-    return;
-  }
+  if (loginResult.error) { authShowScreen('login'); return; }
 
+  _pendingSignup = null;
+  authHideOtpScreen();
   authAfterLogin(loginResult.user);
 }
 
@@ -425,4 +448,118 @@ async function vaultRejectRequest(requestId) {
     return;
   }
   vaultLoadRequests();
+}
+
+/* ── OTP Screen ── */
+var _otpContext = null; // 'signup' | 'claim'
+
+function authShowOtpScreen(email, context) {
+  _otpContext = context;
+  var overlay = document.getElementById('authOverlay');
+  if (overlay) overlay.style.display = 'flex';
+
+  // Hide all screens
+  ['authWelcome','authLogin','authSignup','authForgot','authJoinClub','authClaim','authClubPicker'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // Build or show OTP screen
+  var otpScreen = document.getElementById('authOtpScreen');
+  if (!otpScreen) {
+    otpScreen = document.createElement('div');
+    otpScreen.id = 'authOtpScreen';
+    otpScreen.className = 'auth-screen';
+    document.getElementById('authOverlay').appendChild(otpScreen);
+  }
+  otpScreen.style.display = '';
+  otpScreen.innerHTML =
+    '<div class="auth-title">Verify Email</div>' +
+    '<div class="auth-sub" style="margin-bottom:16px">Enter the 6-digit code sent to<br><strong>' + email + '</strong></div>' +
+    '<input id="authOtpInput" class="auth-input" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:8px;font-size:1.2rem;text-align:center;">' +
+    '<div id="authOtpError" class="auth-error" style="display:none"></div>' +
+    '<button id="authOtpSubmitBtn" class="auth-btn auth-btn-primary" onclick="authSubmitOtp()" style="margin-top:12px;">Verify</button>' +
+    '<button class="auth-btn auth-btn-secondary" onclick="authResendOtp(\'' + email + '\')" style="margin-top:8px;">Resend Code</button>';
+
+  setTimeout(function() {
+    var inp = document.getElementById('authOtpInput');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function authHideOtpScreen() {
+  var otpScreen = document.getElementById('authOtpScreen');
+  if (otpScreen) otpScreen.style.display = 'none';
+}
+
+async function authSubmitOtp() {
+  var otp = (document.getElementById('authOtpInput')?.value || '').trim();
+  if (otp.length !== 6) { authShowError('authOtpError', 'Enter 6-digit code'); return; }
+  if (_otpContext === 'signup') await authCompleteSignup(otp);
+  if (_otpContext === 'claim')  await authCompleteClaim(otp);
+}
+
+async function authResendOtp(email) {
+  var result = await authSendOtp(email);
+  if (result.error) {
+    authShowError('authOtpError', result.error);
+  } else {
+    authShowError('authOtpError', '✅ Code resent');
+    document.getElementById('authOtpError').style.color = 'var(--green,#2dce89)';
+    document.getElementById('authOtpError').style.display = '';
+  }
+}
+
+function authShowError(id, msg) {
+  var el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.style.display = ''; }
+}
+
+/* ── Claim Account with OTP verification ── */
+var _pendingClaim = null;
+
+async function authDoClaimAccount() {
+  var clubId       = (document.getElementById('claimClubSelect')?.value || '').trim();
+  var nickname     = (document.getElementById('claimNickname')?.value || '').trim();
+  var defaultPw    = (document.getElementById('claimDefaultPassword')?.value || '').trim();
+  var email        = (document.getElementById('claimEmail')?.value || '').trim();
+  var newPassword  = (document.getElementById('claimPassword')?.value || '');
+  var confirmPw    = (document.getElementById('claimConfirm')?.value || '');
+  var recoveryWord = (document.getElementById('claimRecoveryWord')?.value || '').trim();
+  var errEl        = document.getElementById('claimError');
+
+  var setErr = function(msg) { if (errEl) { errEl.textContent = msg; errEl.style.display = ''; } };
+
+  if (!clubId)      { setErr('Select your club'); return; }
+  if (!nickname)    { setErr('Enter your nickname'); return; }
+  if (!defaultPw)   { setErr('Enter default password'); return; }
+  if (!email)       { setErr('Enter your email'); return; }
+  if (newPassword.length < 6) { setErr('Password must be at least 6 characters'); return; }
+  if (newPassword !== confirmPw) { setErr('Passwords do not match'); return; }
+
+  // Send OTP to verify email
+  setErr('Sending verification code…');
+  errEl.style.color = 'var(--accent,#6c63ff)';
+  var otpResult = await authSendOtp(email);
+  if (otpResult.error) { errEl.style.color = ''; setErr(otpResult.error); return; }
+
+  // Store claim data and show OTP screen
+  _pendingClaim = { clubId, nickname, defaultPw, email, newPassword, recoveryWord };
+  authShowOtpScreen(email, 'claim');
+}
+
+async function authCompleteClaim(otp) {
+  if (!_pendingClaim) return;
+  var { clubId, nickname, defaultPw, email, newPassword, recoveryWord } = _pendingClaim;
+
+  var verifyResult = await authVerifyOtp(email, otp);
+  if (verifyResult.error) { authShowError('authOtpError', verifyResult.error); return; }
+
+  // OTP verified — complete claim
+  var result = await authClaimAccount(clubId, nickname, defaultPw, email, newPassword, recoveryWord);
+  if (result.error) { authShowError('authOtpError', result.error); return; }
+
+  _pendingClaim = null;
+  authHideOtpScreen();
+  authAfterLogin(result.user);
 }

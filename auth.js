@@ -499,3 +499,41 @@ async function authCheckRequestStatus(clubId) {
 
 // Check for invite link on load
 authHandleInviteLink();
+
+/* ============================================================
+   OTP VERIFICATION — via Supabase Edge Functions + Resend
+   ============================================================ */
+
+const EDGE_BASE = 'https://hplkoxdorbfjhwbvqatn.supabase.co/functions/v1';
+
+/* Send OTP to email */
+async function authSendOtp(email) {
+  try {
+    const res = await fetch(EDGE_BASE + '/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.toLowerCase().trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || 'Failed to send OTP' };
+    return { success: true };
+  } catch(e) {
+    return { error: 'Network error: ' + e.message };
+  }
+}
+
+/* Verify OTP entered by user */
+async function authVerifyOtp(email, otp) {
+  try {
+    const res = await fetch(EDGE_BASE + '/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.toLowerCase().trim(), otp: otp.trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || 'Invalid OTP' };
+    return { success: true };
+  } catch(e) {
+    return { error: 'Network error: ' + e.message };
+  }
+}
