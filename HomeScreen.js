@@ -438,6 +438,8 @@ function homeUpdateStepper() {
 function stepAction() {
   var step = STEP_DEFS[_homeCurrentStep];
   if (_homeCurrentStep === 1) _stepPairsSeen = true;
+  // Reset sessionFinished so Go works after a previous session ended
+  if (typeof sessionFinished !== 'undefined') sessionFinished = false;
   step.go();
 }
 
