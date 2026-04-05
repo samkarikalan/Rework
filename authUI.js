@@ -62,7 +62,7 @@ function authSetLoading(btnSelector, loading) {
   btn.disabled = loading;
   if (loading) {
     btn._origText = btn.textContent;
-    btn.textContent = t('pleaseWait');
+    btn.textContent = 'Please wait...';
   } else {
     btn.textContent = btn._origText || btn.textContent;
   }
@@ -221,7 +221,7 @@ function authShowClubPicker(memberships, user) {
     overlay.appendChild(picker);
   }
   picker.style.display = '';
-  picker.innerHTML = '<div class="auth-title">' + t('selectClubTitle') + '</div>' +
+  picker.innerHTML = '<div class="auth-title">Select Club</div>' +
     '<div class="auth-sub">You are a member of multiple clubs</div>' +
     memberships.map(function(m) {
       var cid   = m.club_id;
@@ -318,17 +318,17 @@ function authSearchClubsUI(query) {
 
   if (resultsEl) {
     resultsEl.style.display = 'block';
-    resultsEl.innerHTML = '<div class="auth-club-loading">' + t('searching') + '</div>';
+    resultsEl.innerHTML = '<div class="auth-club-loading">Searching...</div>';
   }
 
   _searchTimeout = setTimeout(async function() {
     var result = await authSearchClubs(query);
     if (result.error) {
-      if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-empty">' + t('searchFailed') + '</div>';
+      if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-empty">Search failed. Try again.</div>';
       return;
     }
     if (!result.clubs || !result.clubs.length) {
-      if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-empty">' + t('noClubsFound') + '</div>';
+      if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-empty">No clubs found. Check the name.</div>';
       return;
     }
     if (resultsEl) {
@@ -349,7 +349,7 @@ async function authDoRequestJoin(clubId, clubName) {
   var pendingEl = document.getElementById('joinClubPending');
 
   if (errorEl) { errorEl.style.display = 'none'; }
-  if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-loading">' + t('sendingRequest') + '</div>';
+  if (resultsEl) resultsEl.innerHTML = '<div class="auth-club-loading">Sending request...</div>';
 
   var result = await authRequestJoin(clubId);
 
@@ -382,7 +382,7 @@ async function vaultLoadRequests() {
   if (!listEl) return;
 
   if (!club || !club.id) {
-    listEl.innerHTML = '<div class="profile-sessions-empty">' + t('connectClubFirst') + '</div>';
+    listEl.innerHTML = '<div class="profile-sessions-empty">Connect to a club first.</div>';
     return;
   }
 
@@ -390,12 +390,12 @@ async function vaultLoadRequests() {
   var result = await authGetJoinRequests(club.id);
 
   if (result.error) {
-    listEl.innerHTML = '<div class="profile-sessions-empty">' + t('failedLoadRequests') + '</div>';
+    listEl.innerHTML = '<div class="profile-sessions-empty">Failed to load requests.</div>';
     return;
   }
 
   if (!result.requests || !result.requests.length) {
-    listEl.innerHTML = '<div class="profile-sessions-empty">' + t('noPendingRequests') + '</div>';
+    listEl.innerHTML = '<div class="profile-sessions-empty">No pending requests.</div>';
     return;
   }
 

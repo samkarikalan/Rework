@@ -421,11 +421,11 @@ function homeUpdateStepper() {
   if (btn) {
     btn.classList.toggle('btn-done', isDoneCurrent && current === STEP_DEFS.length - 1);
     if (current === 1 && isDoneCurrent) {
-      btn.textContent = t('doneBtn');
+      btn.textContent = 'Done \u2713';
     } else if (current === 2 && !_stepCourtsSet) {
-      btn.textContent = t('setUpBtn');
+      btn.textContent = 'Set Up \u203a';
     } else {
-      btn.textContent = t('goBtn');
+      btn.textContent = 'Go \u203a';
     }
   }
 
@@ -601,9 +601,9 @@ async function homeRefreshJoinClubTile() {
         var memCount = (memberships||[]).length;
         var pendCount = pendingIds.filter(function(id){ return !(memberships||[]).find(function(m){ return m.club_id===id; }); }).length;
         if (memCount > 0) {
-          sub.textContent = memCount + ' ' + (memCount === 1 ? t('club') : t('clubs')) + (pendCount > 0 ? ' · ' + pendCount + ' ' + t('pending') : '');
+          sub.textContent = memCount + (memCount === 1 ? ' club' : ' clubs') + (pendCount > 0 ? ' · ' + pendCount + ' pending' : '');
         } else if (pendCount > 0) {
-          sub.textContent = pendCount + ' ' + t('pending');
+          sub.textContent = pendCount + ' pending';
         }
 
         // Inline list (max 10)
@@ -679,7 +679,7 @@ async function _renderMyClubsList() {
 
   var user = (typeof authGetUser === 'function') ? authGetUser() : null;
   if (!user) {
-    inner.innerHTML = '<div class="jc-empty">' + t('loginToSeeClubs') + '</div>';
+    inner.innerHTML = '<div class="jc-empty">Login to see your clubs</div>';
     return;
   }
 
@@ -694,7 +694,7 @@ async function _renderMyClubsList() {
     var pendingIds = (pending || []).map(function(p){ return p.club_id; });
 
     if ((!memberships || !memberships.length) && !pendingIds.length) {
-      inner.innerHTML = '<div class="jc-empty">' + t('noClubsYetSearch') + '</div>';
+      inner.innerHTML = '<div class="jc-empty">No clubs yet. Search below to join one.</div>';
       return;
     }
 
@@ -738,10 +738,10 @@ async function _renderMyClubsList() {
       '</div>';
     });
 
-    inner.innerHTML = html || '<div class="jc-empty">' + t('noClubsYet') + '</div>';
+    inner.innerHTML = html || '<div class="jc-empty">No clubs yet.</div>';
 
   } catch(e) {
-    inner.innerHTML = '<div class="jc-empty">' + t('couldNotLoadClubs') + '</div>';
+    inner.innerHTML = '<div class="jc-empty">Could not load clubs.</div>';
   }
 }
 
@@ -754,13 +754,13 @@ function _joinClubShowStatus(state, clubName) {
 
   if (state === 'joined') {
     if (icon)  icon.textContent  = '✅';
-    if (title) title.textContent = t('joined') + ': ' + clubName;
+    if (title) title.textContent = 'Joined: ' + clubName;
     if (msg)   msg.textContent   = t('memberMsg') || 'You are a member of this club.';
     if (leave) leave.style.display = '';
     if (card)  card.style.borderColor = '#2dce89';
   } else if (state === 'pending') {
     if (icon)  icon.textContent  = '⏳';
-    if (title) title.textContent = t('requestPending');
+    if (title) title.textContent = 'Request Pending';
     if (msg)   msg.textContent   = 'Your request to join "' + clubName + '" is awaiting admin approval. Check back soon.';
     if (leave) leave.style.display = '';
     if (card)  card.style.borderColor = '#e6a817';
@@ -789,7 +789,7 @@ async function _joinClubDoSearch(query) {
   var errEl     = document.getElementById('joinClubPageError');
   if (!resultsEl) return;
 
-  resultsEl.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:0.85rem;">' + t('searching') + '</div>';
+  resultsEl.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:0.85rem;">Searching...</div>';
   resultsEl.style.display = '';
 
   var result = (typeof authSearchClubs === 'function') ? await authSearchClubs(query) : { clubs: [] };
@@ -802,7 +802,7 @@ async function _joinClubDoSearch(query) {
 
   var clubs = result.clubs || [];
   if (!clubs.length) {
-    resultsEl.innerHTML = '<div style="padding:14px;text-align:center;color:var(--muted);font-size:0.85rem;">' + t('noClubsFoundFor') + ' "' + query + '"</div>';
+    resultsEl.innerHTML = '<div style="padding:14px;text-align:center;color:var(--muted);font-size:0.85rem;">No clubs found for "' + query + '"</div>';
     return;
   }
 
@@ -833,7 +833,7 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
   // Show loading
   if (fbEl) {
     if (fbIcon)  fbIcon.textContent  = '⏳';
-    if (fbTitle) fbTitle.textContent = t('checking');
+    if (fbTitle) fbTitle.textContent = 'Checking...';
     if (fbMsg)   fbMsg.textContent   = '';
     fbEl.style.display = '';
   }
@@ -857,8 +857,8 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
     if (typeof setMyPlayer === 'function') setMyPlayer({ name: result.nickname, gender: 'Male' });
     if (fbEl) {
       if (fbIcon)  fbIcon.textContent  = '✅';
-      if (fbTitle) fbTitle.textContent = t('joined') + ' ' + result.clubName;
-      if (fbMsg)   fbMsg.textContent   = t('welcomeBack') + ', ' + result.nickname + '!';
+      if (fbTitle) fbTitle.textContent = 'Joined ' + result.clubName;
+      if (fbMsg)   fbMsg.textContent   = 'Welcome back, ' + result.nickname + '!';
       fbEl.style.display = '';
     }
     homeRefreshJoinClubTile();
@@ -874,7 +874,7 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
     if (nickEl) {
       var msgEl  = document.getElementById('joinClubNicknameMsg');
       var inputEl = document.getElementById('joinClubNicknameInput');
-      if (msgEl)  msgEl.textContent = '"' + result.conflictNickname + '" ' + t('alreadyTaken') + ' ' + clubName + '. ' + t('chooseDifferentNickname') + ':';
+      if (msgEl)  msgEl.textContent = '"' + result.conflictNickname + '" is already taken in ' + clubName + '. Choose a different nickname for this club:';
       if (inputEl) inputEl.value = '';
       nickEl.style.display = '';
     }
@@ -885,8 +885,8 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
     localStorage.setItem('kbrr_pending_club_id',   clubId);
     localStorage.setItem('kbrr_pending_club_name', clubName);
     if (fbIcon)  fbIcon.textContent  = '⏳';
-    if (fbTitle) fbTitle.textContent = t('requestSentTitle');
-    if (fbMsg)   fbMsg.textContent   = t('waitingAdminApproval');
+    if (fbTitle) fbTitle.textContent = 'Request Sent!';
+    if (fbMsg)   fbMsg.textContent   = 'Waiting for admin approval for "' + clubName + '". Check back here to see when you\'re approved.';
     homeRefreshJoinClubTile();
     return;
   }

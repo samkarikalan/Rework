@@ -90,7 +90,7 @@ function fpRenderDropdown(n) {
   const wrap = document.createElement("div");
   wrap.className = "fp-dropdown-inner";
   if (!available.length) {
-    wrap.innerHTML = '<div class="fp-option-empty">' + t('noPlayersAvailable') + '</div>';
+    wrap.innerHTML = '<div class="fp-option-empty">No players available</div>';
   }
   available.forEach(name => {
     const row = document.createElement("div");
@@ -241,7 +241,7 @@ function fcRenderDropdown(key, n) {
   inner.className = 'fp-dropdown-inner';
 
   if (!available.length) {
-    inner.innerHTML = '<div class="fp-option-empty">' + t('noPlayersAvailable') + '</div>';
+    inner.innerHTML = '<div class="fp-option-empty">No players available</div>';
   } else {
     available.forEach(name => {
       const row = document.createElement('div');
