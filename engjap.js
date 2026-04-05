@@ -543,7 +543,13 @@ const translations = {
     "errorPrefix": "Error: ",
     "playerPrefix": "Player ",
     "sessionBadge": "SESSION",
-    "vsLabel": "VS"
+    "vsLabel": "VS",
+    "playersSelected": "selected",
+    "playersActive": "active",
+    "pairSet": "pair set",
+    "pairsSet": "pairs set",
+    "courtSingle": "court",
+    "courtPlural": "courts"
   },
   "jp": {
     "home": "ホーム",
@@ -1084,7 +1090,13 @@ const translations = {
     "errorPrefix": "エラー: ",
     "playerPrefix": "選手 ",
     "sessionBadge": "セッション",
-    "vsLabel": "VS"
+    "vsLabel": "VS",
+    "playersSelected": "選択済み",
+    "playersActive": "アクティブ",
+    "pairSet": "ペア設定済み",
+    "pairsSet": "ペア設定済み",
+    "courtSingle": "コート",
+    "courtPlural": "コート"
   },
   "kr": {
     "home": "홈",
@@ -1625,7 +1637,13 @@ const translations = {
     "errorPrefix": "오류: ",
     "playerPrefix": "선수 ",
     "sessionBadge": "세션",
-    "vsLabel": "VS"
+    "vsLabel": "VS",
+    "playersSelected": "선택됨",
+    "playersActive": "활성",
+    "pairSet": "페어 설정됨",
+    "pairsSet": "페어 설정됨",
+    "courtSingle": "코트",
+    "courtPlural": "코트"
   },
   "vi": {
     "home": "Trang chủ",
@@ -2166,7 +2184,13 @@ const translations = {
     "errorPrefix": "Lỗi: ",
     "playerPrefix": "Người chơi ",
     "sessionBadge": "PHIÊN",
-    "vsLabel": "VS"
+    "vsLabel": "VS",
+    "playersSelected": "đã chọn",
+    "playersActive": "đang hoạt động",
+    "pairSet": "cặp đã đặt",
+    "pairsSet": "cặp đã đặt",
+    "courtSingle": "sân",
+    "courtPlural": "sân"
   },
   "zh": {
     "home": "首页",
@@ -2707,6 +2731,12 @@ const translations = {
     "errorPrefix": "错误: ",
     "playerPrefix": "球员 ",
     "sessionBadge": "场次",
-    "vsLabel": "VS"
+    "vsLabel": "VS",
+    "playersSelected": "已选择",
+    "playersActive": "活跃",
+    "pairSet": "搭档已设置",
+    "pairsSet": "搭档已设置",
+    "courtSingle": "场地",
+    "courtPlural": "场地"
   }
 };

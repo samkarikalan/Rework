@@ -18,7 +18,7 @@ var STEP_DEFS = [
     activeSub: t('addAtLeast4Step'),
     doneSub: function() {
       var n = schedulerState.activeplayers.length;
-      return n + ' player' + (n !== 1 ? 's' : '') + ' selected';
+      return n + ' ' + t('playerSingular') + ' ' + t('playersSelected');
     },
     isDone: function() { return schedulerState.activeplayers.length >= 4; },
     go: function() { homeGo('playersPage', 'tabBtnPlayers'); }
@@ -29,7 +29,7 @@ var STEP_DEFS = [
     activeSub: t('fixedPairsOptional'),
     doneSub: function() {
       var n = schedulerState.fixedPairs.length;
-      return n ? n + ' pair' + (n !== 1 ? 's' : '') + ' set' : t('skippedOptional');
+      return n ? n + ' ' + (n !== 1 ? t('pairsSet') : t('pairSet')) : t('skippedOptional');
     },
     isDone: function() { return _stepPairsSeen; },
     go: function() { homeGo('fixedPairsPage', 'tabBtnFixedPairs'); }
@@ -42,7 +42,7 @@ var STEP_DEFS = [
       var c = parseInt(document.getElementById('num-courts').textContent) || 1;
       var tog = document.getElementById('modeToggle');
       var mode = (tog && tog.checked) ? 'Competitive' : t('randomMode');
-      return c + ' court' + (c !== 1 ? 's' : '') + ' \u00b7 ' + mode;
+      return c + ' ' + (c !== 1 ? t('courtPlural') : t('courtSingle')) + ' \u00b7 ' + mode;
     },
     isDone: function() { return _stepCourtsSet; },
     go: function() { homeShowCourtsPanel(); }
@@ -196,7 +196,7 @@ async function homeRefreshTiles() {
       var total  = schedulerState.allPlayers.length;
       var active = schedulerState.activeplayers.length;
       playersSub.textContent = total > 0
-        ? total + ' players · ' + active + ' active'
+        ? total + ' ' + t('playerPlural') + ' · ' + active + ' ' + t('playersActive')
         : 'Add · Remove';
     } else {
       playersSub.textContent = t('addRemove');

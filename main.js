@@ -719,7 +719,7 @@ async function syncToLocal() {
     syncRatings();
 
     const count = synced.length;
-    const msg   = `✅ ${count} player${count !== 1 ? "s" : ""} synced · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+    const msg   = `✅ ${count} ${t("playerPlural")} synced · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
     localStorage.setItem("kbrr_last_sync", JSON.stringify({ msg, color: "#2dce89" }));
     setSyncIndicator(msg, "#2dce89");
 

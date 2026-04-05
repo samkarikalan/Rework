@@ -624,6 +624,8 @@ function updatePlayerList() {
   updateFixedPairSelectors();
   updateCourtButtons();
   updateRoundsPageAccess();
+  // Refresh home tiles to reflect updated player count
+  if (typeof homeRefreshTiles === 'function') homeRefreshTiles();
 }
 
 /* =========================
