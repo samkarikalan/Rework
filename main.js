@@ -237,13 +237,13 @@ function showOnboardingOverlay(reason) {
   };
 
   if (reason === 'notLoggedIn') {
-    if (title) title.textContent = t('welcomeToApp');
-    if (msg)   msg.textContent = t('connectClubToStart');
+    if (title) title.textContent = 'Welcome to Sports Club Scheduler';
+    if (msg)   msg.textContent   = 'Connect to your club to get started.';
     if (btn)   { btn.textContent = 'Connect to Club'; btn.onclick = goToVault; }
   } else if (reason === 'noPlayers') {
-    if (title) title.textContent = t('noPlayersFoundWarn');
-    if (msg)   msg.textContent   = t('noPlayersYetVault');
-    if (btn)   { btn.textContent = t('goToVault'); btn.onclick = goToVault; }
+    if (title) title.textContent = 'No players found';
+    if (msg)   msg.textContent   = 'Your club has no players yet. Add players in the Vault to get started.';
+    if (btn)   { btn.textContent = 'Go to Vault'; btn.onclick = goToVault; }
   }
   overlay.style.display = 'flex';
 }
@@ -667,10 +667,10 @@ function initPage() {
 ============================================================ */
 async function syncToLocal() {
   const club = (typeof getMyClub === "function") ? getMyClub() : { id: null };
-  setSyncIndicator(t("syncing"), "#aaa");
+  setSyncIndicator("🔄 Syncing...", "#aaa");
 
   if (!club.id) {
-    setSyncIndicator(t("noClubSelectedWarn"), "#e6a817");
+    setSyncIndicator("⚠️ No club selected", "#e6a817");
     return;
   }
 
@@ -680,7 +680,7 @@ async function syncToLocal() {
 
     const players = await dbGetPlayers(true);
     if (!players || !players.length) {
-      setSyncIndicator(t("noPlayersFoundWarn"), "#e6a817");
+      setSyncIndicator("⚠️ No players found", "#e6a817");
       return;
     }
 
@@ -719,13 +719,13 @@ async function syncToLocal() {
     syncRatings();
 
     const count = synced.length;
-    const msg   = `✅ ${count} ${t("playerPlural")} synced · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+    const msg   = `✅ ${count} player${count !== 1 ? "s" : ""} synced · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
     localStorage.setItem("kbrr_last_sync", JSON.stringify({ msg, color: "#2dce89" }));
     setSyncIndicator(msg, "#2dce89");
 
   } catch (e) {
     console.warn("syncToLocal failed:", e.message);
-    const msg = t("offlineCache");
+    const msg = "⚠️ Offline — using cache";
     localStorage.setItem("kbrr_last_sync", JSON.stringify({ msg, color: "#e6a817" }));
     setSyncIndicator(msg, "#e6a817");
   }
@@ -800,7 +800,7 @@ function _showClubSetupSheet(targetMode) {
   const existing = document.getElementById('clubSetupSheetOverlay');
   if (existing) existing.remove();
 
-  const modeLabel = targetMode === 'vault' ? t('vaultManager') : t('roundOrganiser');
+  const modeLabel = targetMode === 'vault' ? '🔑 Vault Manager' : '🏆 Round Organiser';
 
   const overlay = document.createElement('div');
   overlay.id = 'clubSetupSheetOverlay';
@@ -824,7 +824,7 @@ function _showClubSetupSheet(targetMode) {
         <select id="csJoinClubSelect" class="auth-input" style="margin-bottom:10px">
           <option value="">— Loading clubs… —</option>
         </select>
-        <input type="password" id="csJoinPassword" class="auth-input" placeholder="${t('clubPasswordPh')}" style="margin-bottom:10px">
+        <input type="password" id="csJoinPassword" class="auth-input" placeholder="Club password" style="margin-bottom:10px">
         <div id="csJoinFeedback" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
         <div style="display:flex;gap:10px">
           <button class="admin-modal-cancel" style="flex:1" onclick="document.getElementById('clubSetupSheetOverlay').remove()">Cancel</button>
@@ -835,9 +835,9 @@ function _showClubSetupSheet(targetMode) {
       <!-- CREATE PANEL -->
       <div id="clubSetupPanelCreate" style="display:none;margin-top:14px">
         <div id="clubSetupPanelCreateForm">
-          <input type="text"     id="csCreateName"    class="auth-input" placeholder="${t('clubNamePh')}"      style="margin-bottom:8px">
-          <input type="password" id="csCreateUserPw"  class="auth-input" placeholder="${t('memberPasswordPh')}" style="margin-bottom:8px">
-          <input type="password" id="csCreateAdminPw" class="auth-input" placeholder="${t('enterAdminPasswordPh')}"  style="margin-bottom:10px">
+          <input type="text"     id="csCreateName"    class="auth-input" placeholder="Club name"      style="margin-bottom:8px">
+          <input type="password" id="csCreateUserPw"  class="auth-input" placeholder="Member password" style="margin-bottom:8px">
+          <input type="password" id="csCreateAdminPw" class="auth-input" placeholder="Admin password"  style="margin-bottom:10px">
           <div id="csCreateFeedback" style="font-size:0.82rem;min-height:18px;margin-bottom:10px"></div>
           <div style="display:flex;gap:10px">
             <button class="admin-modal-cancel" style="flex:1" onclick="document.getElementById('clubSetupSheetOverlay').remove()">Cancel</button>
@@ -888,18 +888,18 @@ async function _clubSetupJoin() {
   const fb = document.getElementById('csJoinFeedback');
   const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!select || !select.value) { setFb(t('pleaseSelectClubDot'), false); return; }
+  if (!select || !select.value) { setFb('Please select a club.', false); return; }
   const pw = pwInput ? pwInput.value.trim() : '';
-  if (!pw) { setFb(t('enterClubPassword'), false); return; }
+  if (!pw) { setFb('Enter the club password.', false); return; }
 
-  setFb(t('checkingDot'), true);
+  setFb('Checking…', true);
   try {
     // Use server-side filter — avoids RLS blocking password column reads
     const encodedPw = encodeURIComponent(pw);
     const asAdmin = await sbGet('clubs', `id=eq.${select.value}&admin_password=eq.${encodedPw}&select=id,name`);
     const asUser  = await sbGet('clubs', `id=eq.${select.value}&select_password=eq.${encodedPw}&select=id,name`);
 
-    if (!asAdmin.length && !asUser.length) throw new Error(t('wrongPasswordDot'));
+    if (!asAdmin.length && !asUser.length) throw new Error('Wrong password.');
 
     let role = asAdmin.length ? 'admin' : 'user';
     const clubs = asAdmin.length ? asAdmin : asUser;
@@ -909,7 +909,7 @@ async function _clubSetupJoin() {
     localStorage.setItem('kbrr_rating_field', 'club_rating');
     if (pwInput) pwInput.value = '';
 
-    setFb(role === 'admin' ? t('joinedAsAdmin') : t('joinedSuccessfully'), true);
+    setFb(role === 'admin' ? '✅ Joined as Admin' : '✅ Joined successfully', true);
 
     // Small delay so user sees success, then enter the mode
     setTimeout(() => {
@@ -955,18 +955,18 @@ async function _clubSetupCreateDirect() {
   const fb      = document.getElementById('csCreateFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!name)    { setFb(t('enterClubName'), false); return; }
-  if (!userPw)  { setFb(t('enterMemberPw'), false); return; }
-  if (!adminPw) { setFb(t('enterAdminPw'), false); return; }
-  if (userPw === adminPw) { setFb(t('memberAdminDiff'), false); return; }
+  if (!name)    { setFb('Enter club name.', false); return; }
+  if (!userPw)  { setFb('Enter member password.', false); return; }
+  if (!adminPw) { setFb('Enter admin password.', false); return; }
+  if (userPw === adminPw) { setFb('Member and admin passwords must be different.', false); return; }
 
-  setFb(t('creatingClubDot'), true);
+  setFb('Creating club…', true);
   try {
     const club = await dbAddClub(name, userPw, adminPw);
     if (typeof setMyClub === 'function') setMyClub(club.id, club.name);
     localStorage.setItem('kbrr_club_mode', 'admin');
     localStorage.setItem('kbrr_rating_field', 'club_rating');
-    setFb('✅ ' + club.name + ' ' + t('clubCreatedAdmin'), true);
+    setFb('✅ Club "' + club.name + '" created! You are now Admin.', true);
 
     setTimeout(() => {
       const ov = document.getElementById('clubSetupSheetOverlay');
@@ -1000,7 +1000,7 @@ function _showVaultPasswordPrompt() {
         Enter the club admin password to access Vault Manager.
       </p>
       <input type="password" id="vaultPwInput" class="admin-password-input"
-             placeholder="${t('enterAdminPasswordPh')}"
+             placeholder="Admin password"
              onkeydown="if(event.key==='Enter')verifyVaultPassword()"
              style="margin-bottom:12px;width:100%">
       <div id="vaultPwError" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:12px"></div>
@@ -1022,16 +1022,16 @@ async function verifyVaultPassword() {
   const input = document.getElementById('vaultPwInput');
   const errEl = document.getElementById('vaultPwError');
   const pw    = (input ? input.value : '').trim();
-  if (!pw) { if (errEl) errEl.textContent = t('enterAdminPasswordHint'); return; }
+  if (!pw) { if (errEl) errEl.textContent = 'Enter the admin password'; return; }
 
   const club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (!club || !club.id) { if (errEl) errEl.textContent = t('noClubSelected'); return; }
+  if (!club || !club.id) { if (errEl) errEl.textContent = 'No club selected'; return; }
 
-  if (errEl) errEl.textContent = t('checkingDotDot');
+  if (errEl) errEl.textContent = 'Checking...';
   try {
     const rows = await sbGet('clubs', `id=eq.${club.id}&admin_password=eq.${encodeURIComponent(pw)}&select=id`);
     if (!rows || !rows.length) {
-      if (errEl) errEl.textContent = t('wrongAdminPw');
+      if (errEl) errEl.textContent = 'Wrong admin password';
       if (input) input.value = '';
       return;
     }
@@ -1040,7 +1040,7 @@ async function verifyVaultPassword() {
     if (ov) ov.remove();
     switchMode('vault');
   } catch(e) {
-    if (errEl) errEl.textContent = t('errorPrefix') + e.message;
+    if (errEl) errEl.textContent = 'Error: ' + e.message;
   }
 }
 
@@ -1218,7 +1218,7 @@ async function _doEndSession(shuttleData) {
   // Show ending feedback
   const toast = document.createElement('div');
   toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;color:#fff;padding:16px 24px;border-radius:14px;font-size:0.9rem;font-weight:700;z-index:99999;text-align:center;';
-  toast.textContent = t('endingSession');
+  toast.textContent = '⏹ Ending session…';
   document.body.appendChild(toast);
 
   // Mark session completed in sessions table
@@ -1253,7 +1253,7 @@ async function _doEndSession(shuttleData) {
   updateSessionLiveBar();
 
   // Remove toast
-  toast.textContent = t('sessionEnded');
+  toast.textContent = '✅ Session ended';
   setTimeout(() => toast.remove(), 1500);
 
   // Stay on dashboard and refresh it

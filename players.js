@@ -145,7 +145,7 @@ function fpResetPickers() {
       oldAv.replaceWith(ph);
     }
     const label = document.getElementById("fpLabel" + n);
-    if (label) { label.textContent = t('playerPrefix') + n; label.classList.remove("fp-label-chosen"); }
+    if (label) { label.textContent = "Player " + n; label.classList.remove("fp-label-chosen"); }
     const dd = document.getElementById("fpDropdown" + n);
     if (dd) dd.style.display = "none";
   });
@@ -624,8 +624,6 @@ function updatePlayerList() {
   updateFixedPairSelectors();
   updateCourtButtons();
   updateRoundsPageAccess();
-  // Refresh home tiles to reflect updated player count
-  if (typeof homeRefreshTiles === 'function') homeRefreshTiles();
 }
 
 /* =========================

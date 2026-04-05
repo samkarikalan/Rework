@@ -163,13 +163,13 @@ async function dbGetPlayers(forceFresh = false) {
 /// Add a new player — requires admin session
 async function dbAddPlayer(name, gender, _unused) {
   const club = getMyClub();
-  if (!club.id) throw new Error(t("noClubSelectedJoin"));
+  if (!club.id) throw new Error("No club selected.");
   // Mode check done at login — trust session
 
   // Check duplicate nickname in this club via memberships
   const existing = await sbGet('memberships',
     `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name.trim())}&select=id`);
-  if (existing.length) throw new Error(t('nicknameExists'));
+  if (existing.length) throw new Error('Player already exists in this club.');
 
   // Create global player row
   const created = await sbPost('players', {
@@ -362,11 +362,11 @@ async function dbOverrideRating(playerId, newRating) {
 /// Edit player — requires club admin password
 async function dbEditPlayer(playerId, updates, clubAdminPassword) {
   const club = getMyClub();
-  if (!club.id) throw new Error(t("noClubSelectedJoin"));
+  if (!club.id) throw new Error("No club selected.");
 
   const clubs = await sbGet("clubs", `id=eq.${club.id}&select=admin_password`);
   if (!clubs.length || clubs[0].admin_password !== clubAdminPassword)
-    throw new Error(t("wrongAdminPassword"));
+    throw new Error("Wrong admin password.");
 
   // updates may contain nickname — patch memberships, other fields go to players
   const { nickname, club_rating, ...playerUpdates } = updates;
@@ -386,11 +386,11 @@ async function dbEditPlayer(playerId, updates, clubAdminPassword) {
 /// Delete player from club — requires club admin password
 async function dbDeletePlayer(playerId, clubAdminPassword) {
   const club = getMyClub();
-  if (!club.id) throw new Error(t("noClubSelectedJoin"));
+  if (!club.id) throw new Error("No club selected.");
 
   const clubs = await sbGet("clubs", `id=eq.${club.id}&select=admin_password`);
   if (!clubs.length || clubs[0].admin_password !== clubAdminPassword)
-    throw new Error(t("wrongAdminPassword"));
+    throw new Error("Wrong admin password.");
 
   // Remove from club only (delete membership, keep global player)
   await sbDelete('memberships', `player_id=eq.${playerId}&club_id=eq.${club.id}`);
@@ -414,9 +414,9 @@ async function dbGetClubs() {
 
 /// Create a new club
 async function dbAddClub(clubName, selectPassword, adminPassword, registrationEmail) {
-  if (!clubName.trim()) throw new Error(t('enterClubName'));
-  if (!selectPassword)  throw new Error(t('enterMemberPw'));
-  if (!adminPassword)   throw new Error(t('enterAdminPw'));
+  if (!clubName.trim()) throw new Error('Club name required.');
+  if (!selectPassword)  throw new Error('Select password required.');
+  if (!adminPassword)   throw new Error('Admin password required.');
 
   const payload = {
     name:            clubName.trim(),
@@ -463,7 +463,7 @@ async function dbVerifyOtp(email, token) {
 /* ── Get club registration email (masked for display) ── */
 async function dbGetClubRegEmail(clubId) {
   const rows = await sbGet('clubs', `id=eq.${clubId}&select=registration_email`);
-  if (!rows || !rows.length) throw new Error(t('clubNotFound'));
+  if (!rows || !rows.length) throw new Error('Club not found.');
   return rows[0].registration_email || null;
 }
 
@@ -478,7 +478,7 @@ function maskEmail(email) {
 async function dbVerifyClubAccess(clubId, selectPassword) {
   const clubs = await sbGet("clubs", `id=eq.${clubId}&select=id,name,select_password`);
   if (!clubs.length) throw new Error("Club not found.");
-  if (clubs[0].select_password !== selectPassword) throw new Error(t("wrongPasswordHint"));
+  if (clubs[0].select_password !== selectPassword) throw new Error("Wrong club password.");
   return clubs[0];
 }
 

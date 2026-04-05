@@ -80,17 +80,17 @@ function subPurchase() {
           localStorage.setItem('sub_active', 'true');
           _subStatus = 'active';
           hidePaywall();
-          showToastMsg(t('subscribedPro'));
+          showToastMsg('✅ Subscribed! Welcome to Pro.');
         }
       })
       .catch(function(err) {
         console.warn('Purchase failed:', err);
-        showToastMsg(t('purchaseCancelled'));
+        showToastMsg('Purchase cancelled.');
       });
   } else {
     // Fallback for web testing
     console.log('Billing not available — web mode');
-    showToastMsg(t('billingAppOnly'));
+    showToastMsg('Billing only available in the app.');
   }
 }
 
@@ -107,13 +107,13 @@ function subRestore() {
           localStorage.setItem('sub_active', 'true');
           _subStatus = 'active';
           hidePaywall();
-          showToastMsg(t('purchaseRestored'));
+          showToastMsg('✅ Purchase restored!');
         } else {
-          showToastMsg(t('noActiveSubscription'));
+          showToastMsg('No active subscription found.');
         }
       })
       .catch(function(err) {
-        showToastMsg(t('couldNotRestore'));
+        showToastMsg('Could not restore purchases.');
       });
   }
 }
@@ -127,16 +127,16 @@ function subShowTrialBanner() {
 
   if (_subStatus === 'trial') {
     var days = subTrialDaysLeft();
-    if (labelEl) labelEl.textContent = t('freeTrial');
-    if (valueEl) valueEl.textContent = days + ' ' + t('daysRemaining');
+    if (labelEl) labelEl.textContent = '🎉 Free Trial';
+    if (valueEl) valueEl.textContent = days + ' days remaining';
     if (valueEl) valueEl.style.color = days > 7 ? 'var(--green,#2dce89)' : 'var(--red,#e63757)';
   } else if (_subStatus === 'expired') {
-    if (labelEl) labelEl.textContent = t('trialEndedSub');
-    if (valueEl) valueEl.textContent = t('subscribeToContInue');
+    if (labelEl) labelEl.textContent = '🔒 Trial Ended';
+    if (valueEl) valueEl.textContent = 'Subscribe to continue';
     if (valueEl) valueEl.style.color = 'var(--red,#e63757)';
   } else {
-    if (labelEl) labelEl.textContent = t('activeSubscription');
-    if (valueEl) valueEl.textContent = t('subscribed');
+    if (labelEl) labelEl.textContent = '✅ Active';
+    if (valueEl) valueEl.textContent = 'Subscribed';
     if (valueEl) valueEl.style.color = 'var(--green,#2dce89)';
   }
 }

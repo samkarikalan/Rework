@@ -153,12 +153,6 @@ function setLanguage(lang) {
   });
   
    if (typeof loadHelp === "function") loadHelp(currentHelpSection);
-  // Refresh all dynamic content after language change
-  if (typeof homeUpdateStepper    === "function") homeUpdateStepper();
-  if (typeof homeRefreshTiles     === "function") homeRefreshTiles();
-  if (typeof updateModePill       === "function") updateModePill(localStorage.getItem('kbrr_app_mode') || 'viewer');
-  if (typeof subShowTrialBanner   === "function") subShowTrialBanner();
-  if (typeof clubLoginRefresh     === "function") clubLoginRefresh();
 }
 
 function updateRoundTitle(round) {
@@ -229,7 +223,7 @@ function adminGetPassword() {
 // ── Change password flow ──
 function playerMgmtChangePwd() {
   adminModalMode = "changepwd";
-  document.getElementById("adminModalTitle").textContent = t("changePassword");
+  document.getElementById("adminModalTitle").textContent = "🔑 Change Password";
   document.getElementById("adminPasswordConfirmRow").style.display = "block";
   document.getElementById("adminModalError").textContent = "";
   document.getElementById("adminPasswordInput").value = "";
@@ -253,17 +247,17 @@ function adminVerifyPassword() {
       document.getElementById("playerMgmtUnlocked").style.display = "block";
       playerMgmtRenderList();
     } else {
-      err.textContent = t("wrongPassword");
+      err.textContent = "Wrong password. Try again.";
       document.getElementById("adminPasswordInput").value = "";
     }
 
   } else if (adminModalMode === "changepwd") {
     const confirm = document.getElementById("adminPasswordConfirm").value;
     if (input.length < 4) {
-      err.textContent = t("passwordMin4"); return;
+      err.textContent = "Password must be at least 4 characters."; return;
     }
     if (input !== confirm) {
-      err.textContent = t("passwordsNotMatchDot"); return;
+      err.textContent = "Passwords do not match."; return;
     }
     localStorage.setItem("adminPassword", input);
     adminCloseModal();
@@ -363,7 +357,7 @@ async function playerPlayingRenderList() {
 }
 
 async function playerPlayingRelease(name) {
-  if (!confirm('"' + name + '" ' + t('releaseFromSession'))) return;
+  if (!confirm('Release "' + name + '" from active session?')) return;
   try {
     const _rc = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
     await sbPatch('memberships', `club_id=eq.${_rc.id}&nickname=ilike.${encodeURIComponent(name)}`, {
@@ -374,7 +368,7 @@ async function playerPlayingRelease(name) {
 }
 
 async function playerPlayingReleaseAll() {
-  if (!confirm(t('releaseAllConfirm'))) return;
+  if (!confirm('Release ALL locked players?')) return;
   try {
     const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
     if (!club.id) { alert('No club logged in.'); return; }
@@ -457,7 +451,7 @@ async function playerMgmtToggleGender(displayName) {
 
 // ── Delete from master DB ──
 async function playerMgmtDelete(displayName) {
-  if (!confirm(`${t('removePlayer')} "${displayName}"?`)) return;
+  if (!confirm(`Remove "${displayName}" from this club?`)) return;
   const key = displayName.trim().toLowerCase();
 
   // Remove from Supabase club_members
@@ -529,16 +523,16 @@ function sbRenderClubStatus() {
   const el    = document.getElementById("sbClubStatus");
   const badge = document.getElementById("sbModeBadge");
 
-  if (el) el.textContent = club.name ? club.name : t("noClubSelected");
+  if (el) el.textContent = club.name ? club.name : "No club selected";
 
   if (badge) {
     if (mode === "admin") {
-      badge.textContent = t('adminBadgeFull');
+      badge.textContent = "🔑 Admin";
       badge.style.background = "#2dce89";
       badge.style.color = "#fff";
       badge.style.display = "inline-block";
     } else if (mode === "user") {
-      badge.textContent = t("userBadgeFull");
+      badge.textContent = "👤 User";
       badge.style.background = "#5e72e4";
       badge.style.color = "#fff";
       badge.style.display = "inline-block";
@@ -649,8 +643,8 @@ function vaultModifyFilter() {
     const ini = (p.displayName || '?')[0].toUpperCase();
     const rating = p.rating.toFixed(1);
     const userIdTag = p.userId
-      ? `<span class="vm-userid-chip">${t("registeredBadge")}</span>`
-      : `<span class="vm-userid-chip vm-unlinked">${t("noAccountBadge")}</span>`;
+      ? `<span class="vm-userid-chip">✅ registered</span>`
+      : `<span class="vm-userid-chip vm-unlinked">no account</span>`;
     const safeId = _vmEsc(p.id);
     return `<div class="vm-player-row ${g}">
       <div class="vm-avatar ${g}">${ini}</div>
@@ -659,7 +653,7 @@ function vaultModifyFilter() {
           <span class="vm-player-name">${_vmEsc(p.displayName)}</span>
           ${userIdTag}
         </div>
-        <div class="vm-player-meta">${(p.gender||'Male')==="Female"?t("genderFemale"):t("genderMale")} · ★${rating} · ${p.wins}${t("winsShort")} ${p.losses}${t("lossesShort")}</div>
+        <div class="vm-player-meta">${p.gender || 'Male'} · ★${rating} · ${p.wins}W ${p.losses}L</div>
       </div>
       <div class="vm-row-actions">
         <button class="vm-edit-btn" onclick="vmOpenEditModal('${safeId}')" title="Edit">✎</button>
@@ -711,9 +705,9 @@ async function vmSaveEdit() {
   const fb           = document.getElementById('vmEditFeedback');
   const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green)' : 'var(--red)'; } };
 
-  if (!name) { setFb(t('nameCannotBeEmpty'), false); return; }
+  if (!name) { setFb('Name cannot be empty.', false); return; }
 
-  setFb(t('saving'), true);
+  setFb('Saving…', true);
   try {
     const club = (typeof getMyClub === 'function') ? getMyClub() : null;
     const _vm  = _vmAllPlayers.find(x => x.id === playerId);
@@ -745,7 +739,7 @@ async function vmSaveEdit() {
     if (typeof syncPlayersFromMaster === 'function') syncPlayersFromMaster();
     if (typeof updatePlayerList === 'function') updatePlayerList();
 
-    setFb(t('saved'), true);
+    setFb('✅ Saved!', true);
     setTimeout(() => {
       document.getElementById('vmEditModal').classList.remove('open');
       vaultRenderModify();
@@ -756,7 +750,7 @@ async function vmSaveEdit() {
 }
 
 async function vmDeletePlayer(playerId, displayName) {
-  if (!confirm(`${t('removePlayer')} "${displayName}"?`)) return;
+  if (!confirm(`Remove "${displayName}" from this club?`)) return;
   try {
     // Remove from club only — delete membership, keep global player
     const _dclub = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
@@ -805,12 +799,12 @@ async function clubCreateSendOtp() {
   const fb      = document.getElementById('clubCreateFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!name)    { setFb(t('enterClubName'), false); return; }
-  if (!selPw)   { setFb(t('enterMemberPw'), false); return; }
-  if (!adminPw) { setFb(t('enterAdminPw'), false); return; }
-  if (selPw === adminPw) { setFb(t('memberAdminDiff'), false); return; }
+  if (!name)    { setFb('Enter club name.', false); return; }
+  if (!selPw)   { setFb('Enter member password.', false); return; }
+  if (!adminPw) { setFb('Enter admin password.', false); return; }
+  if (selPw === adminPw) { setFb('Member and admin passwords must be different.', false); return; }
 
-  setFb(t('creatingClubDot'), true);
+  setFb('Creating club...', true);
   try {
     const club = await dbAddClub(name, selPw, adminPw);
     setMyClub(club.id, club.name);
@@ -819,7 +813,7 @@ async function clubCreateSendOtp() {
     ['sbNewClubName','sbNewClubSelectPw','sbNewClubAdminPw'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    setFb('✅ ' + club.name + ' ' + (t('saved')||'created!'), true);
+    setFb('✅ Club "' + club.name + '" created! You are now Admin.', true);
     sbRenderClubStatus();
     vaultSyncStatus();
     if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
@@ -837,15 +831,15 @@ async function clubDeleteWithPassword() {
   const fb      = document.getElementById('clubDeleteFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!select || !select.value) { setFb(t('selectClubToDelete'), false); return; }
+  if (!select || !select.value) { setFb('Select a club to delete.', false); return; }
   const pw = pwInput?.value.trim();
-  if (!pw) { setFb(t('enterAdminPw'), false); return; }
+  if (!pw) { setFb('Enter admin password.', false); return; }
 
-  setFb(t('verifyingDot'), true);
+  setFb('Verifying...', true);
   try {
     const clubs = await sbGet('clubs', `id=eq.${select.value}&select=id,name,admin_password`);
-    if (!clubs || !clubs.length) { setFb(t('clubNotFound'), false); return; }
-    if (clubs[0].admin_password !== pw) { setFb(t('wrongAdminPassword'), false); return; }
+    if (!clubs || !clubs.length) { setFb('Club not found.', false); return; }
+    if (clubs[0].admin_password !== pw) { setFb('Wrong admin password.', false); return; }
 
     const clubName = clubs[0].name || '';
     await dbDeleteClub(select.value);
@@ -956,16 +950,16 @@ async function vaultRegisterAll() {
   const btn   = document.getElementById('regRegisterAllBtn');
   const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.className = 'register-feedback ' + (ok ? 'success' : 'error'); } };
 
-  if (!defPw) { setFb(t('enterDefaultPwAll'), false); return; }
+  if (!defPw) { setFb('Please enter a default password for all players.', false); return; }
 
   const club    = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-  if (!club.id) { setFb(t('noClubSelectedJoin'), false); return; }
+  if (!club.id) { setFb('No club selected.', false); return; }
 
   const pending = _regStagingList.filter(p => p.status === 'pending' || p.status === 'error');
   if (!pending.length) return;
 
   btn.disabled = true;
-  setFb(t('registeringDot'), true);
+  setFb('Registering...', true);
 
   let successCount = 0, failCount = 0;
 
@@ -1014,7 +1008,7 @@ async function vaultRegisterAll() {
 
   btn.disabled = false;
   const parts = [];
-  if (successCount) parts.push('✅ ' + successCount + ' ' + (t('registeredBadge')||'registered'));
+  if (successCount) parts.push('✅ ' + successCount + ' registered');
   if (failCount)    parts.push('⚠️ ' + failCount + ' skipped');
   setFb(parts.join('  '), !failCount);
 
@@ -1031,16 +1025,16 @@ async function vaultDoRegisterPlayer() {
   const fb       = document.getElementById('vregFeedback');
   const setFb    = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green,#2dce89)' : 'var(--red,#e63757)'; } };
 
-  if (!club.id)   { setFb(t('noClubSelectedJoin'), false); return; }
-  if (!nickname)  { setFb(t('enterNickname'), false); return; }
-  if (!defPw)     { setFb(t('enterDefaultPw'), false); return; }
+  if (!club.id)   { setFb('No club selected.', false); return; }
+  if (!nickname)  { setFb('Please enter a nickname.', false); return; }
+  if (!defPw)     { setFb('Please set a default password.', false); return; }
 
-  setFb(t('registeringDot'), true);
+  setFb('Registering...', true);
   try {
     // Check nickname not already in this club
     const existing = await sbGet('memberships',
       'club_id=eq.' + club.id + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id');
-    if (existing && existing.length) { setFb(t('nicknameExists'), false); return; }
+    if (existing && existing.length) { setFb('Nickname already exists in this club.', false); return; }
 
     // Create player row
     const created = await sbPost('players', {
@@ -1067,7 +1061,7 @@ async function vaultDoRegisterPlayer() {
       user_account_id: uaId2 || undefined
     });
 
-    setFb('✅ ' + nickname + ' ' + (t('registeredBadge')||'registered!'), true);
+    setFb('✅ ' + nickname + ' registered!', true);
     // Clear fields for next entry
     document.getElementById('vregNickname').value = '';
     document.getElementById('vregDefaultPassword').value = '';

@@ -184,12 +184,12 @@ function toggleRound() {
 
   // Update button label
   if (currentState === "idle") {
-    // Show t("startGame") if no rounds played yet, else "Next Round"
+    // Show "Start" if no rounds played yet, else "Next Round"
     const isFirst = allRounds.length <= 1;
     if (isFirst) {
       btn.classList.add("start-state");
       textEl.removeAttribute("data-i18n");
-      textEl.textContent = t("startGame");
+      textEl.textContent = "Start";
     } else {
       btn.classList.remove("start-state");
       textEl.dataset.i18n = "nround";
@@ -212,10 +212,10 @@ function toggleRound() {
 function setStatus(status) {
   //statusEl.classList.remove("status-ready", "status-progress");
 
-  /*if (status === t("readyGame")) {
+  /*if (status === "Ready") {
     statusEl.dataset.i18n = "statusReady";
     statusEl.classList.add("status-ready");
-  } else if (status === t("inProgressGame")) {
+  } else if (status === "In Progress") {
     statusEl.dataset.i18n = "statusProgress";
     statusEl.classList.add("status-progress");
   } 
@@ -1351,7 +1351,7 @@ function renderGames(data, roundIndex) {
       const winCup = document.createElement('img');
       winCup.src = 'win-cup.png';
       winCup.className = 'win-cup blinking';
-      winCup.title = t('markWinner');
+      winCup.title = 'Mark winner';
       winCup.style.visibility = 'hidden';
       winCup.style.pointerEvents = 'none';
 
@@ -1464,7 +1464,7 @@ function renderGames(data, roundIndex) {
 
     const vsDivider = document.createElement('div');
     vsDivider.className = 'vs-divider';
-    vsDivider.innerHTML = `<div class="vs-line"></div><span>${t('vsLabel')}</span><div class="vs-line"></div>`;
+    vsDivider.innerHTML = '<div class="vs-line"></div><span>VS</span><div class="vs-line"></div>';
 
     teamsDiv.append(teamLeft, vsDivider, teamRight);
     courtDiv.append(courtName, teamsDiv);
@@ -1512,7 +1512,7 @@ function goodrenderGames(data, roundIndex) {
       const winCup = document.createElement('img');
       winCup.src = 'win-cup.png';
       winCup.className = 'win-cup blinking';
-      winCup.title = t('markWinner');
+      winCup.title = 'Mark winner';
       winCup.style.visibility = 'hidden';
       winCup.style.pointerEvents = 'none';
 
@@ -1616,7 +1616,7 @@ function goodrenderGames(data, roundIndex) {
 
     const vsDivider = document.createElement('div');
     vsDivider.className = 'vs-divider';
-    vsDivider.innerHTML = `<div class="vs-line"></div><span>${t('vsLabel')}</span><div class="vs-line"></div>`;
+    vsDivider.innerHTML = '<div class="vs-line"></div><span>VS</span><div class="vs-line"></div>';
 
     teamsDiv.append(teamLeft, vsDivider, teamRight);
     courtDiv.append(courtName, teamsDiv);
@@ -1666,7 +1666,7 @@ function renderGames2(data, index) {
       const winCup = document.createElement('img');
       winCup.src = 'win-cup.png';
       winCup.className = 'win-cup blinking';
-      winCup.title = t('markWinner');
+      winCup.title = 'Mark winner';
 
       // Start hidden
       winCup.style.visibility = 'hidden';
@@ -1776,7 +1776,7 @@ function renderGames2(data, index) {
 
     const vsDivider = document.createElement('div');
     vsDivider.className = 'vs-divider';
-    vsDivider.innerHTML = `<div class="vs-line"></div><span>${t('vsLabel')}</span><div class="vs-line"></div>`;
+    vsDivider.innerHTML = '<div class="vs-line"></div><span>VS</span><div class="vs-line"></div>';
 
     teamsDiv.append(teamLeft, vsDivider, teamRight);
     courtDiv.append(courtName, teamsDiv);
@@ -1829,7 +1829,7 @@ restDiv.appendChild(title);
 
   if (!data.resting || data.resting.length === 0) {
     const span = document.createElement('span');
-    span.innerText = t('noneGame');
+    span.innerText = 'None';
     restBox.appendChild(span);
   } else {
     data.resting.forEach(restName => {
@@ -2260,7 +2260,7 @@ function handleDropRestToTeam(
   // ---------------------------------------------
   const { restCount } = schedulerState;
 
-  if (oldPlayer && oldPlayer !== t('emptyGame')) {
+  if (oldPlayer && oldPlayer !== '(Empty)') {
 
     // Read only value
     const stored = restCount.get(oldPlayer) || 0;
@@ -2278,7 +2278,7 @@ function handleDropRestToTeam(
 function handleDropBetweenTeams(e, teamSide, gameIndex, playerIndex, data, index, src) {
   // src contains info about the player you selected first
   const { teamSide: fromTeamSide, gameIndex: fromGameIndex, playerIndex: fromPlayerIndex, playerName: player } = src;
-  if (!player || player === t('emptyGame')) return;
+  if (!player || player === '(Empty)') return;
   const fromTeamKey = fromTeamSide === 'L' ? 'pair1' : 'pair2';
   const toTeamKey = teamSide === 'L' ? 'pair1' : 'pair2';
   const fromTeam = data.games[fromGameIndex][fromTeamKey];
@@ -2288,7 +2288,7 @@ function handleDropBetweenTeams(e, teamSide, gameIndex, playerIndex, data, index
   const targetPlayer = toTeam[playerIndex];
   // ✅ Swap players
   toTeam[playerIndex] = movedPlayer;
-  fromTeam[fromPlayerIndex] = targetPlayer && targetPlayer !== t('emptyGame') ? targetPlayer : t('emptyGame');
+  fromTeam[fromPlayerIndex] = targetPlayer && targetPlayer !== '(Empty)' ? targetPlayer : '(Empty)';
   showRound(index);
 }
 
@@ -2417,7 +2417,7 @@ lockBtn.addEventListener('click', () => {
   interactionLocked = !interactionLocked;
   document.body.classList.toggle('locked', interactionLocked);
   lockBtn.src = interactionLocked ? 'lock.png' : 'unlock.png';
-  lockBtn.alt = interactionLocked ? 'Lock' : t('unlockBtn');
+  lockBtn.alt = interactionLocked ? 'Lock' : 'Unlock';
   _syncModeBanner();
   _syncShuffleBtn();
 });

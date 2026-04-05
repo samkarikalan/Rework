@@ -98,8 +98,8 @@ async function authDoSignup() {
   var confirm      = (document.getElementById('signupConfirm')?.value || '');
   var recoveryWord = (document.getElementById('signupRecoveryWord')?.value || '').trim();
 
-  if (!email) { authShowError('signupError', t('emailRequired')); return; }
-  if (password !== confirm) { authShowError('signupError', t('passwordsNotMatch')); return; }
+  if (!email) { authShowError('signupError', 'Email is required'); return; }
+  if (password !== confirm) { authShowError('signupError', 'Passwords do not match'); return; }
 
   // Send OTP first
   authSetLoading('#authSignup .auth-btn-primary', true);
@@ -222,7 +222,7 @@ function authShowClubPicker(memberships, user) {
   }
   picker.style.display = '';
   picker.innerHTML = '<div class="auth-title">' + t('selectClubTitle') + '</div>' +
-    '<div class="auth-sub">' + t('youMemberMultipleClubs') + '</div>' +
+    '<div class="auth-sub">You are a member of multiple clubs</div>' +
     memberships.map(function(m) {
       var cid   = m.club_id;
       var cname = m.club_name || cid;
@@ -247,7 +247,7 @@ async function authDoForgotReset() {
   var confirmPw    = (document.getElementById('forgotConfirmPw')?.value || '');
 
   if (newPw !== confirmPw) {
-    authShowError('forgotError', t('passwordsNotMatch'));
+    authShowError('forgotError', 'Passwords do not match');
     return;
   }
 
@@ -260,7 +260,7 @@ async function authDoForgotReset() {
     return;
   }
 
-  authShowError('forgotError', t('passwordReset'));
+  authShowError('forgotError', '✅ Password reset! Please login.');
   document.getElementById('forgotError').style.color = 'var(--green, #2dce89)';
   setTimeout(function() { authShowScreen('login'); }, 1500);
 }
@@ -335,7 +335,7 @@ function authSearchClubsUI(query) {
       resultsEl.innerHTML = result.clubs.map(function(club) {
         return '<div class="auth-club-item" onclick="authDoRequestJoin(\'' + club.id + '\',\'' + club.name.replace(/'/g, "\\'") + '\')">' +
           '<div class="auth-club-item-name">🏢 ' + club.name + '</div>' +
-          '<div class="auth-club-item-btn">' + t('requestToJoin') + '</div>' +
+          '<div class="auth-club-item-btn">Request to Join ›</div>' +
           '</div>';
       }).join('');
     }
@@ -467,12 +467,12 @@ function authShowOtpScreen(email, context) {
   }
   otpScreen.style.display = '';
   otpScreen.innerHTML =
-    '<div class="auth-title">' + t('verifyEmailTitle') + '</div>' +
+    '<div class="auth-title">Verify Email</div>' +
     '<div class="auth-sub" style="margin-bottom:16px">Enter the 6-digit code sent to<br><strong>' + email + '</strong></div>' +
     '<input id="authOtpInput" class="auth-input" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:8px;font-size:1.2rem;text-align:center;">' +
     '<div id="authOtpError" class="auth-error" style="display:none"></div>' +
-    '<button id="authOtpSubmitBtn" class="auth-btn auth-btn-primary" onclick="authSubmitOtp()" style="margin-top:12px;">' + t('verifyBtn') + '</button>' +
-    '<button class="auth-btn auth-btn-secondary" onclick="authResendOtp(\'' + email + '\')" style="margin-top:8px;">' + t('resendCode') + '</button>';
+    '<button id="authOtpSubmitBtn" class="auth-btn auth-btn-primary" onclick="authSubmitOtp()" style="margin-top:12px;">Verify</button>' +
+    '<button class="auth-btn auth-btn-secondary" onclick="authResendOtp(\'' + email + '\')" style="margin-top:8px;">Resend Code</button>';
 
   setTimeout(function() {
     var inp = document.getElementById('authOtpInput');
@@ -487,7 +487,7 @@ function authHideOtpScreen() {
 
 async function authSubmitOtp() {
   var otp = (document.getElementById('authOtpInput')?.value || '').trim();
-  if (otp.length !== 6) { authShowError('authOtpError', t('enterSixDigitHint')); return; }
+  if (otp.length !== 6) { authShowError('authOtpError', 'Enter 6-digit code'); return; }
   if (_otpContext === 'signup') await authCompleteSignup(otp);
   if (_otpContext === 'claim')  await authCompleteClaim(otp);
 }
@@ -497,7 +497,7 @@ async function authResendOtp(email) {
   if (result.error) {
     authShowError('authOtpError', result.error);
   } else {
-    authShowError('authOtpError', t('codeResent'));
+    authShowError('authOtpError', '✅ Code resent');
     document.getElementById('authOtpError').style.color = 'var(--green,#2dce89)';
     document.getElementById('authOtpError').style.display = '';
   }
@@ -523,15 +523,15 @@ async function authDoClaimAccount() {
 
   var setErr = function(msg) { if (errEl) { errEl.textContent = msg; errEl.style.display = ''; } };
 
-  if (!clubId)      { setErr(t('selectYourClub')); return; }
-  if (!nickname)    { setErr(t('enterYourNickname')); return; }
-  if (!defaultPw)   { setErr(t('enterDefaultPassword')); return; }
+  if (!clubId)      { setErr('Select your club'); return; }
+  if (!nickname)    { setErr('Enter your nickname'); return; }
+  if (!defaultPw)   { setErr('Enter default password'); return; }
   if (!email)       { setErr('Enter your email'); return; }
   if (newPassword.length < 6) { setErr('Password must be at least 6 characters'); return; }
-  if (newPassword !== confirmPw) { setErr(t('passwordsNotMatch')); return; }
+  if (newPassword !== confirmPw) { setErr('Passwords do not match'); return; }
 
   // Send OTP to verify email
-  setErr(t('sendingVerification'));
+  setErr('Sending verification code…');
   errEl.style.color = 'var(--accent,#6c63ff)';
   var otpResult = await authSendOtp(email);
   if (otpResult.error) { errEl.style.color = ''; setErr(otpResult.error); return; }
