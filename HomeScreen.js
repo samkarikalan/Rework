@@ -809,9 +809,9 @@ async function _joinClubDoSearch(query) {
   }
 
   resultsEl.innerHTML = clubs.map(function(c) {
-    return '<div onclick="joinClubPageRequest(\'' + c.id + '\',\'' + c.name.replace(/'/g, "\\'") + '\')" style="padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--border,#333);display:flex;align-items:center;justify-content:space-between;background:var(--card-bg,#1e1e2e);border-radius:12px;margin-bottom:6px;">' +
-      '<div><div style="font-weight:600;color:var(--text);">' + c.name + '</div></div>' +
-      '<span style="color:var(--accent,#6c63ff);font-size:0.82rem;font-weight:600;">Request ›</span>' +
+    return '<div onclick="joinClubPageRequest(\'' + c.id + '\',\'' + c.name.replace(/'/g, "\\'") + '\')" class="jc-club-row" style="cursor:pointer;justify-content:space-between;">' +
+      '<div><div class="jc-club-name">' + c.name + '</div></div>' +
+      '<span style="color:var(--accent,#6c63ff);font-size:0.82rem;font-weight:600;">' + t('requestToJoin') + '</span>' +
     '</div>';
   }).join('');
 }
