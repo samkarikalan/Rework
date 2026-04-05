@@ -269,7 +269,7 @@
     <div class="home-topbar">
       <button class="mode-pill-btn" id="modePillBtn" onclick="openModeSwitcher()">
         <span id="modePillIcon">🏸</span>
-        <span id="modePillLabel" data-i18n="organiser">Organiser</span>
+        <span id="modePillLabel">Organiser</span>
         <span>▾</span>
       </button>
     </div>
@@ -354,22 +354,22 @@
         <div class="home-tile" onclick="homeGo('orgClubMgmtPage',null)">
           <div class="home-tile-icon tile-pairs" id="orgTileIcon">🏢</div>
           <div class="home-tile-name" id="orgVctName">Club</div>
-          <div class="home-tile-sub" id="orgVctBadge" data-i18n="tapConnect">Tap to connect</div>
+          <div class="home-tile-sub" id="orgVctBadge">Tap to connect</div>
         </div>
         <div class="home-tile" onclick="homeGo('playersPage','tabBtnPlayers')">
           <div class="home-tile-icon tile-players">👥</div>
           <div class="home-tile-name" data-i18n="players">Players</div>
-          <div class="home-tile-sub" data-i18n="addRemove" id="tileSubPlayers" data-i18n="addRemove">Add · Remove</div>
+          <div class="home-tile-sub" id="tileSubPlayers">Add · Remove</div>
         </div>
         <div class="home-tile" onclick="homeGo('fixedPairsPage','tabBtnFixedPairs')">
           <div class="home-tile-icon tile-pairs">🤝</div>
           <div class="home-tile-name" data-i18n="fixedPairs">Fixed Pairs</div>
-          <div class="home-tile-sub" data-i18n="alwaysTogether" id="tileSubPairs">Always together</div>
+          <div class="home-tile-sub" id="tileSubPairs">Always together</div>
         </div>
         <div class="home-tile" onclick="homeGo('dashboardPage','tabBtnDashboard')">
           <div class="home-tile-icon">📡</div>
           <div class="home-tile-name" data-i18n="dashboard">Dashboard</div>
-          <div class="home-tile-sub" data-i18n="liveSessions" id="tileSubDashboard">Live sessions</div>
+          <div class="home-tile-sub" id="tileSubDashboard">Live sessions</div>
         </div>
       </div>
     </div>
@@ -381,8 +381,8 @@
       <div class="vault-club-tile" id="vaultClubStatusTile" style="display:none;">
         <div class="vct-dot" id="vctDot" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;"></div>
         <div class="vct-info" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;flex:1;">
-          <div class="vct-name" id="vctName" data-i18n="noClubSelected">No club selected</div>
-          <span class="vct-badge" id="vctBadge" style="display:none" data-i18n="adminBadge">ADMIN</span>
+          <div class="vct-name" id="vctName">No club selected</div>
+          <span class="vct-badge" id="vctBadge" style="display:none">ADMIN</span>
         </div>
         <button onclick="vaultLogoutClub()" style="background:none;border:1px solid var(--red,#e63757);color:var(--red,#e63757);border-radius:8px;padding:5px 10px;font-size:0.7rem;font-weight:700;cursor:pointer;flex-shrink:0;" data-i18n="leaveClub">Leave</button>
         <span onclick="homeGo('vaultClubMgmtPage',null)" style="color:var(--muted,#aaa);font-size:1rem;cursor:pointer;margin-left:6px;">›</span>
@@ -407,7 +407,7 @@
       <div id="vaultTileGrid" class="vault-tile-grid">
 
         <div class="vault-tile vt-playing" onclick="homeGo('vaultPlayingPage',null)">
-          <div class="vt-badge" id="vtBadgePlaying" style="display:none" data-i18n="liveBadge">LIVE</div>
+          <div class="vt-badge" id="vtBadgePlaying" style="display:none">LIVE</div>
           <div class="vt-icon">⚡</div>
           <div class="vt-stat" id="vtStatPlaying">—</div>
           <div class="vt-name" data-i18n="playing">Playing</div>
@@ -429,7 +429,7 @@
         </div>
 
         <div class="vault-tile vt-requests" onclick="homeGo('vaultRequestsPage',null)">
-          <div class="vt-badge" id="vtBadgeRequests" style="display:none" data-i18n="newBadge">NEW</div>
+          <div class="vt-badge" id="vtBadgeRequests" style="display:none">NEW</div>
           <div class="vt-icon">🔔</div>
           <div class="vt-stat" id="vtStatRequests">—</div>
           <div class="vt-name" data-i18n="requests">Requests</div>
@@ -447,13 +447,13 @@
             <img id="homeTileAvatarV" src="male.png" style="width:26px;height:26px;border-radius:50%;display:none;">
             <span id="homeTileIconV">👤</span>
           </div>
-          <div class="home-tile-name" id="homeTileNameV" data-i18n="myCard">My Card</div>
-          <div class="home-tile-sub" data-i18n="notSelected" id="homeTileRatingV">Not selected</div>
+          <div class="home-tile-name" id="homeTileNameV">My Card</div>
+          <div class="home-tile-sub" id="homeTileRatingV">Not selected</div>
         </div>
         <div class="home-tile" onclick="homeGo('dashboardPage','tabBtnDashboard')">
           <div class="home-tile-icon">📡</div>
           <div class="home-tile-name" data-i18n="dashboard">Dashboard</div>
-          <div class="home-tile-sub" data-i18n="liveSessions" id="tileSubDashboardV">Live sessions</div>
+          <div class="home-tile-sub" id="tileSubDashboardV">Live sessions</div>
         </div>
       </div>
       <!-- My Clubs expandable tile -->
@@ -464,7 +464,7 @@
               <div class="home-tile-icon vcl-icon">🏢</div>
               <div>
                 <div class="home-tile-name" data-i18n="myClubs">My Clubs</div>
-                <div class="home-tile-sub" id="tileSubJoinClub" data-i18n="findRequest">Find &amp; request</div>
+                <div class="home-tile-sub" id="tileSubJoinClub">Find &amp; request</div>
               </div>
             </div>
             <span class="vcl-arr">›</span>
@@ -484,7 +484,7 @@
   <div class="top-bar">
     <button class="mode-pill-btn" id="modePillBtn2" onclick="openModeSwitcher()">
         <span id="modePillIcon2">🏸</span>
-        <span id="modePillLabel2" data-i18n="organiser">Organiser</span>
+        <span id="modePillLabel2">Organiser</span>
         <span>▾</span>
       </button>
   </div>
@@ -572,7 +572,7 @@
       <div class="pref-section-label" data-i18n="subscription">Subscription</div>
       <div class="pref-card" id="settingsTrialCard">
         <div class="pref-row">
-          <span class="pref-row-label" id="settingsTrialLabel" data-i18n="freeTrial">Free Trial</span>
+          <span class="pref-row-label" id="settingsTrialLabel">Free Trial</span>
           <span class="pref-row-value" id="settingsTrialValue">—</span>
         </div>
         <div class="pref-divider"></div>
@@ -672,7 +672,7 @@
   <!-- Admin Password Modal -->
   <div id="adminModal" class="admin-modal-overlay" style="display:none">
     <div class="admin-modal">
-      <div class="admin-modal-title" id="adminModalTitle" data-i18n="adminAccess">🔐 Admin Access</div>
+      <div class="admin-modal-title" id="adminModalTitle">🔐 Admin Access</div>
       <input type="password" id="adminPasswordInput" class="admin-password-input"
         placeholder="Enter password" onkeydown="if(event.key==='Enter') adminVerifyPassword()">
       <div id="adminPasswordConfirmRow" style="display:none">
@@ -1068,7 +1068,7 @@
     <div class="title-card">
       <div id="roundTitle">R</div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <span class="mode-banner-badge ready-mode" id="roundModeBadge" data-i18n="readyBadge">READY</span>
+        <span class="mode-banner-badge ready-mode" id="roundModeBadge">READY</span>
         <img id="lockToggleBtn" class="lock-icon" src="lock.png" alt="Lock" />
       </div>
     </div>
@@ -1078,7 +1078,7 @@
     <div class="action-card">
       <button class="action mid small disabled-btn" id="roundShufle" onclick="RefreshRound()" aria-label="Mix round" disabled>🎲</button>
       <button id="nextBtn" class="action right primary start-state" onclick="toggleRound()">
-        <span id="btnText" data-i18n="startBtn">Start</span>
+        <span id="btnText">Start</span>
         <span class="icon"> ▶</span>
       </button>
       <button class="action mid small" onclick="toggleRoundSettings()" aria-label="Settings">⚙️</button>

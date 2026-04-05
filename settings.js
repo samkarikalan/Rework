@@ -153,8 +153,12 @@ function setLanguage(lang) {
   });
   
    if (typeof loadHelp === "function") loadHelp(currentHelpSection);
-  // Refresh stepper so step card text updates with new language
-  if (typeof homeUpdateStepper === "function") homeUpdateStepper();
+  // Refresh all dynamic content after language change
+  if (typeof homeUpdateStepper    === "function") homeUpdateStepper();
+  if (typeof homeRefreshTiles     === "function") homeRefreshTiles();
+  if (typeof updateModePill       === "function") updateModePill(localStorage.getItem('kbrr_app_mode') || 'viewer');
+  if (typeof subShowTrialBanner   === "function") subShowTrialBanner();
+  if (typeof clubLoginRefresh     === "function") clubLoginRefresh();
 }
 
 function updateRoundTitle(round) {
