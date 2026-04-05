@@ -76,7 +76,17 @@
         </button>
       </div>
       <div class="ml-footer">
-        <button class="ml-settings-btn" onclick="document.getElementById('modeSelectOverlay').style.display='none';homeGo('settingsPage','tabBtnSettings')">⚙️ Settings</button>
+        <button class="ml-settings-btn" onclick="document.getElementById('modeSelectOverlay').style.display='none';homeGo('settingsPage','tabBtnSettings')">⚙️ <span data-i18n="settings">Settings</span></button>
+        <div class="ml-lang-row" id="mlLangRow">
+          <span class="ml-lang-current" id="mlLangCurrent" onclick="mlToggleLang()">🇺🇸 English ▾</span>
+          <div class="ml-lang-picker" id="mlLangPicker" style="display:none;">
+            <div class="ml-lang-opt" onclick="mlSelectLang('en','🇺🇸','English')">🇺🇸 English</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('jp','🇯🇵','日本語')">🇯🇵 日本語</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('kr','🇰🇷','한국어')">🇰🇷 한국어</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('zh','🇨🇳','中文')">🇨🇳 中文</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('vi','🇻🇳','Tiếng Việt')">🇻🇳 Tiếng Việt</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -574,30 +584,6 @@
         <div class="pref-row">
           <span class="pref-row-label" id="settingsTrialLabel">Free Trial</span>
           <span class="pref-row-value" id="settingsTrialValue">—</span>
-        </div>
-        <div class="pref-divider"></div>
-        <div class="pref-row pref-row-tap" onclick="openModeSwitcher()">
-          <span class="pref-row-label" data-i18n="currentMode">Current Mode</span>
-          <span class="pref-row-value" id="settingsModeValue">—</span>
-          <span class="pref-row-chevron">›</span>
-        </div>
-      </div>
-
-      <!-- LANGUAGE -->
-      <div class="pref-section-label" data-i18n="language">Language</div>
-      <div class="pref-card">
-        <div class="pref-row pref-row-tap" onclick="settingsToggleLangPicker()">
-          <span class="pref-row-label" data-i18n="language">Language</span>
-          <span class="pref-row-value" id="settingsLangValue">🇺🇸 English</span>
-          <span class="pref-row-chevron">›</span>
-        </div>
-        <div class="pref-lang-picker" id="settingsLangPicker" style="display:none;">
-          <div class="pref-divider"></div>
-          <div class="pref-lang-option" onclick="settingsSelectLang('en','🇺🇸','English')">🇺🇸 English</div>
-          <div class="pref-lang-option" onclick="settingsSelectLang('jp','🇯🇵','日本語')">🇯🇵 日本語</div>
-          <div class="pref-lang-option" onclick="settingsSelectLang('kr','🇰🇷','한국어')">🇰🇷 한국어</div>
-          <div class="pref-lang-option" onclick="settingsSelectLang('zh','🇨🇳','中文')">🇨🇳 中文</div>
-          <div class="pref-lang-option" onclick="settingsSelectLang('vi','🇻🇳','Tiếng Việt')">🇻🇳 Tiếng Việt</div>
         </div>
       </div>
 

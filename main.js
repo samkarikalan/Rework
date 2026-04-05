@@ -82,6 +82,7 @@ function closeModeSheet() {
 }
 
 function openModeSwitcher() {
+  if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
   // Remove existing if any
   const existing = document.getElementById('modeSheetOverlay');
   if (existing) { existing.remove(); return; }

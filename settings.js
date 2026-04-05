@@ -171,9 +171,9 @@ function updateRoundTitle(round) {
 function setFontSize(size) {
   const root = document.documentElement;
 
-  if (size === "small") root.style.setProperty("--base-font-size", "14px");
-  if (size === "medium") root.style.setProperty("--base-font-size", "16px");
-  if (size === "large") root.style.setProperty("--base-font-size", "19px");
+  if (size === "small") root.style.setProperty("--base-font-size", "16px");
+  if (size === "medium") root.style.setProperty("--base-font-size", "19px");
+  if (size === "large") root.style.setProperty("--base-font-size", "22px");
 
   localStorage.setItem("appFontSize", size); // 👈 SAVE (ADD THIS)
 
@@ -1289,4 +1289,28 @@ async function showPlayerStats(name) {
 function closePlayerStats() {
   const modal = document.getElementById("playerStatsModal");
   if (modal) modal.style.display = "none";
+}
+
+/* ── Mode Launcher — Language Picker ── */
+function mlToggleLang() {
+  var picker = document.getElementById('mlLangPicker');
+  if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+
+function mlSelectLang(code, flag, name) {
+  // Close picker
+  var picker = document.getElementById('mlLangPicker');
+  if (picker) picker.style.display = 'none';
+  // Update display
+  var current = document.getElementById('mlLangCurrent');
+  if (current) current.textContent = flag + ' ' + name + ' ▾';
+  // Sync with settings lang (reuse existing function)
+  settingsSelectLang(code, flag, name);
+}
+
+function mlSyncLangDisplay() {
+  var saved = localStorage.getItem('appLang') || 'en';
+  var map = { en: '🇺🇸 English', jp: '🇯🇵 日本語', kr: '🇰🇷 한국어', zh: '🇨🇳 中文', vi: '🇻🇳 Tiếng Việt' };
+  var el = document.getElementById('mlLangCurrent');
+  if (el) el.textContent = (map[saved] || '🇺🇸 English') + ' ▾';
 }
