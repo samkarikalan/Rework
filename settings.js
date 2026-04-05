@@ -153,6 +153,8 @@ function setLanguage(lang) {
   });
   
    if (typeof loadHelp === "function") loadHelp(currentHelpSection);
+  // Refresh stepper so step card text updates with new language
+  if (typeof homeUpdateStepper === "function") homeUpdateStepper();
 }
 
 function updateRoundTitle(round) {
