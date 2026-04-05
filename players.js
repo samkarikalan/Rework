@@ -90,7 +90,7 @@ function fpRenderDropdown(n) {
   const wrap = document.createElement("div");
   wrap.className = "fp-dropdown-inner";
   if (!available.length) {
-    wrap.innerHTML = '<div class="fp-option-empty">No players available</div>';
+    wrap.innerHTML = '<div class="fp-option-empty">' + t('noPlayersAvailable') + '</div>';
   }
   available.forEach(name => {
     const row = document.createElement("div");
@@ -145,7 +145,7 @@ function fpResetPickers() {
       oldAv.replaceWith(ph);
     }
     const label = document.getElementById("fpLabel" + n);
-    if (label) { label.textContent = "Player " + n; label.classList.remove("fp-label-chosen"); }
+    if (label) { label.textContent = t('playerPrefix') + n; label.classList.remove("fp-label-chosen"); }
     const dd = document.getElementById("fpDropdown" + n);
     if (dd) dd.style.display = "none";
   });
@@ -241,7 +241,7 @@ function fcRenderDropdown(key, n) {
   inner.className = 'fp-dropdown-inner';
 
   if (!available.length) {
-    inner.innerHTML = '<div class="fp-option-empty">No players available</div>';
+    inner.innerHTML = '<div class="fp-option-empty">' + t('noPlayersAvailable') + '</div>';
   } else {
     available.forEach(name => {
       const row = document.createElement('div');
@@ -624,6 +624,8 @@ function updatePlayerList() {
   updateFixedPairSelectors();
   updateCourtButtons();
   updateRoundsPageAccess();
+  // Refresh home tiles to reflect updated player count
+  if (typeof homeRefreshTiles === 'function') homeRefreshTiles();
 }
 
 /* =========================

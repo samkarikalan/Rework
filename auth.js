@@ -48,19 +48,19 @@ async function authSignUp(email, password, displayName, gender, recoveryWord) {
   gender      = gender || 'Male';
 
   if (!email || !email.includes('@'))
-    return { error: 'Please enter a valid email' };
+    return { error: t('emailInvalid') };
   if (!displayName || displayName.length < 2)
-    return { error: 'Display name must be at least 2 characters' };
+    return { error: t('displayNameMin2') };
   if (!password || password.length < 6)
-    return { error: 'Password must be at least 6 characters' };
+    return { error: t('passwordMin6') };
   if (!recoveryWord || recoveryWord.trim().length < 3)
-    return { error: 'Recovery keyword must be at least 3 characters' };
+    return { error: t('recoveryMin3') };
 
   // ── Real Supabase ──
   try {
     // Check email exists
     var existing = await sbGet('user_accounts', 'email=eq.' + encodeURIComponent(email) + '&select=id');
-    if (existing && existing.length) return { error: 'Email already registered. Please login.' };
+    if (existing && existing.length) return { error: t('emailAlreadyReg') };
 
     var result = await sbPost('user_accounts', {
       user_id:       email,
@@ -84,8 +84,8 @@ async function authSignUp(email, password, displayName, gender, recoveryWord) {
   } catch(e) {
     var msg = e.message || '';
     if (msg.includes('duplicate') || msg.includes('already'))
-      return { error: 'Email already registered. Please login.' };
-    return { error: 'Sign up failed. Please try again.' };
+      return { error: t('emailAlreadyReg') };
+    return { error: t('signupFailed') };
   }
 }
 
@@ -93,8 +93,8 @@ async function authSignUp(email, password, displayName, gender, recoveryWord) {
 async function authLogin(email, password) {
   email = email.trim().toLowerCase();
 
-  if (!email) return { error: 'Please enter your email' };
-  if (!password) return { error: 'Please enter your password' };
+  if (!email) return { error: t('enterEmail') };
+  if (!password) return { error: t('enterPassword') };
 
   // ── Real Supabase — filter by email + password server-side ──
   try {
@@ -105,8 +105,8 @@ async function authLogin(email, password) {
     if (!rows || !rows.length) {
       // Check if email exists at all for better error message
       var exists = await sbGet('user_accounts', 'email=eq.' + encodeURIComponent(email) + '&select=id').catch(() => []);
-      if (!exists || !exists.length) return { error: 'No account found with this email' };
-      return { error: 'Wrong password' };
+      if (!exists || !exists.length) return { error: t('noAccountEmail') };
+      return { error: t('wrongPasswordLogin') };
     }
     var u = rows[0];
     var authUser = { id: u.id, email: u.email, nickname: u.nickname, displayName: u.nickname };
@@ -114,7 +114,7 @@ async function authLogin(email, password) {
     localStorage.setItem('auth_user', JSON.stringify(authUser));
     return { user: authUser };
   } catch(e) {
-    return { error: e.message || 'Login failed. Please try again.' };
+    return { error: e.message || t('loginFailed') };
   }
 }
 
@@ -123,21 +123,21 @@ async function authResetPassword(email, recoveryWord, newPassword) {
   email        = email.trim().toLowerCase();
   recoveryWord = recoveryWord.trim().toLowerCase();
 
-  if (!email || !email.includes('@')) return { error: 'Please enter your email' };
-  if (!recoveryWord) return { error: 'Please enter your recovery keyword' };
-  if (!newPassword || newPassword.length < 6) return { error: 'Password must be at least 6 characters' };
+  if (!email || !email.includes('@')) return { error: t('enterEmail') };
+  if (!recoveryWord) return { error: t('enterRecovery') };
+  if (!newPassword || newPassword.length < 6) return { error: t('passwordMin6') };
 
   try {
     var rows = await sbGet('user_accounts',
       'email=eq.' + encodeURIComponent(email) +
       '&recovery_word=eq.' + encodeURIComponent(recoveryWord) +
       '&select=id');
-    if (!rows || !rows.length) return { error: 'Email or recovery keyword is incorrect' };
+    if (!rows || !rows.length) return { error: t('emailRecoveryWrong') };
 
     await sbPatch('user_accounts', 'id=eq.' + rows[0].id, { password_hash: newPassword });
     return { success: true };
   } catch(e) {
-    return { error: e.message || 'Reset failed. Please try again.' };
+    return { error: e.message || t('resetFailed') };
   }
 }
 
@@ -149,25 +149,25 @@ async function authClaimAccount(clubId, nickname, defaultPassword, email, newPas
       'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id'
     );
     if (!memberships || !memberships.length)
-      return { error: 'Nickname not found in this club. Check with your admin.' };
+      return { error: t('nicknameNotFound') };
 
     var membership = memberships[0];
 
     // 2. Already claimed?
     if (membership.user_account_id)
-      return { error: 'This account has already been claimed. Please login or use Forgot Password.' };
+      return { error: t('alreadyClaimed') };
 
     // 3. Verify default password on player row
     var players = await sbGet('players',
       'id=eq.' + membership.player_id + '&default_password=eq.' + encodeURIComponent(defaultPassword) + '&select=id'
     );
     if (!players || !players.length)
-      return { error: 'Default password is incorrect. Check with your admin.' };
+      return { error: t('defaultPwWrong') };
 
     // 4. Check email not already used
     var existing = await sbGet('user_accounts', 'email=eq.' + encodeURIComponent(email) + '&select=id');
     if (existing && existing.length)
-      return { error: 'This email is already registered. Use a different email.' };
+      return { error: t('emailAlreadyUsed') };
 
     // 5. Create user_account
     var result = await sbPost('user_accounts', {
@@ -197,7 +197,7 @@ async function authClaimAccount(clubId, nickname, defaultPassword, email, newPas
     return { user: authUser };
 
   } catch(e) {
-    return { error: e.message || 'Claim failed. Please try again.' };
+    return { error: e.message || t('claimFailed') };
   }
 }
 
@@ -215,11 +215,11 @@ function authLogout() {
 /* ── Forgot password — send OTP ── */
 async function authForgotSendOtp(email) {
   email = email.trim().toLowerCase();
-  if (!email || !email.includes('@')) return { error: 'Please enter a valid email' };
+  if (!email || !email.includes('@')) return { error: t('emailInvalid') };
 
   if (AUTH_MOCK_MODE) {
     var user = _mockUsers.find(function(u) { return u.email === email; });
-    if (!user) return { error: 'No account found with this email' };
+    if (!user) return { error: t('noAccountEmail') };
     var otp = Math.floor(100000 + Math.random() * 900000).toString();
     localStorage.setItem('mock_forgot_otp', JSON.stringify({ email: email, otp: otp, ts: Date.now() }));
     console.log('MOCK OTP for ' + email + ': ' + otp); // shown in console for testing
@@ -234,17 +234,17 @@ async function authForgotSendOtp(email) {
 async function authForgotVerify(email, otp, newPassword) {
   email = email.trim().toLowerCase();
   if (!newPassword || newPassword.length < 6)
-    return { error: 'Password must be at least 6 characters' };
+    return { error: t('passwordMin6') };
 
   if (AUTH_MOCK_MODE) {
     var saved = JSON.parse(localStorage.getItem('mock_forgot_otp') || 'null');
     if (!saved || saved.email !== email || saved.otp !== otp)
-      return { error: 'Invalid OTP' };
+      return { error: t('invalidOTP') };
     if (Date.now() - saved.ts > 10 * 60 * 1000)
-      return { error: 'OTP expired. Please request a new one.' };
+      return { error: t('otpExpired') };
 
     var user = _mockUsers.find(function(u) { return u.email === email; });
-    if (!user) return { error: 'Account not found' };
+    if (!user) return { error: t('accountNotFound') };
     user.password = newPassword;
     _saveMockUsers();
     localStorage.removeItem('mock_forgot_otp');
@@ -257,7 +257,7 @@ async function authForgotVerify(email, otp, newPassword) {
 /* ── Join club by invite code ── */
 async function authJoinClub(inviteCode) {
   var user = authGetUser();
-  if (!user) return { error: 'Please login first' };
+  if (!user) return { error: t('pleaseLoginFirst') };
 
   inviteCode = inviteCode.trim().toUpperCase();
   if (!inviteCode) return { error: 'Please enter an invite code' };
@@ -266,7 +266,7 @@ async function authJoinClub(inviteCode) {
     // Find club with this invite code from existing clubs
     var clubs = JSON.parse(localStorage.getItem('mock_clubs') || '[]');
     var club = clubs.find(function(c) { return c.inviteCode === inviteCode; });
-    if (!club) return { error: 'Invalid invite code. Check with your organiser.' };
+    if (!club) return { error: t('invalidInviteCode') };
 
     // Check already member
     var already = _mockClubMembers.find(function(m) {
@@ -294,7 +294,7 @@ async function authJoinClub(inviteCode) {
     setMyClub(club.id, club.name);
     return { success: true, club: { id: club.id, name: club.name } };
   } catch(e) {
-    return { error: e.message || 'Failed to join club.' };
+    return { error: e.message || t('failedToJoinClub') };
   }
 }
 
@@ -328,18 +328,18 @@ async function authSearchClubs(query) {
       'name=ilike.' + encodeURIComponent('%' + query + '%') + '&select=id,name&limit=10');
     return { clubs: rows || [] };
   } catch(e) {
-    return { error: e.message || 'Search failed' };
+    return { error: e.message || t('searchFailed2') };
   }
 }
 
 /* ── Request to join a club ── */
 async function authRequestJoin(clubId, chosenNickname) {
   var user = authGetUser();
-  if (!user) return { error: 'Please login first' };
+  if (!user) return { error: t('pleaseLoginFirst') };
 
   // Use chosen nickname or fall back to account nickname
   var nickname = (chosenNickname || user.nickname || '').trim();
-  if (!nickname) return { error: 'Please provide a nickname.' };
+  if (!nickname) return { error: t('provideNickname') };
 
   try {
     // Check if already a member (by user_account_id)
@@ -399,7 +399,7 @@ async function authRequestJoin(clubId, chosenNickname) {
     });
     return { success: true, nickname: nickname };
   } catch(e) {
-    return { error: e.message || 'Failed to send request' };
+    return { error: e.message || t('failedSendRequest') };
   }
 }
 
@@ -429,7 +429,7 @@ async function authGetJoinRequests(clubId) {
     }
     return { requests: result };
   } catch(e) {
-    return { error: e.message || 'Failed to load requests' };
+    return { error: e.message || t('failedLoadRequests2') };
   }
 }
 
@@ -477,7 +477,7 @@ async function authAcceptRequest(requestId, clubId, userAccountId, nickname, gen
 
     return { success: true };
   } catch(e) {
-    return { error: e.message || 'Failed to accept request' };
+    return { error: e.message || t('failedAcceptRequest') };
   }
 }
 
@@ -490,7 +490,7 @@ async function authRejectRequest(requestId) {
     });
     return { success: true };
   } catch(e) {
-    return { error: e.message || 'Failed to reject request' };
+    return { error: e.message || t('failedRejectRequest') };
   }
 }
 
@@ -552,7 +552,7 @@ async function authVerifyOtp(email, otp) {
       body: JSON.stringify({ email: email.toLowerCase().trim(), otp: otp.trim() })
     });
     const data = await res.json();
-    if (!res.ok) return { error: data.error || 'Invalid OTP' };
+    if (!res.ok) return { error: data.error || t('invalidOTP') };
     return { success: true };
   } catch(e) {
     return { error: 'Network error: ' + e.message };

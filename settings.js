@@ -153,6 +153,12 @@ function setLanguage(lang) {
   });
   
    if (typeof loadHelp === "function") loadHelp(currentHelpSection);
+  // Refresh all dynamic content after language change
+  if (typeof homeUpdateStepper    === "function") homeUpdateStepper();
+  if (typeof homeRefreshTiles     === "function") homeRefreshTiles();
+  if (typeof updateModePill       === "function") updateModePill(localStorage.getItem('kbrr_app_mode') || 'viewer');
+  if (typeof subShowTrialBanner   === "function") subShowTrialBanner();
+  if (typeof clubLoginRefresh     === "function") clubLoginRefresh();
 }
 
 function updateRoundTitle(round) {
@@ -223,7 +229,7 @@ function adminGetPassword() {
 // ── Change password flow ──
 function playerMgmtChangePwd() {
   adminModalMode = "changepwd";
-  document.getElementById("adminModalTitle").textContent = "🔑 Change Password";
+  document.getElementById("adminModalTitle").textContent = t("changePassword");
   document.getElementById("adminPasswordConfirmRow").style.display = "block";
   document.getElementById("adminModalError").textContent = "";
   document.getElementById("adminPasswordInput").value = "";
@@ -247,17 +253,17 @@ function adminVerifyPassword() {
       document.getElementById("playerMgmtUnlocked").style.display = "block";
       playerMgmtRenderList();
     } else {
-      err.textContent = "Wrong password. Try again.";
+      err.textContent = t("wrongPassword");
       document.getElementById("adminPasswordInput").value = "";
     }
 
   } else if (adminModalMode === "changepwd") {
     const confirm = document.getElementById("adminPasswordConfirm").value;
     if (input.length < 4) {
-      err.textContent = "Password must be at least 4 characters."; return;
+      err.textContent = t("passwordMin4"); return;
     }
     if (input !== confirm) {
-      err.textContent = "Passwords do not match."; return;
+      err.textContent = t("passwordsNotMatchDot"); return;
     }
     localStorage.setItem("adminPassword", input);
     adminCloseModal();
@@ -277,7 +283,7 @@ function playerSubtabShow(tab) {
 
 async function playerPlayingRenderList() {
   const container = document.getElementById('playerPlayingList');
-  container.innerHTML = '<p style="color:#aaa;font-size:0.85rem">Loading...</p>';
+  container.innerHTML = '<p style="color:#aaa;font-size:0.85rem">' + t('loading') + '</p>';
   const admin = isAdminMode();
 
   try {
@@ -290,12 +296,12 @@ async function playerPlayingRenderList() {
       );
       rows = (rows || []).map(m => ({ name: m.nickname, gender: m.players?.gender || 'Male' }));
     } else {
-      container.innerHTML = '<p class="player-mgmt-empty">Join a club to view playing players.</p>';
+      container.innerHTML = '<p class="player-mgmt-empty">' + t('joinClubToPlay') + '</p>';
       return;
     }
 
     if (!rows || !rows.length) {
-      container.innerHTML = '<p class="player-mgmt-empty">No players currently locked.</p>';
+      container.innerHTML = '<p class="player-mgmt-empty">' + t('noPlayersLocked') + '</p>';
       return;
     }
 
@@ -308,7 +314,7 @@ async function playerPlayingRenderList() {
       const releaseAllBtn = document.createElement('button');
       releaseAllBtn.className = 'player-mgmt-add-btn';
       releaseAllBtn.style.background = '#e63757';
-      releaseAllBtn.textContent = '🔓 Release All (' + rows.length + ')';
+      releaseAllBtn.textContent = t('releaseAll') + ' (' + rows.length + ')';
       releaseAllBtn.onclick = playerPlayingReleaseAll;
       bar.appendChild(releaseAllBtn);
       container.appendChild(bar);
@@ -351,13 +357,13 @@ async function playerPlayingRenderList() {
     });
 
   } catch(e) {
-    container.innerHTML = '<p class="player-mgmt-empty">Failed to load. Check connection.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('failedLoadConnection') + '</p>';
     console.error('playerPlayingRenderList error:', e);
   }
 }
 
 async function playerPlayingRelease(name) {
-  if (!confirm('Release "' + name + '" from active session?')) return;
+  if (!confirm('"' + name + '" ' + t('releaseFromSession'))) return;
   try {
     const _rc = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
     await sbPatch('memberships', `club_id=eq.${_rc.id}&nickname=ilike.${encodeURIComponent(name)}`, {
@@ -368,7 +374,7 @@ async function playerPlayingRelease(name) {
 }
 
 async function playerPlayingReleaseAll() {
-  if (!confirm('Release ALL locked players?')) return;
+  if (!confirm(t('releaseAllConfirm'))) return;
   try {
     const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
     if (!club.id) { alert('No club logged in.'); return; }
@@ -380,7 +386,7 @@ async function playerPlayingReleaseAll() {
 // ── Render master player list ──
 async function playerMgmtRenderList() {
   const container = document.getElementById("playerMgmtList");
-  container.innerHTML = "<p style='color:#aaa;font-size:0.85rem'>Loading...</p>";
+  container.innerHTML = "<p style='color:#aaa;font-size:0.85rem'>" + t('loading') + "</p>";
 
   // Always use syncToLocal as single source of truth — never fetch directly
   if (!newImportState.historyPlayers || !newImportState.historyPlayers.length) {
@@ -391,7 +397,7 @@ async function playerMgmtRenderList() {
   container.innerHTML = "";
 
   if (players.length === 0) {
-    container.innerHTML = '<p class="player-mgmt-empty">No players in database yet.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('noPlayersInDb') + '</p>';
     return;
   }
 
@@ -451,7 +457,7 @@ async function playerMgmtToggleGender(displayName) {
 
 // ── Delete from master DB ──
 async function playerMgmtDelete(displayName) {
-  if (!confirm(`Remove "${displayName}" from this club?`)) return;
+  if (!confirm(`${t('removePlayer')} "${displayName}"?`)) return;
   const key = displayName.trim().toLowerCase();
 
   // Remove from Supabase club_members
@@ -523,16 +529,16 @@ function sbRenderClubStatus() {
   const el    = document.getElementById("sbClubStatus");
   const badge = document.getElementById("sbModeBadge");
 
-  if (el) el.textContent = club.name ? club.name : "No club selected";
+  if (el) el.textContent = club.name ? club.name : t("noClubSelected");
 
   if (badge) {
     if (mode === "admin") {
-      badge.textContent = "🔑 Admin";
+      badge.textContent = t('adminBadgeFull');
       badge.style.background = "#2dce89";
       badge.style.color = "#fff";
       badge.style.display = "inline-block";
     } else if (mode === "user") {
-      badge.textContent = "👤 User";
+      badge.textContent = t("userBadgeFull");
       badge.style.background = "#5e72e4";
       badge.style.color = "#fff";
       badge.style.display = "inline-block";
@@ -580,17 +586,17 @@ async function vaultRenderModify() {
   if (!container) return;
 
   if (!(typeof isAdminMode === 'function' && isAdminMode())) {
-    container.innerHTML = '<p class="player-mgmt-empty">🔒 Admin access required.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('adminAccessRequired') + '</p>';
     return;
   }
 
   const club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
   if (!club.id) {
-    container.innerHTML = '<p class="player-mgmt-empty">Join a club to manage players.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('joinClubToManage') + '</p>';
     return;
   }
 
-  container.innerHTML = '<p class="player-mgmt-empty"><span class="vm-spinner"></span> Loading…</p>';
+  container.innerHTML = '<p class="player-mgmt-empty"><span class="vm-spinner"></span> ' + t('loading') + '</p>';
 
   try {
     const clubPlayers = await dbGetPlayers(true);
@@ -615,7 +621,7 @@ async function vaultRenderModify() {
 
     vaultModifyFilter();
   } catch(e) {
-    container.innerHTML = '<p class="player-mgmt-empty">Failed to load players.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('failedLoadPlayers') + '</p>';
     console.error('vaultRenderModify error:', e);
   }
 }
@@ -631,10 +637,10 @@ function vaultModifyFilter() {
   if (search) filtered = filtered.filter(p => p.displayName.toLowerCase().includes(search));
   if (gender) filtered = filtered.filter(p => (p.gender || 'Male') === gender);
 
-  if (countEl) countEl.textContent = filtered.length + ' player' + (filtered.length !== 1 ? 's' : '');
+  if (countEl) countEl.textContent = filtered.length + ' ' + (filtered.length !== 1 ? t('playerPlural') : t('playerSingular'));
 
   if (!filtered.length) {
-    container.innerHTML = '<p class="player-mgmt-empty">No players match your search.</p>';
+    container.innerHTML = '<p class="player-mgmt-empty">' + t('noPlayersMatch') + '</p>';
     return;
   }
 
@@ -643,8 +649,8 @@ function vaultModifyFilter() {
     const ini = (p.displayName || '?')[0].toUpperCase();
     const rating = p.rating.toFixed(1);
     const userIdTag = p.userId
-      ? `<span class="vm-userid-chip">✅ registered</span>`
-      : `<span class="vm-userid-chip vm-unlinked">no account</span>`;
+      ? `<span class="vm-userid-chip">${t("registeredBadge")}</span>`
+      : `<span class="vm-userid-chip vm-unlinked">${t("noAccountBadge")}</span>`;
     const safeId = _vmEsc(p.id);
     return `<div class="vm-player-row ${g}">
       <div class="vm-avatar ${g}">${ini}</div>
@@ -653,7 +659,7 @@ function vaultModifyFilter() {
           <span class="vm-player-name">${_vmEsc(p.displayName)}</span>
           ${userIdTag}
         </div>
-        <div class="vm-player-meta">${p.gender || 'Male'} · ★${rating} · ${p.wins}W ${p.losses}L</div>
+        <div class="vm-player-meta">${(p.gender||'Male')==="Female"?t("genderFemale"):t("genderMale")} · ★${rating} · ${p.wins}${t("winsShort")} ${p.losses}${t("lossesShort")}</div>
       </div>
       <div class="vm-row-actions">
         <button class="vm-edit-btn" onclick="vmOpenEditModal('${safeId}')" title="Edit">✎</button>
@@ -705,9 +711,9 @@ async function vmSaveEdit() {
   const fb           = document.getElementById('vmEditFeedback');
   const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green)' : 'var(--red)'; } };
 
-  if (!name) { setFb('Name cannot be empty.', false); return; }
+  if (!name) { setFb(t('nameCannotBeEmpty'), false); return; }
 
-  setFb('Saving…', true);
+  setFb(t('saving'), true);
   try {
     const club = (typeof getMyClub === 'function') ? getMyClub() : null;
     const _vm  = _vmAllPlayers.find(x => x.id === playerId);
@@ -739,7 +745,7 @@ async function vmSaveEdit() {
     if (typeof syncPlayersFromMaster === 'function') syncPlayersFromMaster();
     if (typeof updatePlayerList === 'function') updatePlayerList();
 
-    setFb('✅ Saved!', true);
+    setFb(t('saved'), true);
     setTimeout(() => {
       document.getElementById('vmEditModal').classList.remove('open');
       vaultRenderModify();
@@ -750,7 +756,7 @@ async function vmSaveEdit() {
 }
 
 async function vmDeletePlayer(playerId, displayName) {
-  if (!confirm(`Remove "${displayName}" from this club?`)) return;
+  if (!confirm(`${t('removePlayer')} "${displayName}"?`)) return;
   try {
     // Remove from club only — delete membership, keep global player
     const _dclub = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
@@ -799,12 +805,12 @@ async function clubCreateSendOtp() {
   const fb      = document.getElementById('clubCreateFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!name)    { setFb('Enter club name.', false); return; }
-  if (!selPw)   { setFb('Enter member password.', false); return; }
-  if (!adminPw) { setFb('Enter admin password.', false); return; }
-  if (selPw === adminPw) { setFb('Member and admin passwords must be different.', false); return; }
+  if (!name)    { setFb(t('enterClubName'), false); return; }
+  if (!selPw)   { setFb(t('enterMemberPw'), false); return; }
+  if (!adminPw) { setFb(t('enterAdminPw'), false); return; }
+  if (selPw === adminPw) { setFb(t('memberAdminDiff'), false); return; }
 
-  setFb('Creating club...', true);
+  setFb(t('creatingClubDot'), true);
   try {
     const club = await dbAddClub(name, selPw, adminPw);
     setMyClub(club.id, club.name);
@@ -813,7 +819,7 @@ async function clubCreateSendOtp() {
     ['sbNewClubName','sbNewClubSelectPw','sbNewClubAdminPw'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    setFb('✅ Club "' + club.name + '" created! You are now Admin.', true);
+    setFb('✅ ' + club.name + ' ' + (t('saved')||'created!'), true);
     sbRenderClubStatus();
     vaultSyncStatus();
     if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
@@ -831,15 +837,15 @@ async function clubDeleteWithPassword() {
   const fb      = document.getElementById('clubDeleteFeedback');
   const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!select || !select.value) { setFb('Select a club to delete.', false); return; }
+  if (!select || !select.value) { setFb(t('selectClubToDelete'), false); return; }
   const pw = pwInput?.value.trim();
-  if (!pw) { setFb('Enter admin password.', false); return; }
+  if (!pw) { setFb(t('enterAdminPw'), false); return; }
 
-  setFb('Verifying...', true);
+  setFb(t('verifyingDot'), true);
   try {
     const clubs = await sbGet('clubs', `id=eq.${select.value}&select=id,name,admin_password`);
-    if (!clubs || !clubs.length) { setFb('Club not found.', false); return; }
-    if (clubs[0].admin_password !== pw) { setFb('Wrong admin password.', false); return; }
+    if (!clubs || !clubs.length) { setFb(t('clubNotFound'), false); return; }
+    if (clubs[0].admin_password !== pw) { setFb(t('wrongAdminPassword'), false); return; }
 
     const clubName = clubs[0].name || '';
     await dbDeleteClub(select.value);
@@ -860,7 +866,7 @@ function vaultRenderRegister() {
   const club = (typeof getMyClub === 'function') ? getMyClub() : { name: null };
 
   if (!club.name) {
-    container.innerHTML = '<div class="register-club-label">⚠️ No club selected. Join a club first.</div>';
+    container.innerHTML = '<div class="register-club-label">' + t('noClubSelectedJoin') + '</div>';
     return;
   }
 
@@ -950,16 +956,16 @@ async function vaultRegisterAll() {
   const btn   = document.getElementById('regRegisterAllBtn');
   const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.className = 'register-feedback ' + (ok ? 'success' : 'error'); } };
 
-  if (!defPw) { setFb('Please enter a default password for all players.', false); return; }
+  if (!defPw) { setFb(t('enterDefaultPwAll'), false); return; }
 
   const club    = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-  if (!club.id) { setFb('No club selected.', false); return; }
+  if (!club.id) { setFb(t('noClubSelectedJoin'), false); return; }
 
   const pending = _regStagingList.filter(p => p.status === 'pending' || p.status === 'error');
   if (!pending.length) return;
 
   btn.disabled = true;
-  setFb('Registering...', true);
+  setFb(t('registeringDot'), true);
 
   let successCount = 0, failCount = 0;
 
@@ -1008,7 +1014,7 @@ async function vaultRegisterAll() {
 
   btn.disabled = false;
   const parts = [];
-  if (successCount) parts.push('✅ ' + successCount + ' registered');
+  if (successCount) parts.push('✅ ' + successCount + ' ' + (t('registeredBadge')||'registered'));
   if (failCount)    parts.push('⚠️ ' + failCount + ' skipped');
   setFb(parts.join('  '), !failCount);
 
@@ -1025,16 +1031,16 @@ async function vaultDoRegisterPlayer() {
   const fb       = document.getElementById('vregFeedback');
   const setFb    = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? 'var(--green,#2dce89)' : 'var(--red,#e63757)'; } };
 
-  if (!club.id)   { setFb('No club selected.', false); return; }
-  if (!nickname)  { setFb('Please enter a nickname.', false); return; }
-  if (!defPw)     { setFb('Please set a default password.', false); return; }
+  if (!club.id)   { setFb(t('noClubSelectedJoin'), false); return; }
+  if (!nickname)  { setFb(t('enterNickname'), false); return; }
+  if (!defPw)     { setFb(t('enterDefaultPw'), false); return; }
 
-  setFb('Registering...', true);
+  setFb(t('registeringDot'), true);
   try {
     // Check nickname not already in this club
     const existing = await sbGet('memberships',
       'club_id=eq.' + club.id + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id');
-    if (existing && existing.length) { setFb('Nickname already exists in this club.', false); return; }
+    if (existing && existing.length) { setFb(t('nicknameExists'), false); return; }
 
     // Create player row
     const created = await sbPost('players', {
@@ -1061,7 +1067,7 @@ async function vaultDoRegisterPlayer() {
       user_account_id: uaId2 || undefined
     });
 
-    setFb('✅ ' + nickname + ' registered!', true);
+    setFb('✅ ' + nickname + ' ' + (t('registeredBadge')||'registered!'), true);
     // Clear fields for next entry
     document.getElementById('vregNickname').value = '';
     document.getElementById('vregDefaultPassword').value = '';
@@ -1091,14 +1097,14 @@ function vaultSyncStatus() {
     if (strip) strip.style.borderColor = 'rgba(45,206,137,0.2)';
     if (role) {
       role.style.display = 'inline-block';
-      if (mode === 'admin') { role.textContent = 'ADMIN'; role.style.background = '#2dce89'; role.style.color = '#000'; }
-      else                  { role.textContent = 'USER';  role.style.background = 'var(--accent)'; role.style.color = '#fff'; }
+      if (mode === 'admin') { role.textContent = t('adminBadge')||'ADMIN'; role.style.background = '#2dce89'; role.style.color = '#000'; }
+      else                  { role.textContent = t('userBadge')||'USER';  role.style.background = 'var(--accent)'; role.style.color = '#fff'; }
     }
     // Modify tab — admin only
     const modifyBtn = document.getElementById('vaultTabModifyBtn');
     if (modifyBtn) modifyBtn.style.display = mode === 'admin' ? '' : 'none';
   } else {
-    if (name)  name.textContent  = 'No club selected';
+    if (name)  name.textContent  = t('noClubSelected');
     if (dot)   { dot.style.background = 'var(--muted)'; dot.style.boxShadow = 'none'; }
     if (role)  role.style.display = 'none';
   }
@@ -1170,7 +1176,7 @@ async function sbPopulateDeleteDropdown() {
   if (!select) return;
   try {
     const clubs = await dbGetClubs();
-    select.innerHTML = '<option value="">— Select club to delete —</option>';
+    select.innerHTML = '<option value="">' + (t('selectClubDelete')||'— Select club to delete —') + '</option>';
     clubs.forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.id;
@@ -1209,7 +1215,7 @@ async function showPlayerStats(name) {
   const content  = document.getElementById("playerStatsContent");
   if (!modal || !content) return;
 
-  content.innerHTML = "<div class='stats-loading'>Loading...</div>";
+  content.innerHTML = "<div class='stats-loading'>" + t('loading') + "</div>";
   modal.style.display = "flex";
 
   try {
@@ -1218,7 +1224,7 @@ async function showPlayerStats(name) {
       `name=ilike.${encodeURIComponent(name)}&select=name,gender,wins,losses,sessions`
     );
     if (!rows || !rows.length) {
-      content.innerHTML = "<div class='stats-loading'>Player not found.</div>";
+      content.innerHTML = "<div class='stats-loading'>" + t('playerNotFound') + "</div>";
       return;
     }
     const p      = rows[0];
