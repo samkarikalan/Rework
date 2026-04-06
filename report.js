@@ -27,46 +27,65 @@ async function reportFetchData() {
 
   const month = reportCurrentMonth();
 
-  // Get memberships first
+  // 1. Get all completed sessions for this club this month — same as dashboard
+  const allSessions = await sbGet('sessions',
+    `club_id=eq.${club.id}&status=eq.completed&select=id,date,players,rounds_data,shuttle_data`
+  );
+  const monthSessions = (allSessions || []).filter(s => s.date && s.date.startsWith(month));
+
+  // 2. Get memberships for current rating/points
   const memberships = await sbGet('memberships',
-    `club_id=eq.${club.id}&select=id,nickname,club_rating,club_points,player_id`
+    `club_id=eq.${club.id}&select=id,nickname,club_rating,club_points`
   );
   if (!memberships || !memberships.length) throw new Error('No players found');
 
-  // Fetch player sessions separately (no FK join syntax)
-  const playerIds = memberships.map(m => m.player_id).filter(Boolean);
-  const playerRows = playerIds.length
-    ? await sbGet('players', `id=in.(${playerIds.join(',')})&select=id,wins,losses,sessions`)
-    : [];
-  const playerMap = {};
-  playerRows.forEach(p => { playerMap[p.id] = p; });
+  // 3. Build per-player stats from sessions table
+  const statsMap = {};
 
+  for (const sess of monthSessions) {
+    const sessPlayers  = sess.players || [];
+    const costPerPlayer = sess.shuttle_data ? (parseFloat(sess.shuttle_data.cost_per_player) || 0) : 0;
+    const roundsData   = sess.rounds_data || [];
+
+    // Count wins/losses from rounds_data
+    const winsMap = {}, lossesMap = {};
+    for (const round of roundsData) {
+      for (const game of (round.games || [])) {
+        if (!game.winner) continue;
+        const winners = game.winner === 'L' ? (game.pair1 || []) : (game.pair2 || []);
+        const losers  = game.winner === 'L' ? (game.pair2 || []) : (game.pair1 || []);
+        winners.forEach(n => { winsMap[n]   = (winsMap[n]   || 0) + 1; });
+        losers.forEach(n  => { lossesMap[n] = (lossesMap[n] || 0) + 1; });
+      }
+    }
+
+    // Each player in this session gets +1 session
+    for (const p of sessPlayers) {
+      const name = (p.name || p.player_name || '').trim();
+      if (!name) continue;
+      if (!statsMap[name]) statsMap[name] = { wins: 0, losses: 0, cost: 0, sessions: 0 };
+      statsMap[name].sessions += 1;
+      statsMap[name].wins     += winsMap[name]   || 0;
+      statsMap[name].losses   += lossesMap[name] || 0;
+      statsMap[name].cost     += costPerPlayer;
+    }
+  }
+
+  // 4. Merge with membership ratings/points
   const players = memberships.map(m => {
-    const p       = playerMap[m.player_id] || {};
-    const sessions = (p.sessions || []).filter(s => s.date && s.date.startsWith(month));
-
-    const monthWins   = sessions.reduce((a, s) => a + (s.wins   || 0), 0);
-    const monthLosses = sessions.reduce((a, s) => a + (s.losses || 0), 0);
-    const monthGames  = monthWins + monthLosses;
-    const monthCost   = sessions.reduce((a, s) => a + (parseFloat(s.cost_per_player) || 0), 0);
-    const monthPts    = sessions.reduce((a, s) => a + (parseFloat(s.points_earned)   || 0), 0);
-    // session_count per day entry (multiple sessions same day counted correctly)
-    const sessCount   = sessions.length; // each entry = one session
-    const winRate     = monthGames > 0 ? Math.round((monthWins / monthGames) * 100) : 0;
-
+    const name  = m.nickname || '';
+    const st    = statsMap[name] || { wins: 0, losses: 0, cost: 0, sessions: 0 };
+    const games = st.wins + st.losses;
     return {
-      name:       m.nickname || 'Unknown',
+      name,
       rating:     parseFloat(m.club_rating) || 1.0,
       points:     Math.round(parseFloat(m.club_points) || 0),
-      totalWins:  p.wins   || 0,
-      totalLosses:p.losses || 0,
-      monthWins,
-      monthLosses,
-      monthGames,
-      monthCost:  Math.round(monthCost),
-      monthPts:   Math.round(monthPts * 10) / 10,
-      sessCount,
-      winRate,
+      monthWins:  st.wins,
+      monthLosses:st.losses,
+      monthGames: games,
+      monthCost:  Math.round(st.cost),
+      sessCount:  st.sessions,
+      winRate:    games > 0 ? Math.round((st.wins / games) * 100) : 0,
     };
   }).filter(p => p.sessCount > 0 || p.rating > 1.0)
     .sort((a, b) => b.rating - a.rating);
