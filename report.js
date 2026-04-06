@@ -27,14 +27,22 @@ async function reportFetchData() {
 
   const month = reportCurrentMonth();
 
-  // Get all memberships with player sessions data
+  // Get memberships first
   const memberships = await sbGet('memberships',
-    `club_id=eq.${club.id}&select=id,nickname,club_rating,club_points,player_id,players(id,wins,losses,sessions)`
+    `club_id=eq.${club.id}&select=id,nickname,club_rating,club_points,player_id`
   );
   if (!memberships || !memberships.length) throw new Error('No players found');
 
+  // Fetch player sessions separately (no FK join syntax)
+  const playerIds = memberships.map(m => m.player_id).filter(Boolean);
+  const playerRows = playerIds.length
+    ? await sbGet('players', `id=in.(${playerIds.join(',')})&select=id,wins,losses,sessions`)
+    : [];
+  const playerMap = {};
+  playerRows.forEach(p => { playerMap[p.id] = p; });
+
   const players = memberships.map(m => {
-    const p       = m.players || {};
+    const p       = playerMap[m.player_id] || {};
     const sessions = (p.sessions || []).filter(s => s.date && s.date.startsWith(month));
 
     const monthWins   = sessions.reduce((a, s) => a + (s.wins   || 0), 0);
@@ -43,7 +51,7 @@ async function reportFetchData() {
     const monthCost   = sessions.reduce((a, s) => a + (parseFloat(s.cost_per_player) || 0), 0);
     const monthPts    = sessions.reduce((a, s) => a + (parseFloat(s.points_earned)   || 0), 0);
     // session_count per day entry (multiple sessions same day counted correctly)
-    const sessCount   = sessions.reduce((a, s) => a + (s.session_count || 1), 0);
+    const sessCount   = sessions.length;
     const winRate     = monthGames > 0 ? Math.round((monthWins / monthGames) * 100) : 0;
 
     return {

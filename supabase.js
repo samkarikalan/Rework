@@ -319,8 +319,7 @@ async function dbSyncRatings(updatedRatings) {
             losses:         (todayEntry.losses || 0) + (update.losses || 0),
             points_earned:  Math.max(0, Math.round(((parseFloat(todayEntry.points_earned) || 0) + pointsDelta) * 10) / 10),
             club_rating:    rounded,
-            cost_per_player: (parseFloat(todayEntry.cost_per_player) || 0) + (parseFloat(shuttleData?.cost_per_player) || 0) || null,
-            session_count:  (todayEntry.session_count || 0) + 1
+            cost_per_player: (parseFloat(todayEntry.cost_per_player) || 0) + (parseFloat(shuttleData?.cost_per_player) || 0) || null
           };
 
           await sbPatch('players', `id=eq.${m.player_id}`, {
@@ -728,7 +727,7 @@ async function dbCompleteSession(shuttleData = null) {
             const newCost = shuttleData ? (parseFloat(shuttleData.cost_per_player) || 0) : 0;
             const total = prev + newCost;
             return total > 0 ? Math.round(total) : null;
-          })()
+          })(),
         };
         await sbPatch('players', `id=eq.${playerId}`, {
           sessions: [entry, ...otherDays].slice(0, 30)
