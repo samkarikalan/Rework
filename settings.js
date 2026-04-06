@@ -159,6 +159,11 @@ function setLanguage(lang) {
   if (typeof updateModePill       === "function") updateModePill(localStorage.getItem('kbrr_app_mode') || 'viewer');
   if (typeof subShowTrialBanner   === "function") subShowTrialBanner();
   if (typeof clubLoginRefresh     === "function") clubLoginRefresh();
+  if (typeof updateGearPairsSub   === "function") updateGearPairsSub();
+  if (typeof renderRoundHistory   === "function") {
+    var gearBody = document.getElementById('roundSettingsBody');
+    if (gearBody && gearBody.classList.contains('open')) renderRoundHistory();
+  }
 }
 
 function updateRoundTitle(round) {

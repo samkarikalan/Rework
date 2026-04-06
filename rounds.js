@@ -56,6 +56,11 @@ allRounds = new Proxy(allRounds, {
   set(target, prop, value) {
     target[prop] = value;
     updateSummaryPageAccess();
+  // Refresh round history in gear panel if open
+  const gearBody = document.getElementById('roundSettingsBody');
+  if (gearBody && gearBody.classList.contains('open')) {
+    if (typeof renderRoundHistory === 'function') renderRoundHistory();
+  }
     return true;
   },
   deleteProperty(target, prop) {

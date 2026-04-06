@@ -2497,6 +2497,48 @@ function toggleRoundSettings() {
   const isOpen = body.classList.toggle('open');
   const gearBtn = document.querySelector('.action-card .action.mid.small:last-child');
   if (gearBtn) gearBtn.classList.toggle('settings-active', isOpen);
+  if (isOpen) {
+    renderRoundHistory();
+    updateGearPairsSub();
+  }
+}
+
+/* ── Update Fixed Pairs subtitle in gear panel ── */
+function updateGearPairsSub() {
+  const el = document.getElementById('gearSubPairs');
+  if (!el) return;
+  const n = (typeof schedulerState !== 'undefined' && schedulerState.fixedPairs)
+    ? schedulerState.fixedPairs.length : 0;
+  el.textContent = n > 0
+    ? n + ' ' + (n === 1 ? (t('pairSet')||'pair set') : (t('pairsSet')||'pairs set'))
+    : (t('optional')||'Optional');
+}
+
+/* ── Round History — same style as Summary, no ranking, newest first ── */
+function renderRoundHistory() {
+  const container = document.getElementById('roundHistoryContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!Array.isArray(allRounds) || allRounds.length === 0) return;
+
+  // Section title
+  const title = document.createElement('div');
+  title.className = 'round-header';
+  title.style.cssText = 'margin:0 4px 8px;font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;';
+  title.textContent = t('roundsLabel') || 'Rounds';
+  container.appendChild(title);
+
+  // Set _vRoundsData so _vBuildRound can work
+  window._vRoundsData = allRounds;
+
+  // Render rounds newest first — reuse viewer's _vBuildRound
+  for (let i = allRounds.length - 1; i >= 0; i--) {
+    if (typeof _vBuildRound === 'function') {
+      const roundEl = _vBuildRound(allRounds[i]);
+      container.appendChild(roundEl);
+    }
+  }
 }
 
 // ── Points helpers ────────────────────────────────────────────

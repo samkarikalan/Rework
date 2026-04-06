@@ -1106,15 +1106,18 @@
         <div class="rounds-nav-tiles">
           <div class="rounds-nav-tile" onclick="roundsGoPlayers()">
             <div class="rounds-nav-icon tile-players">👥</div>
-            <div class="rounds-nav-name">Players</div>
-            <div class="rounds-nav-sub" data-i18n="addRemove">Add · Remove</div>
+            <div class="rounds-nav-name" data-i18n="players">Players</div>
+            <div class="rounds-nav-sub" id="gearSubPlayers" data-i18n="addRemove">Add · Remove</div>
           </div>
-          <div class="rounds-nav-tile" onclick="roundsGoSummary()">
-            <div class="rounds-nav-icon tile-summary">📊</div>
-            <div class="rounds-nav-name" data-i18n="summaryLabel">Summary</div>
-            <div class="rounds-nav-sub" data-i18n="sessionStatsLabel">Session stats</div>
+          <div class="rounds-nav-tile" onclick="roundsGoFixedPairs()">
+            <div class="rounds-nav-icon tile-pairs">🤝</div>
+            <div class="rounds-nav-name" data-i18n="fixedPairs">Fixed Pairs</div>
+            <div class="rounds-nav-sub" id="gearSubPairs">Optional</div>
           </div>
         </div>
+
+        <!-- Round History -->
+        <div id="roundHistoryContainer" style="margin-top:14px;"></div>
 
       </div>
     </div>
