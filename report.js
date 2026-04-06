@@ -51,7 +51,7 @@ async function reportFetchData() {
     const monthCost   = sessions.reduce((a, s) => a + (parseFloat(s.cost_per_player) || 0), 0);
     const monthPts    = sessions.reduce((a, s) => a + (parseFloat(s.points_earned)   || 0), 0);
     // session_count per day entry (multiple sessions same day counted correctly)
-    const sessCount   = sessions.length;
+    const sessCount   = sessions.reduce((a, s) => a + (s.session_count || 1), 0);
     const winRate     = monthGames > 0 ? Math.round((monthWins / monthGames) * 100) : 0;
 
     return {

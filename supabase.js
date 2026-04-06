@@ -728,6 +728,7 @@ async function dbCompleteSession(shuttleData = null) {
             const total = prev + newCost;
             return total > 0 ? Math.round(total) : null;
           })(),
+          session_count: (todayEntry.session_count || 0) + 1
         };
         await sbPatch('players', `id=eq.${playerId}`, {
           sessions: [entry, ...otherDays].slice(0, 30)
