@@ -291,10 +291,12 @@ async function dbSyncRatings(updatedRatings) {
       );
       if (!mrows || !mrows.length) continue;
       const m = mrows[0];
-      // Points = same delta as rating but uncapped (always accumulates)
+      // Points = same algorithm as rating but NEVER capped
+      // Use uncappedDelta if available, else fallback to rating diff
       const prevRating = parseFloat(m.club_rating) || 1.0;
-      const pointsDelta = Math.abs(rounded - prevRating);
-      const newPoints = Math.round(((parseFloat(m.club_points) || 0) + pointsDelta) * 10) / 10;
+      const rawDelta = (update.uncappedDelta !== undefined) ? update.uncappedDelta : (rounded - prevRating);
+      const pointsDelta = rawDelta; // can be negative (loss) or positive (win)
+      const newPoints = Math.max(0, Math.round(((parseFloat(m.club_points) || 0) + pointsDelta) * 10) / 10);
 
       await sbPatch('memberships', `id=eq.${m.id}`, {
         club_rating: rounded,
@@ -304,7 +306,7 @@ async function dbSyncRatings(updatedRatings) {
       if (update.wins > 0 || update.losses > 0) {
         const prows = await sbGet('players', `id=eq.${m.player_id}&select=wins,losses,global_points,sessions`);
         if (prows && prows.length) {
-          const newGlobalPoints = Math.round(((parseFloat(prows[0].global_points) || 0) + pointsDelta) * 10) / 10;
+          const newGlobalPoints = Math.max(0, Math.round(((parseFloat(prows[0].global_points) || 0) + pointsDelta) * 10) / 10);
 
           // Update sessions jsonb for period stats (week/month/year)
           const today = new Date().toISOString().split('T')[0];
@@ -315,7 +317,7 @@ async function dbSyncRatings(updatedRatings) {
             date:          today,
             wins:          (todayEntry.wins || 0) + (update.wins || 0),
             losses:        (todayEntry.losses || 0) + (update.losses || 0),
-            points_earned: Math.round(((parseFloat(todayEntry.points_earned) || 0) + pointsDelta) * 10) / 10,
+            points_earned: Math.max(0, Math.round(((parseFloat(todayEntry.points_earned) || 0) + pointsDelta) * 10) / 10),
             club_rating:   rounded,
             cost_per_player: parseFloat(todayEntry.cost_per_player) || null
           };
@@ -486,17 +488,18 @@ async function dbVerifyClubAccess(clubId, selectPassword) {
 /// SYNC AFTER ROUND
 /// ============================================================
 
-async function syncAfterRound(roundWins, roundLosses) {
+async function syncAfterRound(roundWins, roundLosses, roundRatingDeltas) {
   try {
     // STEP 1 — Push: send updated ratings + wins/losses to Supabase
     const playedNames = new Set([...roundWins.keys(), ...roundLosses.keys()]);
     const updatedRatings = schedulerState.allPlayers
       .filter(p => playedNames.has(p.name))
       .map(p => ({
-        name:         p.name,
-        activeRating: getActiveRating(p.name),  // single door — mode-blind
-        wins:         (roundWins   && roundWins.get(p.name))   || 0,
-        losses:       (roundLosses && roundLosses.get(p.name)) || 0
+        name:              p.name,
+        activeRating:      getActiveRating(p.name),  // capped at 5 for rating
+        uncappedDelta:     (roundRatingDeltas && roundRatingDeltas.get(p.name)) || 0, // true delta for points
+        wins:              (roundWins   && roundWins.get(p.name))   || 0,
+        losses:            (roundLosses && roundLosses.get(p.name)) || 0
       }));
 
     await dbSyncRatings(updatedRatings);

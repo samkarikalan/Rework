@@ -520,8 +520,9 @@ for (const game of games) {
 
 // Rating updates — all modes
 // Also track wins/losses per player this round
-const roundWins   = new Map();
-const roundLosses = new Map();
+const roundWins         = new Map();
+const roundLosses       = new Map();
+const roundRatingDeltas = new Map(); // uncapped delta for points
 
 for (const game of games) {
   if (!game.winner) continue;
@@ -537,14 +538,19 @@ for (const game of games) {
   const loseLoss = gap < -0.3 ? 0.4 : gap < 0.3 ? 0.2 : 0.1;
 
   for (const p of winners) {
-    setRating(p, (typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p)) + winGain);
+    const prevW = typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p);
+    setRating(p, prevW + winGain);
     roundWins.set(p, (roundWins.get(p) || 0) + 1);
+    // Track uncapped delta (winGain always positive)
+    roundRatingDeltas.set(p, (roundRatingDeltas.get(p) || 0) + winGain);
   }
   for (const p of losers) {
     const current = typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p);
     const updated = Math.max(1.0, current - loseLoss);
     setRating(p, updated);
     roundLosses.set(p, (roundLosses.get(p) || 0) + 1);
+    // Track uncapped delta for points (loseLoss always positive, points decrease too)
+    roundRatingDeltas.set(p, (roundRatingDeltas.get(p) || 0) - loseLoss);
   }
 }
 
@@ -562,7 +568,7 @@ syncRatings();
 updatePlayerList();
 
 // Sync ratings + wins/losses to Supabase
-if (typeof syncAfterRound === "function") syncAfterRound(roundWins, roundLosses);
+if (typeof syncAfterRound === "function") syncAfterRound(roundWins, roundLosses, roundRatingDeltas);
 
 // after tracking pairs & games
 checkAndResetPairCycle(schedulerState, games, roundIndex);
