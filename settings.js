@@ -1293,7 +1293,7 @@ function closePlayerStats() {
 
 /* ── Mode Launcher — Language Picker ── */
 function _mlLangLabel() {
-  var saved = localStorage.getItem('appLang') || 'en';
+  var saved = localStorage.getItem('appLanguage') || 'en';
   var map = { en: '🇺🇸 English', jp: '🇯🇵 日本語', kr: '🇰🇷 한국어', zh: '🇨🇳 中文', vi: '🇻🇳 Tiếng Việt' };
   return map[saved] || '🇺🇸 English';
 }
