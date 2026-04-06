@@ -246,15 +246,14 @@ async function reportExportToGitHub(htmlContent, clubSlug, monthStr) {
   const filename = `${clubSlug}_${monthStr}.html`;
   const apiUrl   = `${REPORT_GITHUB_API}/repos/${REPORT_GITHUB_OWNER}/${REPORT_GITHUB_REPO}/contents/${filename}`;
 
-  const token = localStorage.getItem('kbrr_admin_token');
-  if (!token) throw new Error('Admin token required to export report');
+  const token = (typeof getGithubToken === 'function') ? getGithubToken() : localStorage.getItem('kbrr_admin_token');
 
   // Check if file exists to get SHA
   let sha = null;
   try {
-    const check = await fetch(apiUrl, {
-      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
-    });
+    const checkHeaders = { 'Accept': 'application/vnd.github+json' };
+    if (token) checkHeaders['Authorization'] = `token ${token}`;
+    const check = await fetch(apiUrl, { headers: checkHeaders });
     if (check.ok) { const j = await check.json(); sha = j.sha; }
   } catch(e) { /* new file */ }
 
@@ -267,13 +266,12 @@ async function reportExportToGitHub(htmlContent, clubSlug, monthStr) {
     ...(sha ? { sha } : {})
   };
 
+  const putHeaders = { 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
+  if (token) putHeaders['Authorization'] = `token ${token}`;
+
   const res = await fetch(apiUrl, {
     method: 'PUT',
-    headers: {
-      'Authorization': `token ${token}`,
-      'Accept': 'application/vnd.github+json',
-      'Content-Type': 'application/json'
-    },
+    headers: putHeaders,
     body: JSON.stringify(body)
   });
 
