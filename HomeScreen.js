@@ -67,8 +67,8 @@ function showHomeScreen() {
 
   homeEl.style.display = 'flex';
 
-  // Restore top bar when back on home
-  document.querySelectorAll('.home-topbar').forEach(function(b) { b.style.display = ''; });
+  // Restore both top bars when back on home
+  document.querySelectorAll('.home-topbar, .top-bar').forEach(function(b) { b.style.display = ''; });
 
 
   // Mode + status bar

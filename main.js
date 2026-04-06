@@ -505,8 +505,8 @@ function showPage(pageID, el) {
   // Show selected page
   document.getElementById(pageID).style.display = 'block';
 
-  // Hide top bar while inside a page (back button is visible)
-  document.querySelectorAll('.home-topbar').forEach(b => b.style.display = 'none');
+  // Hide both top bars while inside a page
+  document.querySelectorAll('.home-topbar, .top-bar').forEach(b => b.style.display = 'none');
 
   // Update active tab styling
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
