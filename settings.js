@@ -1303,30 +1303,17 @@ function mlToggleLang() {
   if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
 }
 
-function mlToggleLang2() {
-  var picker = document.getElementById('mlLangPicker2');
-  if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-}
-
 function mlSelectLang(code, flag, name) {
-  // Close both pickers
-  ['mlLangPicker','mlLangPicker2'].forEach(function(id) {
-    var p = document.getElementById(id);
-    if (p) p.style.display = 'none';
-  });
-  // Update both displays
-  ['mlLangCurrent','mlLangCurrent2'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = flag + ' ' + name + ' ▾';
-  });
   // Apply language
   settingsSelectLang(code, flag, name);
+  // Update display and close picker
+  mlSyncLangDisplay();
+  var p = document.getElementById('mlLangPicker');
+  if (p) p.style.display = 'none';
 }
 
 function mlSyncLangDisplay() {
   var label = _mlLangLabel();
-  ['mlLangCurrent','mlLangCurrent2'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = label + ' ▾';
-  });
+  var el = document.getElementById('mlLangCurrent');
+  if (el) el.textContent = label + ' ▾';
 }

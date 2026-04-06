@@ -77,79 +77,27 @@ function setViewerMode(isViewer) {
 }
 
 function closeModeSheet() {
-  var o = document.getElementById('modeSheetOverlay');
-  if (o) o.remove();
+  var o = document.getElementById('modeSelectOverlay');
+  if (o) o.style.display = 'none';
 }
 
 function openModeSwitcher() {
+  // Use static overlay only — update active mode highlight
+  var overlay = document.getElementById('modeSelectOverlay');
+  if (!overlay) return;
+  // Update active state on mode buttons
+  overlay.querySelectorAll('.ml-mode').forEach(function(btn) {
+    btn.classList.remove('ml-active');
+    if (btn.classList.contains(appMode)) btn.classList.add('ml-active');
+  });
+  // Sync language label
   if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
-  // Remove existing if any
-  const existing = document.getElementById('modeSheetOverlay');
-  if (existing) { existing.remove(); return; }
-
-  const overlay = document.createElement('div');
-  overlay.className = 'mode-launcher-fullscreen';
-  overlay.id = 'modeSheetOverlay';
-
-  const cancelBtn = appMode ? `<button class="ml-cancel" onclick="closeModeSheet()">${t('cancel')}</button>` : '';
-
-  overlay.innerHTML = `
-    <div class="ml-inner">
-      <div class="ml-logo">🏸</div>
-      <div class="ml-title">${t('appTitle')}</div>
-      <div class="ml-sub">${t('howUsingApp')}</div>
-      <div class="ml-modes">
-        <button class="ml-mode viewer ${appMode === 'viewer' ? 'ml-active' : ''}"
-                onclick="switchMode('viewer')">
-          <div class="ml-mode-icon">👁</div>
-          <div class="ml-mode-info">
-            <div class="ml-mode-name">${t('viewer')}</div>
-            <div class="ml-mode-desc">${t('watchLiveDesc')}</div>
-          </div>
-          <span class="ml-arr">›</span>
-        </button>
-        <button class="ml-mode organiser ${appMode === 'organiser' ? 'ml-active' : ''}"
-                onclick="switchMode('organiser')">
-          <div class="ml-mode-icon">🏆</div>
-          <div class="ml-mode-info">
-            <div class="ml-mode-name">${t('roundOrganiser')}</div>
-            <div class="ml-mode-desc">${t('roundOrganiserDesc')}</div>
-          </div>
-          <span class="ml-arr">›</span>
-        </button>
-        <button class="ml-mode vault ${appMode === 'vault' ? 'ml-active' : ''}"
-                onclick="requestVaultMode()">
-          <div class="ml-mode-icon">🔑</div>
-          <div class="ml-mode-info">
-            <div class="ml-mode-name">${t('vaultManager')}</div>
-            <div class="ml-mode-desc">${t('vaultManagerDesc')}</div>
-          </div>
-          <span class="ml-arr">›</span>
-        </button>
-      </div>
-      <div class="ml-footer">
-        <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage',null)">⚙️ ${t('settings')}</button>
-        <div class="ml-lang-row" id="mlLangRow2">
-          <span class="ml-lang-current" id="mlLangCurrent2" onclick="mlToggleLang2()">${_mlLangLabel()} ▾</span>
-          <div class="ml-lang-picker" id="mlLangPicker2" style="display:none;">
-            <div class="ml-lang-opt" onclick="mlSelectLang('en','🇺🇸','English')">🇺🇸 English</div>
-            <div class="ml-lang-opt" onclick="mlSelectLang('jp','🇯🇵','日本語')">🇯🇵 日本語</div>
-            <div class="ml-lang-opt" onclick="mlSelectLang('kr','🇰🇷','한국어')">🇰🇷 한국어</div>
-            <div class="ml-lang-opt" onclick="mlSelectLang('zh','🇨🇳','中文')">🇨🇳 中文</div>
-            <div class="ml-lang-opt" onclick="mlSelectLang('vi','🇻🇳','Tiếng Việt')">🇻🇳 Tiếng Việt</div>
-          </div>
-        </div>
-      </div>
-      ${cancelBtn ? `<div class="ml-footer" style="margin-top:8px">${cancelBtn}</div>` : ''}
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
+  overlay.style.display = 'flex';
 }
 
 function switchMode(mode) {
-  const overlay = document.getElementById('modeSheetOverlay');
-  if (overlay) overlay.remove();
+  const overlay = document.getElementById('modeSelectOverlay');
+  if (overlay) overlay.style.display = 'none';
 
   // Viewer needs no club
   if (mode === 'viewer') {
@@ -226,6 +174,8 @@ async function initAppFlow() {
   // ── Step 2: Always show mode select on load ──
   var overlay = document.getElementById('modeSelectOverlay');
   if (overlay) overlay.style.display = 'flex';
+  // Sync language label on static overlay
+  if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
 }
 
 function showOnboardingOverlay(reason) {
@@ -777,8 +727,8 @@ function updateSessionLiveBar() {
    VAULT MODE — Admin password gate
 ============================================================= */
 function requestVaultMode() {
-  const overlay = document.getElementById('modeSheetOverlay');
-  if (overlay) overlay.remove();
+  const overlay = document.getElementById('modeSelectOverlay');
+  if (overlay) overlay.style.display = 'none';
 
   if (appMode === 'vault') { switchMode('vault'); return; }
 

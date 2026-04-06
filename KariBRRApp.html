@@ -50,7 +50,7 @@
       <div class="ml-title" data-i18n="chooseMode">Choose Mode</div>
       <div class="ml-sub" data-i18n="howUsingAppToday">How are you using the app today?</div>
       <div class="ml-modes">
-        <button class="ml-mode viewer" onclick="document.getElementById('modeSelectOverlay').style.display='none';selectMode('viewer')">
+        <button class="ml-mode viewer" onclick="switchMode('viewer')">
           <div class="ml-mode-icon">👁</div>
           <div class="ml-mode-info">
             <div class="ml-mode-name" data-i18n="viewer">Viewer</div>
@@ -58,7 +58,7 @@
           </div>
           <span class="ml-arr">›</span>
         </button>
-        <button class="ml-mode organiser" onclick="document.getElementById('modeSelectOverlay').style.display='none';switchMode('organiser')">
+        <button class="ml-mode organiser" onclick="switchMode('organiser')">
           <div class="ml-mode-icon">🏆</div>
           <div class="ml-mode-info">
             <div class="ml-mode-name" data-i18n="roundOrganiser">Round Organiser</div>
@@ -66,7 +66,7 @@
           </div>
           <span class="ml-arr">›</span>
         </button>
-        <button class="ml-mode vault" onclick="document.getElementById('modeSelectOverlay').style.display='none';requestVaultMode()">
+        <button class="ml-mode vault" onclick="requestVaultMode()">
           <div class="ml-mode-icon">🔑</div>
           <div class="ml-mode-info">
             <div class="ml-mode-name" data-i18n="vaultManager">Vault Manager</div>
@@ -76,7 +76,7 @@
         </button>
       </div>
       <div class="ml-footer">
-        <button class="ml-settings-btn" onclick="document.getElementById('modeSelectOverlay').style.display='none';homeGo('settingsPage','tabBtnSettings')">⚙️ <span data-i18n="settings">Settings</span></button>
+        <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage','tabBtnSettings')">⚙️ <span data-i18n="settings">Settings</span></button>
         <div class="ml-lang-row" id="mlLangRow">
           <span class="ml-lang-current" id="mlLangCurrent" onclick="mlToggleLang()">🇺🇸 English ▾</span>
           <div class="ml-lang-picker" id="mlLangPicker" style="display:none;">
