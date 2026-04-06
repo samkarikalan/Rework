@@ -549,7 +549,9 @@ const translations = {
     "pairSet": "pair set",
     "pairsSet": "pairs set",
     "courtSingle": "court",
-    "courtPlural": "courts"
+    "courtPlural": "courts",
+    "report": "Report",
+    "monthlyStats": "monthly stats"
   },
   "jp": {
     "home": "ホーム",
@@ -1096,7 +1098,9 @@ const translations = {
     "pairSet": "ペア設定済み",
     "pairsSet": "ペア設定済み",
     "courtSingle": "コート",
-    "courtPlural": "コート"
+    "courtPlural": "コート",
+    "report": "レポート",
+    "monthlyStats": "月間統計"
   },
   "kr": {
     "home": "홈",
@@ -1643,7 +1647,9 @@ const translations = {
     "pairSet": "페어 설정됨",
     "pairsSet": "페어 설정됨",
     "courtSingle": "코트",
-    "courtPlural": "코트"
+    "courtPlural": "코트",
+    "report": "보고서",
+    "monthlyStats": "월간 통계"
   },
   "vi": {
     "home": "Trang chủ",
@@ -2190,7 +2196,9 @@ const translations = {
     "pairSet": "cặp đã đặt",
     "pairsSet": "cặp đã đặt",
     "courtSingle": "sân",
-    "courtPlural": "sân"
+    "courtPlural": "sân",
+    "report": "Báo cáo",
+    "monthlyStats": "thống kê tháng"
   },
   "zh": {
     "home": "首页",
@@ -2737,6 +2745,8 @@ const translations = {
     "pairSet": "搭档已设置",
     "pairsSet": "搭档已设置",
     "courtSingle": "场地",
-    "courtPlural": "场地"
+    "courtPlural": "场地",
+    "report": "报告",
+    "monthlyStats": "月度统计"
   }
 };

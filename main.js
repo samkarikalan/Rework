@@ -506,6 +506,30 @@ function showPage(pageID, el) {
     if (typeof renderSummaryFromSession === 'function') renderSummaryFromSession();
   }
 
+  if (pageID === "vaultReportPage") {
+    // Update month label
+    const d = new Date();
+    const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const titleEl = document.getElementById('reportMonthTitle');
+    const subEl   = document.getElementById('reportMonthSub');
+    if (titleEl) titleEl.textContent = label + ' ' + (t('report') || 'Report');
+    if (subEl)   subEl.textContent   = t('monthlyStats') || 'Monthly stats';
+    // Render preview
+    if (typeof reportFetchData === 'function') {
+      reportFetchData().then(data => {
+        const html = reportBuildHTML(data);
+        const preview = document.getElementById('reportPreview');
+        if (preview) {
+          const iframe = document.createElement('iframe');
+          iframe.style.cssText = 'width:100%;height:80vh;border:none;border-radius:16px;';
+          iframe.srcdoc = html;
+          preview.innerHTML = '';
+          preview.appendChild(iframe);
+        }
+      }).catch(() => {});
+    }
+  }
+
   if (pageID === "myCardPage") {
     if (typeof renderMyCard === 'function') renderMyCard();
   }
