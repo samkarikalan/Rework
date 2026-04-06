@@ -835,6 +835,8 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
 
   if (errEl) errEl.style.display = 'none';
   if (nickEl) nickEl.style.display = 'none';
+  var pwSectionReset = document.getElementById('joinClubPasswordSection');
+  if (pwSectionReset) pwSectionReset.style.display = 'none';
 
   // Show loading
   if (fbEl) {

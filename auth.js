@@ -367,11 +367,18 @@ async function authRequestJoin(clubId, chosenNickname) {
       'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id');
     if (conflict && conflict.length) {
       var cm = conflict[0];
-      // If membership is unclaimed — ask for default password to verify
+      // If unclaimed — ask for default password to verify identity
       if (!cm.user_account_id) {
         return { needsPassword: true, conflictNickname: nickname, membershipId: cm.id, playerId: cm.player_id };
       }
-      // Nickname taken by someone else (already claimed)
+      // If claimed by THIS user already — treat as member (auto-join)
+      if (cm.user_account_id === user.id) {
+        var clubInfo2 = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name').catch(function(){ return []; });
+        var cname2 = (clubInfo2 && clubInfo2.length) ? clubInfo2[0].name : '';
+        if (typeof setMyClub === 'function') setMyClub(clubId, cname2);
+        return { alreadyMember: true };
+      }
+      // Nickname taken by someone else
       return { nicknameConflict: true, conflictNickname: nickname };
     }
 
