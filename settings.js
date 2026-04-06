@@ -1292,25 +1292,41 @@ function closePlayerStats() {
 }
 
 /* ── Mode Launcher — Language Picker ── */
+function _mlLangLabel() {
+  var saved = localStorage.getItem('appLang') || 'en';
+  var map = { en: '🇺🇸 English', jp: '🇯🇵 日本語', kr: '🇰🇷 한국어', zh: '🇨🇳 中文', vi: '🇻🇳 Tiếng Việt' };
+  return map[saved] || '🇺🇸 English';
+}
+
 function mlToggleLang() {
   var picker = document.getElementById('mlLangPicker');
   if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
 }
 
+function mlToggleLang2() {
+  var picker = document.getElementById('mlLangPicker2');
+  if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+
 function mlSelectLang(code, flag, name) {
-  // Close picker
-  var picker = document.getElementById('mlLangPicker');
-  if (picker) picker.style.display = 'none';
-  // Update display
-  var current = document.getElementById('mlLangCurrent');
-  if (current) current.textContent = flag + ' ' + name + ' ▾';
-  // Sync with settings lang (reuse existing function)
+  // Close both pickers
+  ['mlLangPicker','mlLangPicker2'].forEach(function(id) {
+    var p = document.getElementById(id);
+    if (p) p.style.display = 'none';
+  });
+  // Update both displays
+  ['mlLangCurrent','mlLangCurrent2'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = flag + ' ' + name + ' ▾';
+  });
+  // Apply language
   settingsSelectLang(code, flag, name);
 }
 
 function mlSyncLangDisplay() {
-  var saved = localStorage.getItem('appLang') || 'en';
-  var map = { en: '🇺🇸 English', jp: '🇯🇵 日本語', kr: '🇰🇷 한국어', zh: '🇨🇳 中文', vi: '🇻🇳 Tiếng Việt' };
-  var el = document.getElementById('mlLangCurrent');
-  if (el) el.textContent = (map[saved] || '🇺🇸 English') + ' ▾';
+  var label = _mlLangLabel();
+  ['mlLangCurrent','mlLangCurrent2'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = label + ' ▾';
+  });
 }

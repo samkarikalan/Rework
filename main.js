@@ -129,6 +129,16 @@ function openModeSwitcher() {
       </div>
       <div class="ml-footer">
         <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage',null)">⚙️ ${t('settings')}</button>
+        <div class="ml-lang-row" id="mlLangRow2">
+          <span class="ml-lang-current" id="mlLangCurrent2" onclick="mlToggleLang2()">${_mlLangLabel()} ▾</span>
+          <div class="ml-lang-picker" id="mlLangPicker2" style="display:none;">
+            <div class="ml-lang-opt" onclick="mlSelectLang('en','🇺🇸','English')">🇺🇸 English</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('jp','🇯🇵','日本語')">🇯🇵 日本語</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('kr','🇰🇷','한국어')">🇰🇷 한국어</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('zh','🇨🇳','中文')">🇨🇳 中文</div>
+            <div class="ml-lang-opt" onclick="mlSelectLang('vi','🇻🇳','Tiếng Việt')">🇻🇳 Tiếng Việt</div>
+          </div>
+        </div>
       </div>
       ${cancelBtn ? `<div class="ml-footer" style="margin-top:8px">${cancelBtn}</div>` : ''}
     </div>
