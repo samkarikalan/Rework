@@ -714,24 +714,17 @@ async function dbCompleteSession(shuttleData = null) {
         const playerId = mrows[0].player_id;
         const prows = await sbGet('players', `id=eq.${playerId}&select=sessions`).catch(() => []);
         const existing = (prows.length ? prows[0].sessions : null) || [];
-        const otherDays = existing.filter(s => s.date !== today);
-        const todayEntry = existing.find(s => s.date === today) || {};
+        // Each session = separate entry (no merging same day)
         const entry = {
           date:          today,
-          wins:          (todayEntry.wins || 0) + (p.wins || 0),
-          losses:        (todayEntry.losses || 0) + (p.losses || 0),
-          points_earned: Math.round(((parseFloat(todayEntry.points_earned) || 0) + (parseFloat(mrows[0].club_points) || 0)) * 10) / 10,
+          wins:          p.wins || 0,
+          losses:        p.losses || 0,
+          points_earned: parseFloat(mrows[0].club_points) || 0,
           club_rating:   parseFloat(mrows[0].club_rating) || 1.0,
-          cost_per_player: (() => {
-            const prev = parseFloat(todayEntry.cost_per_player) || 0;
-            const newCost = shuttleData ? (parseFloat(shuttleData.cost_per_player) || 0) : 0;
-            const total = prev + newCost;
-            return total > 0 ? Math.round(total) : null;
-          })(),
-          session_count: (todayEntry.session_count || 0) + 1
+          cost_per_player: shuttleData ? (parseFloat(shuttleData.cost_per_player) || 0) : null
         };
         await sbPatch('players', `id=eq.${playerId}`, {
-          sessions: [entry, ...otherDays].slice(0, 30)
+          sessions: [entry, ...existing].slice(0, 60)
         }).catch(() => {});
       } catch(e) { /* silent per player */ }
     }
