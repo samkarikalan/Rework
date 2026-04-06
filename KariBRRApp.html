@@ -547,14 +547,24 @@
       <div id="joinClubPageResults" style="display:none;"></div>
       <div id="joinClubPageError" class="auth-error" style="display:none;"></div>
 
-      <!-- Nickname conflict section -->
-      <div id="joinClubNicknameSection" style="display:none; background:var(--surface,#1e1e2e); border:1px solid var(--border,#333); border-radius:14px; padding:16px; margin-top:10px;">
+      <!-- Password claim section (unclaimed player found) -->
+      <div id="joinClubPasswordSection" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:10px;">
+        <div id="joinClubPasswordMsg" style="font-size:0.85rem; color:var(--text); margin-bottom:12px; line-height:1.5;"></div>
+        <input type="password" id="joinClubPasswordInput" class="auth-input"
+          placeholder="Default password"
+          style="width:100%; box-sizing:border-box; margin-bottom:10px;"
+          onkeydown="if(event.key==='Enter') joinClubSubmitPassword()">
+        <button onclick="joinClubSubmitPassword()" style="width:100%; padding:12px; background:var(--accent,#6c63ff); color:#fff; border:none; border-radius:10px; font-size:0.95rem; font-weight:600; cursor:pointer; font-family:inherit;">🔑 <span data-i18n="claimAndJoin">Claim &amp; Join</span></button>
+      </div>
+
+      <!-- Nickname conflict section (taken by someone else) -->
+      <div id="joinClubNicknameSection" style="display:none; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-top:10px;">
         <div id="joinClubNicknameMsg" style="font-size:0.85rem; color:var(--text); margin-bottom:12px; line-height:1.5;"></div>
         <input type="text" id="joinClubNicknameInput" class="auth-input"
           placeholder="Enter your nickname for this club"
           style="width:100%; box-sizing:border-box; margin-bottom:10px;"
           onkeydown="if(event.key==='Enter') joinClubSubmitNickname()">
-        <button onclick="joinClubSubmitNickname()" style="width:100%; padding:12px; background:var(--accent,#6c63ff); color:#fff; border:none; border-radius:10px; font-size:0.95rem; font-weight:600; cursor:pointer;" data-i18n="submitRequest">Submit Request</button>
+        <button onclick="joinClubSubmitNickname()" style="width:100%; padding:12px; background:var(--accent,#6c63ff); color:#fff; border:none; border-radius:10px; font-size:0.95rem; font-weight:600; cursor:pointer; font-family:inherit;" data-i18n="submitRequest">Submit Request</button>
       </div>
       <div id="joinClubPageFeedback" style="display:none; text-align:center; padding:20px 12px; border-radius:14px; background:var(--card-bg,#1e1e2e); border:1px solid var(--border,#333); margin-top:10px;">
         <div id="joinClubPageFeedbackIcon" style="font-size:2rem; margin-bottom:8px;">⏳</div>

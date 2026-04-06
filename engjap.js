@@ -551,7 +551,10 @@ const translations = {
     "courtSingle": "court",
     "courtPlural": "courts",
     "report": "Report",
-    "monthlyStats": "monthly stats"
+    "monthlyStats": "monthly stats",
+    "foundInClub": "found in",
+    "enterDefaultPwClaim": "Enter your default password to join:",
+    "claimAndJoin": "Claim & Join"
   },
   "jp": {
     "home": "ホーム",
@@ -1100,7 +1103,10 @@ const translations = {
     "courtSingle": "コート",
     "courtPlural": "コート",
     "report": "レポート",
-    "monthlyStats": "月間統計"
+    "monthlyStats": "月間統計",
+    "foundInClub": "が見つかりました:",
+    "enterDefaultPwClaim": "デフォルトパスワードを入力して参加してください:",
+    "claimAndJoin": "申請して参加"
   },
   "kr": {
     "home": "홈",
@@ -1649,7 +1655,10 @@ const translations = {
     "courtSingle": "코트",
     "courtPlural": "코트",
     "report": "보고서",
-    "monthlyStats": "월간 통계"
+    "monthlyStats": "월간 통계",
+    "foundInClub": "에서 발견됨:",
+    "enterDefaultPwClaim": "기본 비밀번호를 입력하여 참여하세요:",
+    "claimAndJoin": "신청하고 참여"
   },
   "vi": {
     "home": "Trang chủ",
@@ -2198,7 +2207,10 @@ const translations = {
     "courtSingle": "sân",
     "courtPlural": "sân",
     "report": "Báo cáo",
-    "monthlyStats": "thống kê tháng"
+    "monthlyStats": "thống kê tháng",
+    "foundInClub": "tìm thấy trong",
+    "enterDefaultPwClaim": "Nhập mật khẩu mặc định để tham gia:",
+    "claimAndJoin": "Xác nhận & Tham gia"
   },
   "zh": {
     "home": "首页",
@@ -2747,6 +2759,9 @@ const translations = {
     "courtSingle": "场地",
     "courtPlural": "场地",
     "report": "报告",
-    "monthlyStats": "月度统计"
+    "monthlyStats": "月度统计",
+    "foundInClub": "在俱乐部中找到:",
+    "enterDefaultPwClaim": "输入默认密码加入:",
+    "claimAndJoin": "认领并加入"
   }
 };

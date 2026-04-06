@@ -367,26 +367,11 @@ async function authRequestJoin(clubId, chosenNickname) {
       'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id');
     if (conflict && conflict.length) {
       var cm = conflict[0];
-      // If membership is unclaimed — this is the user's own account, auto-link it
+      // If membership is unclaimed — ask for default password to verify
       if (!cm.user_account_id) {
-        await sbPatch('memberships', 'id=eq.' + cm.id, { user_account_id: user.id }).catch(function(){});
-        // Also link any other clubs with same nickname
-        var others = await sbGet('memberships',
-          'nickname=ilike.' + encodeURIComponent(nickname) + '&user_account_id=is.null&select=id').catch(function(){ return []; });
-        for (var i = 0; i < others.length; i++) {
-          await sbPatch('memberships', 'id=eq.' + others[i].id, { user_account_id: user.id }).catch(function(){});
-        }
-        // Also update players table — mark as registered
-        await sbPatch('players',
-          'club_id=eq.' + clubId + '&name=ilike.' + encodeURIComponent(nickname),
-          { user_account_id: user.id }
-        ).catch(function(){});
-        // Get club name and auto-join
-        var clubInfo = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name').catch(function(){ return []; });
-        var cname = (clubInfo && clubInfo.length) ? clubInfo[0].name : '';
-        return { autoLinked: true, clubId: clubId, clubName: cname, nickname: nickname };
+        return { needsPassword: true, conflictNickname: nickname, membershipId: cm.id, playerId: cm.player_id };
       }
-      // Nickname taken by someone else
+      // Nickname taken by someone else (already claimed)
       return { nicknameConflict: true, conflictNickname: nickname };
     }
 
@@ -400,6 +385,59 @@ async function authRequestJoin(clubId, chosenNickname) {
     return { success: true, nickname: nickname };
   } catch(e) {
     return { error: e.message || t('failedSendRequest') };
+  }
+}
+
+/* ── Claim existing player record by verifying default password ── */
+async function authClaimAndJoin(clubId, nickname, defaultPassword) {
+  var user = authGetUser();
+  if (!user) return { error: t('pleaseLoginFirst') };
+
+  try {
+    // Find membership
+    var memberships = await sbGet('memberships',
+      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id'
+    );
+    if (!memberships || !memberships.length)
+      return { error: t('nicknameNotFound') };
+
+    var membership = memberships[0];
+
+    // Already claimed by someone else?
+    if (membership.user_account_id && membership.user_account_id !== user.id)
+      return { error: t('alreadyClaimed') };
+
+    // Verify default password on player row
+    var players = await sbGet('players',
+      'id=eq.' + membership.player_id + '&default_password=eq.' + encodeURIComponent(defaultPassword) + '&select=id'
+    );
+    if (!players || !players.length)
+      return { error: t('defaultPwWrong') };
+
+    // Link membership to logged-in user
+    await sbPatch('memberships', 'id=eq.' + membership.id, { user_account_id: user.id });
+
+    // Also link any other clubs with same unclaimed nickname
+    var others = await sbGet('memberships',
+      'nickname=ilike.' + encodeURIComponent(nickname) + '&user_account_id=is.null&select=id'
+    ).catch(function(){ return []; });
+    for (var i = 0; i < others.length; i++) {
+      await sbPatch('memberships', 'id=eq.' + others[i].id, { user_account_id: user.id }).catch(function(){});
+    }
+
+    // Update players table
+    await sbPatch('players',
+      'club_id=eq.' + clubId + '&name=ilike.' + encodeURIComponent(nickname),
+      { user_account_id: user.id }
+    ).catch(function(){});
+
+    // Get club name
+    var clubInfo = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name').catch(function(){ return []; });
+    var cname = (clubInfo && clubInfo.length) ? clubInfo[0].name : '';
+    return { success: true, clubId: clubId, clubName: cname, nickname: nickname };
+
+  } catch(e) {
+    return { error: e.message || t('claimFailed') };
   }
 }
 

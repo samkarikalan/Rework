@@ -820,8 +820,9 @@ async function _joinClubDoSearch(query) {
 }
 
 /* ── Stores clubId/Name while user picks a new nickname ── */
-var _pendingJoinClubId   = null;
-var _pendingJoinClubName = null;
+var _pendingJoinClubId       = null;
+var _pendingJoinClubName     = null;
+var _pendingJoinNickname     = null;
 
 async function joinClubPageRequest(clubId, clubName, customNickname) {
   var fbEl      = document.getElementById('joinClubPageFeedback');
@@ -871,11 +872,29 @@ async function joinClubPageRequest(clubId, clubName, customNickname) {
     return;
   }
 
-  if (result.nicknameConflict) {
-    // Nickname taken — ask user to pick a different one
+  if (result.needsPassword) {
+    // Unclaimed player found — ask for default password to verify identity
     if (fbEl) fbEl.style.display = 'none';
     _pendingJoinClubId   = clubId;
     _pendingJoinClubName = clubName;
+    _pendingJoinNickname = result.conflictNickname;
+    var pwSection = document.getElementById('joinClubPasswordSection');
+    var pwMsg     = document.getElementById('joinClubPasswordMsg');
+    var pwInput   = document.getElementById('joinClubPasswordInput');
+    if (nickEl) nickEl.style.display = 'none';
+    if (pwMsg) pwMsg.textContent = '"' + result.conflictNickname + '" ' + (t('foundInClub') || 'found in') + ' ' + clubName + '. ' + (t('enterDefaultPwClaim') || 'Enter your default password to join:');
+    if (pwInput) pwInput.value = '';
+    if (pwSection) pwSection.style.display = '';
+    return;
+  }
+
+  if (result.nicknameConflict) {
+    // Nickname truly taken by someone else — ask for different nickname
+    if (fbEl) fbEl.style.display = 'none';
+    _pendingJoinClubId   = clubId;
+    _pendingJoinClubName = clubName;
+    var pwSection2 = document.getElementById('joinClubPasswordSection');
+    if (pwSection2) pwSection2.style.display = 'none';
     if (nickEl) {
       var msgEl  = document.getElementById('joinClubNicknameMsg');
       var inputEl = document.getElementById('joinClubNicknameInput');
@@ -913,6 +932,50 @@ function joinClubSubmitNickname() {
     return;
   }
   joinClubPageRequest(_pendingJoinClubId, _pendingJoinClubName, nickname);
+}
+
+/* ── Called when user submits default password to claim their player ── */
+async function joinClubSubmitPassword() {
+  var pwInput = document.getElementById('joinClubPasswordInput');
+  var errEl   = document.getElementById('joinClubPageError');
+  var password = pwInput ? pwInput.value.trim() : '';
+
+  if (!password) {
+    if (errEl) { errEl.textContent = t('enterPasswordHint'); errEl.style.display = ''; }
+    return;
+  }
+
+  var fbEl    = document.getElementById('joinClubPageFeedback');
+  var fbIcon  = document.getElementById('joinClubPageFeedbackIcon');
+  var fbTitle = document.getElementById('joinClubPageFeedbackTitle');
+  var fbMsg   = document.getElementById('joinClubPageFeedbackMsg');
+  var pwSection = document.getElementById('joinClubPasswordSection');
+
+  if (fbIcon)  fbIcon.textContent  = '⏳';
+  if (fbTitle) fbTitle.textContent = t('checking');
+  if (fbMsg)   fbMsg.textContent   = '';
+  if (fbEl)    fbEl.style.display  = '';
+  if (pwSection) pwSection.style.display = 'none';
+
+  var result = (typeof authClaimAndJoin === 'function')
+    ? await authClaimAndJoin(_pendingJoinClubId, _pendingJoinNickname, password)
+    : { error: t('notAvailable') };
+
+  if (result.success) {
+    if (typeof setMyClub === 'function') setMyClub(result.clubId, result.clubName);
+    if (typeof setMyPlayer === 'function') setMyPlayer({ name: result.nickname, gender: 'Male' });
+    if (fbIcon)  fbIcon.textContent  = '✅';
+    if (fbTitle) fbTitle.textContent = t('joined') + ' ' + result.clubName;
+    if (fbMsg)   fbMsg.textContent   = t('welcomeBack') + ', ' + result.nickname + '!';
+    homeRefreshJoinClubTile();
+    _renderMyClubsList();
+    return;
+  }
+
+  // Error — show password section again
+  if (pwSection) pwSection.style.display = '';
+  if (fbEl) fbEl.style.display = 'none';
+  if (errEl) { errEl.textContent = result.error; errEl.style.display = ''; }
 }
 
 /* ── Leave club ── */
