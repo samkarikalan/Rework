@@ -505,6 +505,9 @@ function showPage(pageID, el) {
   // Show selected page
   document.getElementById(pageID).style.display = 'block';
 
+  // Hide mode pill while inside a page (back button is visible)
+  document.querySelectorAll('.mode-pill-btn').forEach(b => b.style.display = 'none');
+
   // Update active tab styling
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   if (el) {

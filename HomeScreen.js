@@ -67,6 +67,9 @@ function showHomeScreen() {
 
   homeEl.style.display = 'flex';
 
+  // Restore mode pill (hidden while inside pages)
+  document.querySelectorAll('.mode-pill-btn').forEach(function(b) { b.style.display = ''; });
+
 
   // Mode + status bar
   var isOrganiser = (typeof appMode !== 'undefined') && appMode === 'organiser';
