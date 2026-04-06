@@ -960,6 +960,8 @@ async function homeRefreshVaultTiles(clubId) {
     if (vtPlaying) vtPlaying.textContent = playingCount;
     var vtBadgePlaying = document.getElementById('vtBadgePlaying');
     if (vtBadgePlaying) vtBadgePlaying.style.display = playingCount > 0 ? '' : 'none';
+    var tileSubPlaying = document.getElementById('tileSubPlaying');
+    if (tileSubPlaying) tileSubPlaying.textContent = playingCount + ' ' + t('playersActive');
 
     // Total players (register + modify share same count)
     var members = await sbGet('memberships', 'club_id=eq.' + clubId + '&select=id').catch(() => []);

@@ -347,16 +347,8 @@
 
     </div>
 
-    <!-- VIEWER FLOW -->
-    <div id="homeViewerFlow" style="display:none;">
-      <div class="home-hero-card viewer-hero" onclick="homeGo('dashboardPage','tabBtnDashboard')">
-        <div>
-          <div class="home-hero-label" data-i18n="viewerBadge">VIEWER</div>
-          <div class="home-hero-title" data-i18n="watchSession">Watch Session</div>
-        </div>
-        <div class="home-hero-play">▶</div>
-      </div>
-    </div>
+    <!-- VIEWER FLOW - removed (dashboard tile covers this) -->
+    <div id="homeViewerFlow" style="display:none;"></div>
 
     <!-- ── ORGANISER GRID ── -->
     <div id="homeOrgGrid" style="display:none;">
@@ -380,6 +372,14 @@
           <div class="home-tile-icon">📡</div>
           <div class="home-tile-name" data-i18n="dashboard">Dashboard</div>
           <div class="home-tile-sub" id="tileSubDashboard">Live sessions</div>
+        </div>
+        <div class="home-tile" onclick="homeGo('vaultPlayingPage',null)">
+          <div class="home-tile-icon" style="position:relative;">
+            ⚡
+            <div class="vt-badge" id="vtBadgePlaying" style="display:none;position:absolute;top:-6px;right:-6px;">LIVE</div>
+          </div>
+          <div class="home-tile-name" data-i18n="playing">Playing</div>
+          <div class="home-tile-sub" id="tileSubPlaying">—</div>
         </div>
       </div>
     </div>
@@ -415,14 +415,6 @@
       </div>
 
       <div id="vaultTileGrid" class="vault-tile-grid">
-
-        <div class="vault-tile vt-playing" onclick="homeGo('vaultPlayingPage',null)">
-          <div class="vt-badge" id="vtBadgePlaying" style="display:none">LIVE</div>
-          <div class="vt-icon">⚡</div>
-          <div class="vt-stat" id="vtStatPlaying">—</div>
-          <div class="vt-name" data-i18n="playing">Playing</div>
-          <div class="vt-sub" data-i18n="onCourtNow">on court now</div>
-        </div>
 
         <div class="vault-tile vt-register" onclick="homeGo('vaultRegisterPage',null)">
           <div class="vt-icon">📋</div>
