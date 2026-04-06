@@ -1193,6 +1193,7 @@ function showRound(index) {
   // Sync mode banner and shuffle after every round display
   _syncModeBanner();
   _syncShuffleBtn();
+  checkAllWinnersMarked();
 }
 
 
@@ -1390,6 +1391,7 @@ function renderGames(data, roundIndex) {
           game.winner = teamSide;
           game.winners = teamPairs.slice();
           if (typeof saveRoundsToDb === "function") saveRoundsToDb();
+          checkAllWinnersMarked();
         } else {
           allCups.forEach(cup => {
             cup.classList.remove('active');
@@ -1406,6 +1408,7 @@ function renderGames(data, roundIndex) {
           game.winner = undefined;
           game.winners = [];
           if (typeof saveRoundsToDb === "function") saveRoundsToDb();
+          checkAllWinnersMarked();
         }
       };
 
@@ -1554,6 +1557,7 @@ function goodrenderGames(data, roundIndex) {
           game.winner = teamSide;
           game.winners = teamPairs.slice();
           if (typeof saveRoundsToDb === "function") saveRoundsToDb();
+          checkAllWinnersMarked();
         } else {
           // 👉 Unmark → show BOTH cups again
           allCups.forEach(cup => {
@@ -2489,6 +2493,19 @@ function toggleMinRoundsVisibility() {
 function updateModeLabel() {
   const lbl = document.getElementById('modeLabel');
   if (lbl) lbl.textContent = getPlayMode() === "competitive" ? "🏆" : "🎲";
+}
+
+// Check if all games in current round have winners — enable End button
+function checkAllWinnersMarked() {
+  const round = allRounds[currentRoundIndex];
+  if (!round || !round.games || !round.games.length) return;
+  const allMarked = round.games.every(g => g.winner);
+  const endBtn = document.getElementById('endBtn');
+  if (endBtn) {
+    endBtn.style.opacity = allMarked ? '1' : '';
+    endBtn.style.boxShadow = allMarked ? '0 0 0 2px #2dce89' : '';
+    endBtn.title = allMarked ? '' : '';
+  }
 }
 
 // toggleRoundSettings — unified version

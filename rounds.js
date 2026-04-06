@@ -236,7 +236,7 @@ function nextRound() {
 }
 function endRounds() {  
 	sessionFinished = true;
-	updSchedule(allRounds.length - 1, schedulerState); // pass schedulerState
+	updSchedule(allRounds.length - 1, schedulerState, false); // false = don't sync ratings again
     const newRound = AischedulerNextRound(schedulerState); // do NOT wrap in []
     allRounds.push(newRound);
     currentRoundIndex = allRounds.length - 2;
@@ -400,7 +400,7 @@ function allPairsExhausted(queue, pairPlayedSet) {
 
 
 
-function updSchedule(roundIndex, schedulerState) {
+function updSchedule(roundIndex, schedulerState, syncToDb = true) {
   //AUTO_SAVE();
 	const data = allRounds[roundIndex];
   if (!data) return;
@@ -567,8 +567,8 @@ for (const game of games) {
 syncRatings();
 updatePlayerList();
 
-// Sync ratings + wins/losses to Supabase
-if (typeof syncAfterRound === "function") syncAfterRound(roundWins, roundLosses, roundRatingDeltas);
+// Sync ratings + wins/losses to Supabase (only from nextRound, not endRounds)
+if (syncToDb && typeof syncAfterRound === "function") syncAfterRound(roundWins, roundLosses, roundRatingDeltas);
 
 // after tracking pairs & games
 checkAndResetPairCycle(schedulerState, games, roundIndex);
