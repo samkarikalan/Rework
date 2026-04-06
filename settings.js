@@ -993,19 +993,13 @@ async function vaultRegisterAll() {
       });
       const player = created[0];
 
-      // Auto-link user_account if exists with same nickname
-      const uaRows1 = await sbGet('user_accounts',
-        'nickname=ilike.' + encodeURIComponent(p.name) + '&select=id').catch(() => []);
-      const uaId1 = uaRows1.length ? uaRows1[0].id : null;
-
-      // Create membership
+      // Create membership — no auto-link, player must claim via default password
       await sbPost('memberships', {
-        player_id:       player.id,
-        club_id:         club.id,
-        nickname:        p.name,
-        club_rating:     p.rating || 1.0,
-        club_points:     0,
-        user_account_id: uaId1 || undefined
+        player_id:   player.id,
+        club_id:     club.id,
+        nickname:    p.name,
+        club_rating: p.rating || 1.0,
+        club_points: 0
       });
 
       _regStagingList[i].status = 'success';
@@ -1057,19 +1051,13 @@ async function vaultDoRegisterPlayer() {
     });
     const player = created[0];
 
-    // Auto-link user_account if exists with same nickname
-    const uaRows2 = await sbGet('user_accounts',
-      'nickname=ilike.' + encodeURIComponent(nickname) + '&select=id').catch(() => []);
-    const uaId2 = uaRows2.length ? uaRows2[0].id : null;
-
-    // Create membership
+    // Create membership — player must claim via default password
     await sbPost('memberships', {
-      player_id:       player.id,
-      club_id:         club.id,
-      nickname:        nickname,
-      club_rating:     rating,
-      club_points:     0,
-      user_account_id: uaId2 || undefined
+      player_id:   player.id,
+      club_id:     club.id,
+      nickname:    nickname,
+      club_rating: rating,
+      club_points: 0
     });
 
     setFb('✅ ' + nickname + ' ' + (t('registeredBadge')||'registered!'), true);

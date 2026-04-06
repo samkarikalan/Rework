@@ -371,14 +371,14 @@ async function authRequestJoin(clubId, chosenNickname) {
       if (!cm.user_account_id) {
         return { needsPassword: true, conflictNickname: nickname, membershipId: cm.id, playerId: cm.player_id };
       }
-      // If claimed by THIS user already — treat as member (auto-join)
-      if (cm.user_account_id === user.id) {
+      // Claimed by THIS user — auto-join
+      if (String(cm.user_account_id) === String(user.id)) {
         var clubInfo2 = await sbGet('clubs', 'id=eq.' + clubId + '&select=id,name').catch(function(){ return []; });
         var cname2 = (clubInfo2 && clubInfo2.length) ? clubInfo2[0].name : '';
         if (typeof setMyClub === 'function') setMyClub(clubId, cname2);
         return { alreadyMember: true };
       }
-      // Nickname taken by someone else
+      // Claimed by someone else — truly taken
       return { nicknameConflict: true, conflictNickname: nickname };
     }
 
