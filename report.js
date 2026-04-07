@@ -79,7 +79,7 @@ async function reportFetchData() {
     return {
       name,
       rating:     parseFloat(m.club_rating) || 1.0,
-      points:     Math.round(parseFloat(m.club_points) || 0),
+      points:     Math.round((parseFloat(m.club_points) || 0) * 10) / 10,
       monthWins:  st.wins,
       monthLosses:st.losses,
       monthGames: games,
@@ -256,9 +256,9 @@ body{font-family:'DM Sans',sans-serif;background:#0a0a12;color:#fff;padding:16px
       <div class="g-row">
         <div class="g-name">${p.name}</div>
         <div class="g-track">
-          <div class="g-fill" style="width:${pct(p.points,maxPts)}%;background:linear-gradient(90deg,#e85d75,#f9a8b8);">${p.points}</div>
+          <div class="g-fill" style="width:${pct(p.points,maxPts)}%;background:linear-gradient(90deg,#e85d75,#f9a8b8);">${p.points.toFixed(1)}</div>
         </div>
-        <div class="g-num">${p.points}</div>
+        <div class="g-num">${p.points.toFixed(1)}</div>
       </div>`).join('')}
   </div>
   <div class="w-axis">${axisLabels(['0','','','','',maxPts])}</div>
