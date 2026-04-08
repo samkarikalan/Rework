@@ -2539,36 +2539,20 @@ function renderRoundHistory() {
 
   if (!Array.isArray(allRounds) || allRounds.length === 0) return;
 
-  // Only show PAST completed rounds — skip current active round
-  // A round is completed if all its games have a winner marked
-  const pastRounds = [];
-  for (let i = 0; i < allRounds.length; i++) {
-    const round = allRounds[i];
-    if (!round || !round.games || !round.games.length) continue;
-    const allMarked = round.games.every(g => g.winner);
-    // Skip current round (last) if not all winners marked
-    if (i === currentRoundIndex && !allMarked) continue;
-    if (allMarked) pastRounds.push({ round, index: i });
-  }
-
-  if (!pastRounds.length) return;
-
-  // Visual separator between settings and rounds history
-  const sep = document.createElement('div');
-  sep.style.cssText = 'margin:14px 0 10px;border-top:1px solid var(--border2);padding-top:12px;';
-  const sepLabel = document.createElement('div');
-  sepLabel.style.cssText = 'font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;';
-  sepLabel.textContent = t('roundsLabel') || 'Round History';
-  sep.appendChild(sepLabel);
-  container.appendChild(sep);
+  // Section title
+  const title = document.createElement('div');
+  title.className = 'round-header';
+  title.style.cssText = 'margin:0 4px 8px;font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;';
+  title.textContent = t('roundsLabel') || 'Rounds';
+  container.appendChild(title);
 
   // Set _vRoundsData so _vBuildRound can work
   window._vRoundsData = allRounds;
 
-  // Render past rounds newest first
-  for (let i = pastRounds.length - 1; i >= 0; i--) {
+  // Render rounds newest first — reuse viewer's _vBuildRound
+  for (let i = allRounds.length - 1; i >= 0; i--) {
     if (typeof _vBuildRound === 'function') {
-      const roundEl = _vBuildRound(pastRounds[i].round);
+      const roundEl = _vBuildRound(allRounds[i]);
       container.appendChild(roundEl);
     }
   }

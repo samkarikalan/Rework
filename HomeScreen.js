@@ -1075,12 +1075,7 @@ async function vaultQuickCreateClub() {
     document.getElementById('vaultQuickMemberPw').value  = '';
     document.getElementById('vaultQuickAdminPw').value   = '';
     // Refresh home to show vault tiles
-    // Set vault mode so pill shows correctly
-    if (typeof appMode !== 'undefined') appMode = 'vault';
-    sessionStorage.setItem('appMode', 'vault');
-    localStorage.setItem('kbrr_app_mode', 'vault');
-    if (typeof updateModePill === 'function') updateModePill('vault');
-    setTimeout(function() { homeRefreshTiles(); showHomeScreen(); }, 600);
+    setTimeout(function() { homeRefreshTiles(); }, 600);
   } catch(e) {
     setFb('❌ ' + e.message, false);
   }
@@ -1090,12 +1085,8 @@ async function vaultQuickCreateClub() {
 function vaultLogoutClub() {
   if (!confirm(t('leaveVaultConfirm'))) return;
   if (typeof sbClearClub === 'function') sbClearClub();
-  // Go to mode selector front page
-  var overlay = document.getElementById('modeSelectOverlay');
-  if (overlay) {
-    if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
-    overlay.style.display = 'flex';
-  }
+  homeRefreshTiles();
+  homeRefreshJoinClubTile();
 }
 
 /* ── Club Management — show panel by tile tap ── */
