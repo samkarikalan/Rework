@@ -285,6 +285,8 @@ height: 44px; min-height: 44px; box-sizing: border-box;
 .pec-delete { text-align: right; }
 .pec-delete .delete { all: unset; font-size: 22px; cursor: pointer; color: var(--muted); transition: color 0.2s; }
 .pec-delete .delete:hover { color: var(--red); }
+.pec-delete-btn { all: unset; cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
+.pec-delete-btn:hover, .pec-delete-btn:active { color: var(--red, #e63757); background: rgba(230,55,87,0.1); }
 
 /* ── Fixed Pair ── */
 .fixed-card { display: grid; grid-template-columns: 1fr 55px; align-items: center; gap: 8px; font-size: 1rem; padding: 10px 14px; border-radius: var(--r-xl); border: 1px solid var(--border2); background: var(--surface2); margin: 5px 0; }
