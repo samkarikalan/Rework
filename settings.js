@@ -297,7 +297,7 @@ async function playerPlayingRenderList() {
     let rows;
     if (club.id) {
       rows = await sbGet('memberships',
-        `club_id=eq.${club.id}&is_playing=eq.true&select=nickname,players(gender)&order=nickname.asc`
+        `club_id=eq.${club.id}&is_playing=eq.true&select=nickname,player_id,players(gender)&order=nickname.asc`
       );
       rows = (rows || []).map(m => ({ name: m.nickname, gender: m.players?.gender || 'Male' }));
     } else {
@@ -312,8 +312,8 @@ async function playerPlayingRenderList() {
 
     container.innerHTML = '';
 
-    // Release All button — admin only
-    if (admin) {
+    // Release All button — admin and organiser (user)
+    if (admin || getClubMode() === 'user') {
       const bar = document.createElement('div');
       bar.style.cssText = 'padding:8px 0 12px;';
       const releaseAllBtn = document.createElement('button');
@@ -349,7 +349,7 @@ async function playerPlayingRenderList() {
       row.appendChild(nameSpan);
       row.appendChild(timeSpan);
 
-      if (admin) {
+      if (admin || getClubMode() === 'user') {
         const btn = document.createElement('button');
         btn.className = 'player-mgmt-del-btn';
         btn.style.cssText = 'background:#e63757;color:#fff;border:none;border-radius:20px;padding:4px 10px;font-size:0.8rem';
@@ -371,7 +371,7 @@ async function playerPlayingRelease(name) {
   if (!confirm('"' + name + '" ' + t('releaseFromSession'))) return;
   try {
     const _rc = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
-    await sbPatch('memberships', `club_id=eq.${_rc.id}&nickname=ilike.${encodeURIComponent(name)}`, {
+    await sbPatch('memberships', `club_id=eq.${_rc.id}&nickname=ilike.${name}`, {
       is_playing: false
     });
     playerPlayingRenderList();
