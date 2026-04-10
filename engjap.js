@@ -555,7 +555,8 @@ const translations = {
     "foundInClub": "found in",
     "enterDefaultPwClaim": "Enter your default password to join:",
     "claimAndJoin": "Claim & Join",
-    "historyBtn": "History"
+    "historyBtn": "History",
+    "navigate": "Navigate"
   },
   "jp": {
     "home": "ホーム",
@@ -1108,7 +1109,8 @@ const translations = {
     "foundInClub": "が見つかりました:",
     "enterDefaultPwClaim": "デフォルトパスワードを入力して参加してください:",
     "claimAndJoin": "申請して参加",
-    "historyBtn": "履歴"
+    "historyBtn": "履歴",
+    "navigate": "ナビゲート"
   },
   "kr": {
     "home": "홈",
@@ -1661,7 +1663,8 @@ const translations = {
     "foundInClub": "에서 발견됨:",
     "enterDefaultPwClaim": "기본 비밀번호를 입력하여 참여하세요:",
     "claimAndJoin": "신청하고 참여",
-    "historyBtn": "기록"
+    "historyBtn": "기록",
+    "navigate": "이동"
   },
   "vi": {
     "home": "Trang chủ",
@@ -2214,7 +2217,8 @@ const translations = {
     "foundInClub": "tìm thấy trong",
     "enterDefaultPwClaim": "Nhập mật khẩu mặc định để tham gia:",
     "claimAndJoin": "Xác nhận & Tham gia",
-    "historyBtn": "Lịch sử"
+    "historyBtn": "Lịch sử",
+    "navigate": "Điều hướng"
   },
   "zh": {
     "home": "首页",
@@ -2767,6 +2771,7 @@ const translations = {
     "foundInClub": "在俱乐部中找到:",
     "enterDefaultPwClaim": "输入默认密码加入:",
     "claimAndJoin": "认领并加入",
-    "historyBtn": "历史"
+    "historyBtn": "历史",
+    "navigate": "导航"
   }
 };

@@ -1090,6 +1090,8 @@ document.getElementById(‘vaultQuickAdminPw’).value   = ‘’;
 if (typeof appMode !== ‘undefined’) appMode = ‘vault’;
 sessionStorage.setItem(‘appMode’, ‘vault’);
 localStorage.setItem(‘kbrr_app_mode’, ‘vault’);
+localStorage.setItem('kbrr_club_mode', 'admin');
+if (typeof applyMode === 'function') applyMode('vault');
 if (typeof updateModePill === ‘function’) updateModePill(‘vault’);
 setTimeout(function() { homeRefreshTiles(); showHomeScreen(); }, 600);
 } catch(e) {
