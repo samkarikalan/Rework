@@ -1664,15 +1664,3 @@ body.app-light .tile-pairs { background: rgba(45,206,137,0.12); }
 }
 .ml-lang-opt:last-child { border-bottom: none; }
 .ml-lang-opt:active { background: var(--surface2); }
-
-/* ── Gear Panel Section Label ── */
-.gear-section-label {
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 12px 0 6px;
-  margin-top: 4px;
-  border-top: 1px solid var(--border2, rgba(255,255,255,0.08));
-}

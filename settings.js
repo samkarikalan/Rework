@@ -288,7 +288,6 @@ const admin = isAdminMode();
 try {
 const club = (typeof getMyClub === ‘function’) ? getMyClub() : { id: null };
 
-```
 let rows;
 if (club.id) {
   rows = await sbGet('memberships',
@@ -355,7 +354,6 @@ rows.forEach(function(p) {
 
   container.appendChild(row);
 });
-```
 
 } catch(e) {
 container.innerHTML = ‘<p class="player-mgmt-empty">’ + t(‘failedLoadConnection’) + ‘</p>’;
@@ -589,7 +587,6 @@ container.innerHTML = ’<p class="player-mgmt-empty"><span class="vm-spinner"><
 try {
 const clubPlayers = await dbGetPlayers(true);
 
-```
 // Fetch memberships to get user_account_id for each player
 const mems = await sbGet('memberships',
   'club_id=eq.' + club.id + '&select=nickname,user_account_id'
@@ -609,7 +606,6 @@ _vmAllPlayers = (clubPlayers || []).map(p => ({
 })).sort((a, b) => a.displayName.localeCompare(b.displayName));
 
 vaultModifyFilter();
-```
 
 } catch(e) {
 container.innerHTML = ‘<p class="player-mgmt-empty">’ + t(‘failedLoadPlayers’) + ‘</p>’;
@@ -696,7 +692,6 @@ try {
 const club = (typeof getMyClub === ‘function’) ? getMyClub() : null;
 const _vm  = _vmAllPlayers.find(x => x.id === playerId);
 
-```
 // 1. Update membership (nickname + club_rating)
 if (club?.id) {
   await sbPatch('memberships', `id=eq.${playerId}`, {
@@ -729,7 +724,6 @@ setTimeout(() => {
   document.getElementById('vmEditModal').classList.remove('open');
   vaultRenderModify();
 }, 600);
-```
 
 } catch(e) {
 setFb(’❌ ’ + e.message, false);
@@ -826,7 +820,6 @@ const clubs = await sbGet(‘clubs’, `id=eq.${select.value}&select=id,name,adm
 if (!clubs || !clubs.length) { setFb(t(‘clubNotFound’), false); return; }
 if (clubs[0].admin_password !== pw) { setFb(t(‘wrongAdminPassword’), false); return; }
 
-```
 const clubName = clubs[0].name || '';
 await dbDeleteClub(select.value);
 
@@ -837,7 +830,6 @@ select.value = '';
 if (pwInput) pwInput.value = '';
 await sbPopulateDeleteDropdown();
 setFb('✅ Club "' + clubName + '" deleted.', true);
-```
 
 } catch (e) { setFb(’❌ ’ + e.message, false); }
 }
@@ -856,7 +848,6 @@ container.innerHTML = `
 <div class="register-form">
 <div class="register-club-label">🏸 Registering for: <strong>${club.name}</strong></div>
 
-```
   <!-- Tabs -->
   <div class="vault-inner-tabs">
     <button id="vregTabIndividual" class="vault-inner-tab active" onclick="vaultRegisterShowTab('individual')">Individual</button>
@@ -916,7 +907,6 @@ container.innerHTML = `
     </button>
   </div>
 </div>`;
-```
 
 window._regDefaultGender = ‘Male’;
 if (typeof _regStagingList !== ‘undefined’) _regStagingList = [];
@@ -962,7 +952,6 @@ const existing = await sbGet(‘memberships’,
 ‘club_id=eq.’ + club.id + ‘&nickname=ilike.’ + encodeURIComponent(p.name) + ‘&select=id’);
 if (existing && existing.length) { _regStagingList[i].status = ‘duplicate’; failCount++; continue; }
 
-```
   // Create player row
   const created = await sbPost('players', {
     name:             p.name,
@@ -989,7 +978,6 @@ if (existing && existing.length) { _regStagingList[i].status = ‘duplicate’; 
   failCount++;
 }
 if (typeof regRenderStaging === 'function') regRenderStaging();
-```
 
 }
 
@@ -1023,7 +1011,6 @@ const existing = await sbGet(‘memberships’,
 ‘club_id=eq.’ + club.id + ‘&nickname=ilike.’ + encodeURIComponent(nickname) + ‘&select=id’);
 if (existing && existing.length) { setFb(t(‘nicknameExists’), false); return; }
 
-```
 // Create player row
 const created = await sbPost('players', {
   name:             nickname,
@@ -1051,7 +1038,6 @@ document.getElementById('vregRating').value = '1.0';
 // Invalidate player cache
 localStorage.removeItem('kbrr_cache_players');
 localStorage.removeItem('kbrr_cache_ts');
-```
 
 } catch(e) {
 setFb(’❌ ’ + e.message, false);
@@ -1208,7 +1194,6 @@ const genderImg = gender === “Female” ? “female.png” : “male.png”;
 const total    = wins + losses;
 const winPct   = total > 0 ? Math.round((wins / total) * 100) : 0;
 
-```
 const sessionRows = sessions.length
   ? sessions.map(s => `
       <tr>
@@ -1251,7 +1236,6 @@ content.innerHTML = `
     <tbody>${sessionRows}</tbody>
   </table>
 `;
-```
 
 } catch (e) {
 content.innerHTML = “<div class='stats-loading'>Failed to load stats.</div>”;

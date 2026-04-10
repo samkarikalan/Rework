@@ -88,7 +88,6 @@ try {
 let bestRating = null;
 let wins = 0, losses = 0;
 
-```
 // Auto-fetch from all memberships (works across multiple clubs, no live session needed)
 const user = (typeof authGetUser === 'function') ? authGetUser() : null;
 let bestClubName = null;
@@ -130,7 +129,6 @@ const baseLabel = bestClubName ? bestClubName + '  ·  ' + bestRating.toFixed(1)
 const label = wins || losses ? baseLabel + '  ·  W:' + wins + ' L:' + losses : baseLabel;
 if (tileRating)  tileRating.textContent  = label;
 if (tileRatingV) tileRatingV.textContent = label;
-```
 
 } catch(e) {
 const master = JSON.parse(localStorage.getItem(‘newImportHistory’) || ‘[]’);
@@ -281,12 +279,10 @@ try {
 // PIN/recovery stored in user_accounts via auth system — no DB patch needed here
 // Just update local cache
 
-```
 const p = _pickerAllPlayers.find(x => x.name === name);
 if (p) { p.pin = pin; p.recovery_word = recovery; }
 err.textContent = '';
 _completeProfileSelection(name);
-```
 
 } catch(e) {
 err.textContent = t(‘failedSave’);
@@ -501,7 +497,6 @@ if (sessEl) sessEl.innerHTML = ‘<div class="profile-sessions-loading">Loading�
 try {
 const club = (typeof getMyClub === ‘function’) ? getMyClub() : { id: null };
 
-```
 // Find player via membership — nickname lookup using logged-in user's nickname
 const myNickname = player.displayName || player.name || player.nickname || '';
 let globalRating = 1.0, globalPoints = 0, totalWins = 0, totalLosses = 0;
@@ -653,7 +648,6 @@ if (matchEl && playerDbId && club.id) {
     matchEl.innerHTML = '<div class="profile-sessions-empty">Could not load matches.</div>';
   }
 }
-```
 
 } catch(e) {
 console.error(‘renderMyCard error:’, e);
@@ -712,7 +706,6 @@ const liveLosses = liveMatches.filter(m => m.result === ‘L’).length;
 const rating     = (typeof getActiveRating === ‘function’) ? getActiveRating(playerName) : getRating(playerName);
 const tier       = ratingTierLabel(rating);
 
-```
 const block = document.createElement('div');
 block.className = 'session-block';
 block.innerHTML = `
@@ -731,7 +724,6 @@ block.innerHTML = `
     ${liveMatches.map(m => renderMatchRow(m, playerName)).join('<div class="match-divider"></div>')}
   </div>`;
 container.appendChild(block);
-```
 
 }
 
@@ -740,7 +732,6 @@ sessions.slice(0, 3).forEach((s, idx) => {
 const tier    = ratingTierLabel(s.rating || 1.0);
 const matches = s.matches || [];
 
-```
 const block = document.createElement('div');
 block.className = 'session-block past';
 block.innerHTML = `
@@ -763,7 +754,6 @@ block.innerHTML = `
     <div class="session-no-matches">Match details available from next session onwards</div>
   </div>`}`;
 container.appendChild(block);
-```
 
 });
 }
