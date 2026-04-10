@@ -265,6 +265,7 @@ var bestRating = null;
 var bestClubName = null;
 var wins = 0, losses = 0;
 
+```
     if (user) {
       // Use the ACTIVE club specifically, not the highest-rated one
       var activeClub = (typeof getMyClub === 'function') ? getMyClub() : null;
@@ -321,6 +322,7 @@ var wins = 0, losses = 0;
     if (tileRatingV) tileRatingV.textContent = t('loading') || 'Tap to view';
   }
 })();
+```
 
 }
 
@@ -391,6 +393,7 @@ if (!dot) continue;
 dot.classList.remove(‘s-active’, ‘s-done’, ‘s-locked’);
 var sn = dot.querySelector(’.sn’);
 
+```
 if (i < current && done[i]) {
   dot.classList.add('s-done');
   if (sn) sn.textContent = '✓';
@@ -405,6 +408,7 @@ if (i < current && done[i]) {
 // Line after this step
 var line = document.getElementById('stepLine' + i);
 if (line) line.classList.toggle('s-done', i < current && done[i]);
+```
 
 }
 
@@ -593,6 +597,7 @@ var pending = await sbGet(‘club_join_requests’,
 ‘user_account_id=eq.’ + user.id + ‘&status=eq.pending&select=club_id’).catch(function(){ return []; });
 var pendingIds = (pending || []).map(function(p){ return p.club_id; });
 
+```
   var allIds = [...new Set([
     ...(memberships||[]).map(function(m){ return m.club_id; }),
     ...pendingIds
@@ -649,6 +654,7 @@ var pendingIds = (pending || []).map(function(p){ return p.club_id; });
     return;
   }
 } catch(e) { /* offline — fall through */ }
+```
 
 }
 
@@ -695,6 +701,7 @@ try {
 var memberships = await sbGet(‘memberships’,
 ‘user_account_id=eq.’ + user.id + ‘&select=club_id,nickname’);
 
+```
 // Also check pending requests
 var pending = await sbGet('club_join_requests',
   'user_account_id=eq.' + user.id + '&status=eq.pending&select=club_id').catch(function(){ return []; });
@@ -746,6 +753,7 @@ pendingIds.forEach(function(cid) {
 });
 
 inner.innerHTML = html || '<div class="jc-empty">' + t('noClubsYet') + '</div>';
+```
 
 } catch(e) {
 inner.innerHTML = ‘<div class="jc-empty">’ + t(‘couldNotLoadClubs’) + ‘</div>’;
@@ -1031,6 +1039,7 @@ if (vtBadgePlaying) vtBadgePlaying.style.display = playingCount > 0 ? ‘’ : �
 var tileSubPlaying = document.getElementById(‘tileSubPlaying’);
 if (tileSubPlaying) tileSubPlaying.textContent = playingCount + ’ ’ + t(‘playersActive’);
 
+```
 // Total players (register + modify share same count)
 var members = await sbGet('memberships', 'club_id=eq.' + clubId + '&select=id').catch(() => []);
 var memberCount = (members || []).length;
@@ -1046,6 +1055,7 @@ var vtRequests = document.getElementById('vtStatRequests');
 if (vtRequests) vtRequests.textContent = reqCount;
 var vtBadgeReq = document.getElementById('vtBadgeRequests');
 if (vtBadgeReq) vtBadgeReq.style.display = reqCount > 0 ? '' : 'none';
+```
 
 } catch(e) { /* silent */ }
 }
