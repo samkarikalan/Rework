@@ -123,7 +123,7 @@ function toggleRound() {
     document.querySelectorAll(
       "button, .player-btn, .mode-card, .lock-icon, .swap-icon, .menu-btn"
     ).forEach(el => {
-      const keep = el.id === "nextBtn" || el.id === "endBtn" || el.id === "roundShufle" || el.classList.contains("win-cup");
+      const keep = el.id === "nextBtn" || el.id === "endBtn" || el.classList.contains("win-cup");
       if (!keep) {
         el.style.pointerEvents = "none";
         el.classList.add("disabled");
@@ -139,6 +139,7 @@ function toggleRound() {
 
     document.getElementById("roundsPage").classList.add("active-mode");
     _syncModeBanner();
+    _syncShuffleBtn(); // disable shuffle while round is active
 
   } else if (currentState === "active") {
     // ── RETURN TO IDLE MODE (advance round) ──
@@ -2443,7 +2444,7 @@ function _syncModeBanner() {
 function _syncShuffleBtn() {
   const btn = document.getElementById('roundShufle');
   if (!btn) return;
-  // Shuffle allowed in idle regardless of lock state; disabled only during active round
+  // Shuffle allowed in idle regardless of lock state; disabled during active round
   const allow = currentState !== "active";
   btn.disabled = !allow;
   btn.classList.toggle('disabled-btn', !allow);
