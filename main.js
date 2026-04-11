@@ -117,6 +117,16 @@ function switchMode(mode) {
     return;
   }
 
+  // Organiser -- must be authenticated to the club (user or admin password entered)
+  if (mode === 'organiser') {
+    var clubMode = (typeof getClubMode === 'function') ? getClubMode() : null;
+    if (!clubMode) {
+      // Has a club stored but never logged in with password -- prompt login
+      _showClubSetupSheet(mode);
+      return;
+    }
+  }
+
   // Vault -- also needs admin auth
   if (mode === 'vault') {
     requestVaultMode();
