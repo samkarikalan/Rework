@@ -57,8 +57,6 @@
   <script src="report.js" defer></script>
 
   <link rel="stylesheet" href="ui.css">
-  <link rel="stylesheet" href="BRRStyle2.css">
-  <link rel="stylesheet" href="BRRStyle3.css">
   <link rel="stylesheet" href="rounds.css">
 </head>
 <body>
@@ -557,9 +555,10 @@
   <!-- ============================= -->
 
   <div id="joinClubPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="myClubs">🏢 My Clubs</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="myClubs">🏢 My Clubs</span>
+      <div class="sheet-header-spacer"></div>
     </div>
 
 <div style="padding:14px;">
@@ -626,9 +625,10 @@
   <!-- ============================= -->
 
   <div id="settingsPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="settings">⚙️ Settings</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="settings">⚙️ Settings</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="pref-wrap">
 
@@ -784,9 +784,10 @@
   <!-- ================================ -->
 
   <div id="vaultPlayingPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="playingNow">🔴 Playing Now</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="playingNow">🔴 Playing Now</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
       <div class="vault-sync-row">
@@ -804,9 +805,10 @@
   <!-- ================================ -->
 
   <div id="vaultRegisterPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="registerPlayers">📋 Register Players</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="registerPlayers">📋 Register Players</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
       <div id="vaultRegisterContainer"></div>
@@ -820,9 +822,10 @@
   <!-- ================================ -->
 
   <div id="vaultModifyPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="modifyPlayers">✏️ Modify Players</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="modifyPlayers">✏️ Modify Players</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
       <!-- Filter row -->
@@ -909,9 +912,10 @@
   <!-- ================================ -->
 
   <div id="vaultRequestsPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="joinRequests">🔔 Join Requests</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="joinRequests">🔔 Join Requests</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
       <div class="vault-sync-row">
@@ -931,9 +935,10 @@
   <!-- ================================ -->
 
   <div id="vaultClubMgmtPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="clubManagement">🏢 Club Management</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="clubManagement">🏢 Club Management</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
 
@@ -1037,9 +1042,10 @@
   <!-- ── ORGANISER CLUB MANAGEMENT PAGE ── -->
 
   <div id="orgClubMgmtPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title" data-i18n="roundOrganiser">🏆 Club — Round Organiser</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="roundOrganiser">🏆 Club — Round Organiser</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
 
@@ -1081,9 +1087,10 @@
   <!-- vaultPage kept as minimal stub for organiser mode -->
 
   <div id="vaultPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" data-i18n="backHome" onclick="showHomeScreen()">&#8249; Home</button>
-      <span class="page-back-title">&#9889; Vault</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title">&#9889; Vault</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
       <div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:0.9rem;">
@@ -1093,7 +1100,11 @@
   </div><!-- vaultPage -->
 
  <div id="playersPage" class="page">
-  <div class="page-back-bar"><button class="page-back-btn" id="playersBackBtn" onclick="navBack()" data-i18n="backHome">‹ Home</button><span class="page-back-title" data-i18n="players">👥 Players</span></div>
+  <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="players">👥 Players</span>
+      <div class="sheet-header-spacer"></div>
+    </div>
 
   <div class="card browse-card" onclick="newImportShowModal()">
     <div class="browse-left">
@@ -1112,7 +1123,11 @@
 <!-- FIXED PAIRS PAGE -->
 
 <div id="fixedPairsPage" class="page" style="display:none;">
-  <div class="page-back-bar"><button class="page-back-btn" id="fixedPairsBackBtn" onclick="navBack()" data-i18n="backHome">‹ Home</button><span class="page-back-title" data-i18n="fixedPairs">🤝 Fixed Pairs</span></div>
+  <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="fixedPairs">🤝 Fixed Pairs</span>
+      <div class="sheet-header-spacer"></div>
+    </div>
 
   <div class="card" id="fixedPairsCard">
     <span class="browse-title" data-i18n="fixedPairs"></span>
@@ -1237,7 +1252,11 @@
   <!-- ============================= -->
 
   <div id="summaryPage" class="page" style="display:none;">
-  <div class="page-back-bar"><button class="page-back-btn" id="summaryBackBtn" onclick="navBack()" data-i18n="backHome">‹ Home</button><span class="page-back-title" data-i18n="summary">📊 Summary</span></div>
+  <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="summary">📊 Summary</span>
+      <div class="sheet-header-spacer"></div>
+    </div>
     <div class="exp_btn" onclick="exportBRR2HTML()" data-i18n="exporthtml">📄</div>
     <div id="reportContainer"></div>
     <div id="export"></div>
@@ -1250,9 +1269,10 @@
   <!-- ============================= -->
 
   <div id="dashboardPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" data-i18n="backHome" onclick="showHomeScreen()">&#8249; Home</button>
-      <span class="page-back-title" data-i18n="dashboard">📡 Dashboard</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="dashboard">📡 Dashboard</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div id="dashboardContainer" class="dashboard-container">
       <div class="dashboard-loading"><div class="help-spinner"></div></div>
@@ -1262,9 +1282,10 @@
   <!-- VIEWER PAGE — session detail -->
 
   <div id="viewerPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" data-i18n="backHome" onclick="showHomeScreen()">&#8249; Home</button>
-      <button class="page-back-btn" onclick="viewerGoBack()">📡 Dashboard</button>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="liveSession">📡 Live Session</span>
+      <button class="sheet-close-btn" onclick="viewerGoBack()" style="background:var(--accent-dim);color:var(--accent);">📊</button>
     </div>
     <div id="viewerResults"></div>
   </div>
@@ -1276,9 +1297,10 @@
   <!-- ============================= -->
 
   <div id="myCardPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" data-i18n="backHome" onclick="showHomeScreen()">&#8249; Home</button>
-      <span class="page-back-title" data-i18n="myCard">My Card</span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="myCard">My Card</span>
+      <div class="sheet-header-spacer"></div>
     </div>
 
 <!-- Not logged in state -->
@@ -1395,7 +1417,11 @@
   <!-- ============================= -->
 
   <div id="helpPage" class="page" style="display:none;">
-  <div class="page-back-bar"><button class="page-back-btn" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button><span class="page-back-title" data-i18n="help">❓ Help</span></div>
+  <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title" data-i18n="help">❓ Help</span>
+      <div class="sheet-header-spacer"></div>
+    </div>
 
 <!-- Search bar -->
 <div class="help-search-wrap">
@@ -1679,9 +1705,10 @@
   <!-- ══════════════════════════════════════════════════ -->
 
   <div id="vaultReportPage" class="page" style="display:none;">
-    <div class="page-back-bar">
-      <button class="page-back-btn" onclick="navBack()" data-i18n="backHome">‹ Home</button>
-      <span class="page-back-title">📊 <span data-i18n="report">Report</span></span>
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <span class="sheet-title">📊 <span data-i18n="report">Report</span>
+      <div class="sheet-header-spacer"></div>
     </div>
     <div style="padding:16px;">
 
