@@ -1164,6 +1164,8 @@
 <!-- Single tight top bar -->
 <div class="rounds-top-bar">
   <button class="rtb-back" onclick="showHomeScreen()" data-i18n="backHome">‹ Home</button>
+  <button class="rtb-settings" onclick="toggleRoundSettings()" aria-label="Settings">⚙️</button>
+  <button class="rtb-settings" onclick="showRoundHistory()" aria-label="Past Rounds">🕓</button>
   <div class="rtb-spacer"></div>
   <div class="rtb-live" id="sessionLiveBar" style="display:none;">
     <div class="rtb-dot"></div>
@@ -1188,7 +1190,6 @@
     <span id="btnText">Start</span>
     <span class="icon"> ▶</span>
   </button>
-  <button class="action mid small" onclick="toggleRoundSettings()" aria-label="Settings">⚙️</button>
 </div>
 
 <!-- Round Settings Panel -->
@@ -1237,12 +1238,27 @@
       </div>
     </div>
 
-    <!-- Round History -->
-    <div id="roundHistoryContainer" style="margin-top:14px;"></div>
 
   </div>
 </div>
 
+  </div>
+
+  <!-- ============================= -->
+
+  <!--      ROUND HISTORY PAGE       -->
+
+  <!-- ============================= -->
+
+  <div id="roundHistoryPage" class="page" style="display:none;">
+    <div class="sheet-header">
+      <button class="sheet-close-btn" onclick="closeRoundHistory()">✕</button>
+      <span class="sheet-title" data-i18n="roundHistory">🕓 Past Rounds</span>
+      <div class="sheet-header-spacer"></div>
+    </div>
+    <div style="padding:12px;">
+      <div id="roundHistoryContainer"></div>
+    </div>
   </div>
 
   <!-- ============================= -->

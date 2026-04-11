@@ -2512,12 +2512,21 @@ function checkAllWinnersMarked() {
 function toggleRoundSettings() {
   const body = document.getElementById('roundSettingsBody');
   const isOpen = body.classList.toggle('open');
-  const gearBtn = document.querySelector('.action-card .action.mid.small:last-child');
-  if (gearBtn) gearBtn.classList.toggle('settings-active', isOpen);
-  if (isOpen) {
-    renderRoundHistory();
-    updateGearPairsSub();
-  }
+  if (isOpen) updateGearPairsSub();
+}
+
+function showRoundHistory() {
+  renderRoundHistory();
+  document.getElementById('roundHistoryPage').style.display = 'block';
+  document.querySelectorAll('.page').forEach(p => {
+    if (p.id !== 'roundHistoryPage') p.style.display = 'none';
+  });
+  document.getElementById('roundHistoryPage').style.display = 'block';
+}
+
+function closeRoundHistory() {
+  document.getElementById('roundHistoryPage').style.display = 'none';
+  document.getElementById('roundsPage').style.display = 'block';
 }
 
 /* ── Update Fixed Pairs subtitle in gear panel ── */
