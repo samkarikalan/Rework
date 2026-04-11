@@ -2517,6 +2517,7 @@ function toggleRoundSettings() {
 }
 
 function closeRoundSettings(e) {
+  // Called directly from × button (no event) or from overlay backdrop click
   if (e && e.target !== document.getElementById('roundSettingsOverlay')) return;
   const overlay = document.getElementById('roundSettingsOverlay');
   if (overlay) overlay.style.display = 'none';
@@ -2529,6 +2530,7 @@ function showRoundHistory() {
 }
 
 function closeRoundHistory(e) {
+  // Called directly from × button (no event) or from overlay backdrop click
   if (e && e.target !== document.getElementById('roundHistoryOverlay')) return;
   const overlay = document.getElementById('roundHistoryOverlay');
   if (overlay) overlay.style.display = 'none';

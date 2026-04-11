@@ -543,9 +543,11 @@ if (btn) btn.textContent = label;
 /* ── Back navigation -- goes to correct origin ── */
 function navBack() {
 if (_navSource === 'rounds') {
-showPage('roundsPage', null);
+  showPage('roundsPage', null);
+} else if (_navSource === 'settings') {
+  showPage('settingsPage', null);
 } else {
-showHomeScreen();
+  showHomeScreen();
 }
 }
 

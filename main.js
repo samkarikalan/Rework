@@ -547,6 +547,8 @@ function showPage(pageID, el) {
     updateModePill(localStorage.getItem('kbrr_app_mode') || 'organiser');
     loadHomeStyle();
     if (typeof appearSyncFromSaved === 'function') appearSyncFromSaved();
+    // Track that settings is the source for sub-pages
+    if (typeof _navSource !== 'undefined') _navSource = 'settings';
   }
 
   if (pageID === "helpPage") {

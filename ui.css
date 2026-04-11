@@ -7369,3 +7369,32 @@ body.app-light .bottom-sheet-overlay {
   background: rgba(0,0,0,0.3);
 }
 
+.bottom-sheet-title-bar {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.bottom-sheet-title-bar .bottom-sheet-title {
+  flex: 1;
+  padding: 0;
+  border: none;
+  text-align: left;
+}
+.bottom-sheet-x {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.bottom-sheet-x:active { background: var(--surface3); color: var(--text); }
+

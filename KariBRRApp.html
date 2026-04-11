@@ -1101,7 +1101,7 @@
 
  <div id="playersPage" class="page">
   <div class="sheet-header">
-      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <button class="sheet-close-btn" id="playersBackBtn" onclick="navBack()">✕</button>
       <span class="sheet-title" data-i18n="players">👥 Players</span>
       <div class="sheet-header-spacer"></div>
     </div>
@@ -1124,7 +1124,7 @@
 
 <div id="fixedPairsPage" class="page" style="display:none;">
   <div class="sheet-header">
-      <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
+      <button class="sheet-close-btn" id="fixedPairsBackBtn" onclick="navBack()">✕</button>
       <span class="sheet-title" data-i18n="fixedPairs">🤝 Fixed Pairs</span>
       <div class="sheet-header-spacer"></div>
     </div>
@@ -1196,7 +1196,10 @@
 <div class="bottom-sheet-overlay" id="roundSettingsOverlay" onclick="closeRoundSettings(event)">
   <div class="bottom-sheet-panel" id="roundSettingsPanel">
     <div class="bottom-sheet-handle"></div>
-    <div class="bottom-sheet-title" data-i18n="settings">⚙️ Round Settings</div>
+    <div class="bottom-sheet-title-bar">
+      <div class="bottom-sheet-title" data-i18n="settings">⚙️ Round Settings</div>
+      <button class="bottom-sheet-x" onclick="closeRoundSettings()">✕</button>
+    </div>
   <div id="roundSettingsBody">
 
     <!-- Courts Row -->
@@ -1255,7 +1258,10 @@
 <div class="bottom-sheet-overlay" id="roundHistoryOverlay" onclick="closeRoundHistory(event)" style="display:none;">
   <div class="bottom-sheet-panel">
     <div class="bottom-sheet-handle"></div>
-    <div class="bottom-sheet-title">🕓 Past Rounds</div>
+    <div class="bottom-sheet-title-bar">
+      <div class="bottom-sheet-title">🕓 Past Rounds</div>
+      <button class="bottom-sheet-x" onclick="closeRoundHistory()">✕</button>
+    </div>
     <div class="bottom-sheet-content" id="roundHistoryContainer"></div>
   </div>
 </div>
