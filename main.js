@@ -232,6 +232,10 @@ function isPageVisible(pageId) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Restore theme and font size from saved prefs FIRST
+  if (typeof initTheme    === 'function') initTheme();
+  if (typeof initFontSize === 'function') initFontSize();
+
   // Show mode select overlay first
   initModeOnLoad();
 
