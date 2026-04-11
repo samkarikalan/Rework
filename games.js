@@ -184,23 +184,18 @@ function toggleRound() {
 
   // Update button label
   if (currentState === "idle") {
-    // Show t("startGame") if no rounds played yet, else "Next Round"
     const isFirst = allRounds.length <= 1;
-    if (isFirst) {
-      btn.classList.add("start-state");
-      textEl.removeAttribute("data-i18n");
-      textEl.textContent = t("startGame");
-    } else {
-      btn.classList.remove("start-state");
-      textEl.dataset.i18n = "nround";
-    }
-    icon.textContent = " ▶";
+    btn.classList.add("start-state");
     btn.classList.remove("end", "round-active");
+    textEl.removeAttribute("data-i18n");
+    textEl.textContent = isFirst ? (t("startGame") || "Play") : (t("nextRound") || "Next");
+    icon.textContent = " ▶";
   } else if (currentState === "active") {
     btn.classList.remove("start-state", "end");
-    textEl.dataset.i18n = "endrounds";
-    icon.textContent = " ▶";
     btn.classList.add("round-active");
+    textEl.removeAttribute("data-i18n");
+    textEl.textContent = t("nextRound") || "Next";
+    icon.textContent = " ▶";
   }
   setLanguage(currentLang);
 }
@@ -2510,23 +2505,33 @@ function checkAllWinnersMarked() {
 
 // toggleRoundSettings -- unified version
 function toggleRoundSettings() {
-  const body = document.getElementById('roundSettingsBody');
-  const isOpen = body.classList.toggle('open');
-  if (isOpen) updateGearPairsSub();
+  const overlay = document.getElementById('roundSettingsOverlay');
+  if (!overlay) return;
+  const isOpen = overlay.style.display === 'flex';
+  if (isOpen) {
+    closeRoundSettings();
+  } else {
+    overlay.style.display = 'flex';
+    updateGearPairsSub();
+  }
+}
+
+function closeRoundSettings(e) {
+  if (e && e.target !== document.getElementById('roundSettingsOverlay')) return;
+  const overlay = document.getElementById('roundSettingsOverlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 function showRoundHistory() {
   renderRoundHistory();
-  document.getElementById('roundHistoryPage').style.display = 'block';
-  document.querySelectorAll('.page').forEach(p => {
-    if (p.id !== 'roundHistoryPage') p.style.display = 'none';
-  });
-  document.getElementById('roundHistoryPage').style.display = 'block';
+  const overlay = document.getElementById('roundHistoryOverlay');
+  if (overlay) overlay.style.display = 'flex';
 }
 
-function closeRoundHistory() {
-  document.getElementById('roundHistoryPage').style.display = 'none';
-  document.getElementById('roundsPage').style.display = 'block';
+function closeRoundHistory(e) {
+  if (e && e.target !== document.getElementById('roundHistoryOverlay')) return;
+  const overlay = document.getElementById('roundHistoryOverlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 /* ── Update Fixed Pairs subtitle in gear panel ── */

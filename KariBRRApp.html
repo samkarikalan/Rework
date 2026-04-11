@@ -1192,12 +1192,12 @@
   </button>
 </div>
 
-<!-- Round Settings Panel -->
-<div class="round-settings-panel">
-
-
-  <!-- Single roundSettingsBody — contains all settings + player slot -->
-  <div class="round-settings-body" id="roundSettingsBody">
+<!-- Round Settings Sheet (bottom overlay) -->
+<div class="bottom-sheet-overlay" id="roundSettingsOverlay" onclick="closeRoundSettings(event)">
+  <div class="bottom-sheet-panel" id="roundSettingsPanel">
+    <div class="bottom-sheet-handle"></div>
+    <div class="bottom-sheet-title" data-i18n="settings">⚙️ Round Settings</div>
+  <div id="roundSettingsBody">
 
     <!-- Courts Row -->
     <div class="setting-row">
@@ -1240,6 +1240,7 @@
 
 
   </div>
+  </div>
 </div>
 
   </div>
@@ -1250,16 +1251,14 @@
 
   <!-- ============================= -->
 
-  <div id="roundHistoryPage" class="page" style="display:none;">
-    <div class="sheet-header">
-      <button class="sheet-close-btn" onclick="closeRoundHistory()">✕</button>
-      <span class="sheet-title" data-i18n="roundHistory">🕓 Past Rounds</span>
-      <div class="sheet-header-spacer"></div>
-    </div>
-    <div style="padding:12px;">
-      <div id="roundHistoryContainer"></div>
-    </div>
+  <!-- Round History Sheet (bottom overlay) -->
+<div class="bottom-sheet-overlay" id="roundHistoryOverlay" onclick="closeRoundHistory(event)" style="display:none;">
+  <div class="bottom-sheet-panel">
+    <div class="bottom-sheet-handle"></div>
+    <div class="bottom-sheet-title">🕓 Past Rounds</div>
+    <div class="bottom-sheet-content" id="roundHistoryContainer"></div>
   </div>
+</div>
 
   <!-- ============================= -->
 
