@@ -2443,8 +2443,8 @@ function _syncModeBanner() {
 function _syncShuffleBtn() {
   const btn = document.getElementById('roundShufle');
   if (!btn) return;
-  // Shuffle only when unlocked AND not in active round
-  const allow = !interactionLocked && currentState !== "active";
+  // Shuffle allowed in idle regardless of lock state; disabled only during active round
+  const allow = currentState !== "active";
   btn.disabled = !allow;
   btn.classList.toggle('disabled-btn', !allow);
 }
