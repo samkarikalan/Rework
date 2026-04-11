@@ -458,7 +458,7 @@ if (!rows || !rows.length) {
 container.innerHTML = '';
 
 // Release All button -- admin and organiser (user)
-if (admin || getClubMode() === 'user') {
+if (admin || getClubMode() === 'user' || (typeof appMode !== 'undefined' && appMode === 'organiser')) {
   const bar = document.createElement('div');
   bar.style.cssText = 'padding:8px 0 12px;';
   const releaseAllBtn = document.createElement('button');
@@ -494,7 +494,7 @@ rows.forEach(function(p) {
   row.appendChild(nameSpan);
   row.appendChild(timeSpan);
 
-  if (admin || getClubMode() === 'user') {
+  if (admin || getClubMode() === 'user' || (typeof appMode !== 'undefined' && appMode === 'organiser')) {
     const btn = document.createElement('button');
     btn.className = 'player-mgmt-del-btn';
     btn.style.cssText = 'background:#e63757;color:#fff;border:none;border-radius:20px;padding:4px 10px;font-size:0.8rem';

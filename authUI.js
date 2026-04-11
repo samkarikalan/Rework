@@ -179,7 +179,16 @@ async function authAfterLogin(user) {
         if (typeof setMyClub === 'function') setMyClub(m.club_id, m.club_name);
         if (typeof setMyPlayer === 'function') setMyPlayer({ name: m.nickname, gender: 'Male' });
         authHideOverlay();
-        if (typeof selectMode === 'function') selectMode(sessionStorage.getItem('appMode') || 'viewer');
+        if (typeof selectMode === 'function') (function() {
+  var saved = sessionStorage.getItem('appMode') || localStorage.getItem('kbrr_app_mode');
+  if (saved) {
+    selectMode(saved);
+  } else {
+    // First login — show mode select screen
+    var overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) { overlay.style.display = 'flex'; if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay(); }
+  }
+})();
         return;
       } else {
         authShowClubPicker(linkedMemberships, user);
@@ -192,7 +201,16 @@ async function authAfterLogin(user) {
   var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
   if (club && club.id) {
     authHideOverlay();
-    if (typeof selectMode === 'function') selectMode(sessionStorage.getItem('appMode') || 'viewer');
+    if (typeof selectMode === 'function') (function() {
+  var saved = sessionStorage.getItem('appMode') || localStorage.getItem('kbrr_app_mode');
+  if (saved) {
+    selectMode(saved);
+  } else {
+    // First login — show mode select screen
+    var overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) { overlay.style.display = 'flex'; if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay(); }
+  }
+})();
     return;
   }
 
@@ -236,7 +254,16 @@ async function authPickClub(clubId, clubName, nickname) {
   if (typeof setMyClub   === 'function') setMyClub(clubId, clubName);
   if (typeof setMyPlayer === 'function') setMyPlayer({ name: nickname, gender: 'Male' });
   authHideOverlay();
-  if (typeof selectMode === 'function') selectMode(sessionStorage.getItem('appMode') || 'viewer');
+  if (typeof selectMode === 'function') (function() {
+  var saved = sessionStorage.getItem('appMode') || localStorage.getItem('kbrr_app_mode');
+  if (saved) {
+    selectMode(saved);
+  } else {
+    // First login — show mode select screen
+    var overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) { overlay.style.display = 'flex'; if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay(); }
+  }
+})();
 }
 
 /* ── Do Forgot Password -- recovery keyword ── */
@@ -284,13 +311,31 @@ async function authDoJoinClub() {
   // Success -- go to app
   authHideOverlay();
   if (typeof updateProfileBtn === 'function') updateProfileBtn();
-  selectMode(sessionStorage.getItem('appMode') || 'viewer');
+  (function() {
+  var saved = sessionStorage.getItem('appMode') || localStorage.getItem('kbrr_app_mode');
+  if (saved) {
+    selectMode(saved);
+  } else {
+    // First login — show mode select screen
+    var overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) { overlay.style.display = 'flex'; if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay(); }
+  }
+})();
 }
 
 /* ── Skip join club ── */
 function authSkipJoin() {
   authHideOverlay();
-  selectMode(sessionStorage.getItem('appMode') || 'viewer');
+  (function() {
+  var saved = sessionStorage.getItem('appMode') || localStorage.getItem('kbrr_app_mode');
+  if (saved) {
+    selectMode(saved);
+  } else {
+    // First login — show mode select screen
+    var overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) { overlay.style.display = 'flex'; if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay(); }
+  }
+})();
 }
 
 /* ── Logout ── */
@@ -362,7 +407,16 @@ async function authDoRequestJoin(clubId, clubName) {
   if (result.alreadyMember) {
     // Already member -- go straight to app
     authHideOverlay();
-    selectMode(sessionStorage.getItem('appMode') || 'viewer');
+    (function() {
+  var saved = sessionStorage.getItem('appMode') || localStorage.getItem('kbrr_app_mode');
+  if (saved) {
+    selectMode(saved);
+  } else {
+    // First login — show mode select screen
+    var overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) { overlay.style.display = 'flex'; if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay(); }
+  }
+})();
     return;
   }
 
