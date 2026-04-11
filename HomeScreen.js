@@ -525,19 +525,9 @@ showPage('fixedPairsPage', null);
 _updateDynamicBackBtns('fixedPairsPage');
 }
 
-/* ── Update dynamic back button labels ── */
+/* ── Update dynamic back button labels ── keep ✕ always */
 function _updateDynamicBackBtns(pageId) {
-var label = _navSource === 'rounds' ? '‹ Rounds' : '‹ Home';
-var ids = {
-playersPage:    'playersBackBtn',
-summaryPage:    'summaryBackBtn',
-fixedPairsPage: 'fixedPairsBackBtn'
-};
-var btnId = ids[pageId];
-if (btnId) {
-var btn = document.getElementById(btnId);
-if (btn) btn.textContent = label;
-}
+  // No-op: buttons always show ✕, navBack() handles routing
 }
 
 /* ── Back navigation -- goes to correct origin ── */
