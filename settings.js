@@ -45,6 +45,28 @@ const picker = document.getElementById('settingsLangPicker');
 if (picker) picker.style.display = picker.style.display === 'none' ? '' : 'none';
 }
 
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem("appLanguage", lang);
+
+  document.querySelectorAll("[id^='lang_']").forEach(btn => {
+    btn.classList.remove("active");
+  });
+  document.getElementById("lang_" + lang)?.classList.add("active");
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = translations[lang][key] || key;
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    el.placeholder = translations[lang][key] || "";
+  });
+  
+   loadHelp(currentHelpSection);
+}
+
 function settingsSelectLang(lang, flag, name) {
 const val = document.getElementById('settingsLangValue');
 if (val) val.textContent = flag + ' ' + name;
