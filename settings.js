@@ -151,7 +151,15 @@ function appearSyncFromSaved() {
 
   // Reset pending state
   _appearPending = { theme: null, font: null, tile: null };
-  _appearUpdatePreview();
+
+  // Sync preview box to current saved state
+  const box = document.getElementById('stylePreviewBox');
+  if (box) {
+    box.setAttribute('data-style', tile);
+    box.setAttribute('data-theme', theme);
+    box.setAttribute('data-font',  font);
+  }
+  _appearUpdateApplyBtn();
 }
 
 function appearSelect(type, value, btn) {
@@ -165,51 +173,37 @@ function appearSelect(type, value, btn) {
   // Store pending — do NOT apply to app yet
   _appearPending[type] = value;
 
-  // Update only the preview box
-  _appearUpdatePreview();
+  // Update ONLY the preview box via data attributes — nothing touches the live app
+  const box = document.getElementById('stylePreviewBox');
+  if (box) {
+    if (type === 'tile')  box.setAttribute('data-style', value);
+    if (type === 'theme') box.setAttribute('data-theme', value);
+    if (type === 'font')  box.setAttribute('data-font',  value);
+  }
+
+  _appearUpdateApplyBtn();
 }
 
-function _appearUpdatePreview() {
+function _appearUpdateApplyBtn() {
   const btn   = document.getElementById('appearApplyBtn');
   const bar   = document.getElementById('appearPreviewBar');
   const label = document.getElementById('appearPreviewLabel');
-  const previewBox = document.getElementById('stylePreviewBox');
-
   const hasPending = Object.values(_appearPending).some(v => v !== null);
-
   if (hasPending) {
     btn?.classList.add('appear-apply-ready');
     if (bar) bar.style.display = '';
-
-    // Build label
     const parts = [];
     if (_appearPending.theme) parts.push(_appearPending.theme === 'light' ? '☀️ Light' : '🌙 Dark');
     if (_appearPending.font)  parts.push(_appearPending.font.charAt(0).toUpperCase() + _appearPending.font.slice(1) + ' font');
     if (_appearPending.tile)  parts.push(_appearPending.tile.charAt(0).toUpperCase() + _appearPending.tile.slice(1) + ' tiles');
-    if (label) label.textContent = parts.join(' · ') + ' — tap Apply to save';
-
-    // Update tile preview box styles only (not whole app)
-    if (previewBox && _appearPending.tile) {
-      previewBox.setAttribute('data-preview-style', _appearPending.tile);
-    }
-
-    // Theme preview: tint the preview box
-    if (previewBox && _appearPending.theme) {
-      previewBox.setAttribute('data-preview-theme', _appearPending.theme);
-    }
-
-    // Font preview: show size label inside preview
-    const fontPreviewEl = document.getElementById('appearFontPreview');
-    if (fontPreviewEl && _appearPending.font) {
-      const sizes = { small: '21px', medium: '24px', large: '27px' };
-      fontPreviewEl.style.fontSize = sizes[_appearPending.font];
-      fontPreviewEl.style.display = '';
-    }
+    if (label) label.textContent = parts.join(' · ') + ' — tap Apply';
   } else {
     btn?.classList.remove('appear-apply-ready');
     if (bar) bar.style.display = 'none';
   }
 }
+
+
 
 function appearApply() {
   const btn = document.getElementById('appearApplyBtn');
