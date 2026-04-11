@@ -119,11 +119,12 @@ function toggleRound() {
 
     currentState = "active";
 
-    // Disable everything except nextBtn and win-cup
+    // Disable everything except nextBtn, endBtn, roundShufle and win-cup
     document.querySelectorAll(
       "button, .player-btn, .mode-card, .lock-icon, .swap-icon, .menu-btn"
     ).forEach(el => {
-      if (el.id !== "nextBtn" && !el.classList.contains("win-cup")) {
+      const keep = el.id === "nextBtn" || el.id === "endBtn" || el.id === "roundShufle" || el.classList.contains("win-cup");
+      if (!keep) {
         el.style.pointerEvents = "none";
         el.classList.add("disabled");
       }

@@ -64,7 +64,7 @@ function setLanguage(lang) {
     el.placeholder = translations[lang][key] || "";
   });
   
-   loadHelp(currentHelpSection);
+  if (typeof loadHelp === "function" && typeof currentHelpSection !== "undefined") loadHelp(currentHelpSection);
 }
 
 function settingsSelectLang(lang, flag, name) {
@@ -1411,12 +1411,12 @@ if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : '
 }
 
 function mlSelectLang(code, flag, name) {
-// Apply language
-settingsSelectLang(code, flag, name);
-// Update display and close picker
-mlSyncLangDisplay();
+// Close picker FIRST before anything else
 var p = document.getElementById('mlLangPicker');
 if (p) p.style.display = 'none';
+// Apply language and update display
+settingsSelectLang(code, flag, name);
+mlSyncLangDisplay();
 }
 
 function mlSyncLangDisplay() {
