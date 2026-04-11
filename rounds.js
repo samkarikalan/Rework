@@ -616,18 +616,22 @@ function rebuildRestQueue(restQueue) {
   
 
 function RefreshRound() {
+    // Save current position - shuffle must NOT change round number or advance index
     const savedRoundIndex = schedulerState.roundIndex;
-    schedulerState.roundIndex = allRounds.length - 1;
-    currentRoundIndex = schedulerState.roundIndex;
+    const savedCurrentIndex = currentRoundIndex;
 
-    // Use RandomRound directly -- it uses pairPlayedSet + lastRound
-    // to actively avoid repeating pairs, giving genuine variety on reshuffle
+    // Generate a new arrangement for the CURRENT round only
     const newRound = RandomRound(schedulerState);
-    newRound.round = savedRoundIndex + 1; // keep round number stable
 
-    // Restore roundIndex -- shuffle should not advance the round counter
+    // Keep the round number exactly the same as before
+    newRound.round = savedRoundIndex;
+
+    // Restore everything - no advancement
     schedulerState.roundIndex = savedRoundIndex;
-    allRounds[allRounds.length - 1] = newRound;
+    currentRoundIndex = savedCurrentIndex;
+
+    // Replace current round in-place
+    allRounds[currentRoundIndex] = newRound;
     showRound(currentRoundIndex);
 }
 

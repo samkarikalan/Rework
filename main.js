@@ -1247,6 +1247,25 @@ async function _doEndSession(shuttleData) {
   // Stop heartbeat
   if (typeof stopSessionHeartbeat === 'function') stopSessionHeartbeat();
 
+  // Reset round state machine
+  if (typeof currentState !== 'undefined') currentState = 'idle';
+  if (typeof roundActive  !== 'undefined') roundActive  = false;
+  if (typeof sessionFinished !== 'undefined') sessionFinished = false;
+
+  // Reset Next/Play button appearance
+  const nextBtn  = document.getElementById('nextBtn');
+  const btnText  = document.getElementById('btnText');
+  const btnIcon  = nextBtn ? nextBtn.querySelector('.icon') : null;
+  if (nextBtn)  { nextBtn.classList.add('start-state'); nextBtn.classList.remove('round-active','end'); }
+  if (btnText)  { btnText.textContent = t('startGame') || 'Play'; }
+  if (btnIcon)  { btnIcon.textContent = ' ▶'; }
+
+  // Re-enable all disabled buttons
+  document.querySelectorAll('.disabled').forEach(el => {
+    el.style.pointerEvents = '';
+    el.classList.remove('disabled');
+  });
+
   // Hide live bar
   updateSessionLiveBar();
 
@@ -1254,9 +1273,9 @@ async function _doEndSession(shuttleData) {
   toast.textContent = t('sessionEnded');
   setTimeout(() => toast.remove(), 1500);
 
-  // Stay on dashboard and refresh it
-  if (typeof showPage === 'function') {
-    showPage('dashboardPage', document.getElementById('tabBtnDashboard'));
+  // Go to home screen
+  if (typeof showHomeScreen === 'function') {
+    showHomeScreen();
   }
 }
 

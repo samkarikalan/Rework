@@ -104,7 +104,7 @@
         <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage','tabBtnSettings')">⚙️ <span data-i18n="settings">Settings</span></button>
         <div class="ml-lang-row" id="mlLangRow">
           <span class="ml-lang-current" id="mlLangCurrent" onclick="mlToggleLang()">🇺🇸 English ▾</span>
-          <div class="ml-lang-picker" id="mlLangPicker" style="display:none;">
+          <div class="ml-lang-picker" id="mlLangPicker" style="display:none;" onclick="event.stopPropagation()">
             <div class="ml-lang-opt" onclick="mlSelectLang('en','🇺🇸','English')">🇺🇸 English</div>
             <div class="ml-lang-opt" onclick="mlSelectLang('jp','🇯🇵','日本語')">🇯🇵 日本語</div>
             <div class="ml-lang-opt" onclick="mlSelectLang('kr','🇰🇷','한국어')">🇰🇷 한국어</div>
