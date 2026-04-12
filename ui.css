@@ -1947,14 +1947,22 @@ body.app-light .vcl-row-name { color: #1a1a2e; }
 /* ═══════════════════════════════════════════
    FULL APP COVERAGE -- GLOW STYLE
 ═══════════════════════════════════════════ */
-body.tile-style-glow .home-tile,
-body.tile-style-glow .pref-card,
-body.tile-style-glow .jc-club-row,
-body.tile-style-glow .match-card,
-body.tile-style-glow .dashboard-card,
-body.tile-style-glow .session-card {
+body.tile-style-glow:not(.app-light) .home-tile,
+body.tile-style-glow:not(.app-light) .pref-card,
+body.tile-style-glow:not(.app-light) .jc-club-row,
+body.tile-style-glow:not(.app-light) .match-card,
+body.tile-style-glow:not(.app-light) .dashboard-card,
+body.tile-style-glow:not(.app-light) .session-card {
   background: var(--surface2, #1a1a2e) !important;
   border: 1px solid var(--border, #2a2a40) !important;
+  position: relative;
+  overflow: hidden;
+}
+/* glow light mode - keep white bg, just show coloured top border */
+body.tile-style-glow.app-light .home-tile,
+body.tile-style-glow.app-light .pref-card {
+  background: #ffffff !important;
+  border: 1px solid #e8e8f0 !important;
   position: relative;
   overflow: hidden;
 }
@@ -2016,13 +2024,15 @@ body.tile-style-color .home-tile:nth-child(6) { background: #1a1a2e !important; 
 body.tile-style-color .home-tile .home-tile-icon { background: rgba(255,255,255,0.15) !important; }
 body.tile-style-color .home-tile .home-tile-name { color: #fff !important; }
 body.tile-style-color .home-tile .home-tile-sub  { color: rgba(255,255,255,0.7) !important; }
-body.tile-style-color .vault-tile:nth-child(1) { background: #2dce89 !important; }
-body.tile-style-color .vault-tile:nth-child(2) { background: #6c8cff !important; }
-body.tile-style-color .vault-tile:nth-child(3) { background: #a78bfa !important; }
-body.tile-style-color .vault-tile:nth-child(4) { background: #e63757 !important; }
-body.tile-style-color .vault-tile .vt-name,
-body.tile-style-color .vault-tile .vt-stat,
-body.tile-style-color .vault-tile .vt-sub { color: #fff !important; }
+body.tile-style-color:not(.app-light) .vault-tile:nth-child(1) { background: #2dce89 !important; }
+body.tile-style-color:not(.app-light) .vault-tile:nth-child(2) { background: #6c8cff !important; }
+body.tile-style-color:not(.app-light) .vault-tile:nth-child(3) { background: #a78bfa !important; }
+body.tile-style-color:not(.app-light) .vault-tile:nth-child(4) { background: #e63757 !important; }
+body.tile-style-color:not(.app-light) .vault-tile .vt-name,
+body.tile-style-color:not(.app-light) .vault-tile .vt-stat,
+body.tile-style-color:not(.app-light) .vault-tile .vt-sub { color: #fff !important; }
+/* color style light mode vault tiles - keep light bg, just add color accent */
+body.tile-style-color.app-light .vault-tile { background: #fff !important; }
 
 /* rounds-nav-tiles */
 body.tile-style-color .rounds-nav-tile { border: none !important; }
@@ -2573,6 +2583,12 @@ body.app-light .jc-club-pending {
   margin-bottom: 4px;
 }
 .tile-vault    { background: #3d2b00; }
+
+/* vt-report: dark mode gradient, light mode clean */
+.vt-report { background: linear-gradient(135deg, #1e0814, #3d1028); }
+body.app-light .vt-report { background: #fff !important; }
+body.app-light .vt-report .vt-stat,
+body.app-light .vt-report .vt-name { color: #1a1a2e !important; }
 .tile-settings { background: var(--surface3); }
 .tile-summary  { background: rgba(45,206,137,0.15); }
 body.app-light .tile-vault    { background: #fef3c7; }
@@ -7435,43 +7451,78 @@ body.app-light .bottom-sheet-overlay {
 /* ═══════════════════════════════════════════
    TILE STYLE — vcl-tile + home-help-btn
    Must be at end of file to win specificity
+   Uses :not(.app-light) pattern for dark-only rules
 ═══════════════════════════════════════════ */
 
-/* COLOR style — solid colored backgrounds like grid tiles */
-body.tile-style-color .vcl-tile {
+/* ── COLOR style — dark mode ── */
+body.tile-style-color:not(.app-light) .vcl-tile {
   background: #2a2a4a !important;
   border: none !important;
   box-shadow: 0 2px 12px rgba(108,99,255,0.2) !important;
 }
-body.tile-style-color .vcl-tile .vcl-row {
+body.tile-style-color:not(.app-light) .vcl-tile .vcl-row {
   background: rgba(255,255,255,0.08) !important;
 }
-body.tile-style-color .vcl-tile .home-tile-name,
-body.tile-style-color .vcl-tile .vcl-row-name { color: #fff !important; }
-body.tile-style-color .vcl-tile .home-tile-sub,
-body.tile-style-color .vcl-tile .vcl-row-nick,
-body.tile-style-color .vcl-tile .vcl-arr { color: rgba(255,255,255,0.6) !important; }
-body.tile-style-color .vcl-tile .home-tile-icon { background: rgba(255,255,255,0.15) !important; }
-
-body.tile-style-color .home-help-btn {
+body.tile-style-color:not(.app-light) .vcl-tile .home-tile-name,
+body.tile-style-color:not(.app-light) .vcl-tile .vcl-row-name { color: #fff !important; }
+body.tile-style-color:not(.app-light) .vcl-tile .home-tile-sub,
+body.tile-style-color:not(.app-light) .vcl-tile .vcl-row-nick,
+body.tile-style-color:not(.app-light) .vcl-tile .vcl-arr { color: rgba(255,255,255,0.6) !important; }
+body.tile-style-color:not(.app-light) .vcl-tile .home-tile-icon { background: rgba(255,255,255,0.15) !important; }
+body.tile-style-color:not(.app-light) .home-help-btn {
   background: #1e2a1e !important;
   border: none !important;
   color: #2dce89 !important;
   box-shadow: 0 2px 12px rgba(45,206,137,0.15) !important;
 }
 
-/* GLOW style — dark with coloured top border (overflow:hidden clips ::before so use border-top) */
-body.tile-style-glow .vcl-tile {
+/* ── COLOR style — light mode ── */
+body.tile-style-color.app-light .vcl-tile {
+  background: #e8eaff !important;
+  border: 1px solid #c5caff !important;
+  box-shadow: 0 2px 12px rgba(108,99,255,0.12) !important;
+}
+body.tile-style-color.app-light .vcl-tile .vcl-row {
+  background: rgba(108,99,255,0.06) !important;
+}
+body.tile-style-color.app-light .vcl-tile .home-tile-name,
+body.tile-style-color.app-light .vcl-tile .vcl-row-name { color: #2a2a4a !important; }
+body.tile-style-color.app-light .vcl-tile .home-tile-sub,
+body.tile-style-color.app-light .vcl-tile .vcl-row-nick { color: #5a5a8a !important; }
+body.tile-style-color.app-light .home-help-btn {
+  background: #e6f9f2 !important;
+  border: 1px solid #a8e6cf !important;
+  color: #1a7a4a !important;
+  box-shadow: 0 2px 12px rgba(45,206,137,0.12) !important;
+}
+
+/* ── GLOW style — dark mode only (light mode falls back to default) ── */
+body.tile-style-glow:not(.app-light) .vcl-tile {
   background: #13131f !important;
   border: 1px solid #2a2a40 !important;
   border-top: 3px solid #6c8cff !important;
   box-shadow: 0 0 12px rgba(108,140,255,0.2) !important;
 }
-body.tile-style-glow .home-help-btn {
+body.tile-style-glow:not(.app-light) .home-help-btn {
   background: #13131f !important;
   border: 1px solid #2a2a40 !important;
   border-top: 3px solid #2dce89 !important;
   color: var(--text) !important;
   box-shadow: 0 0 12px rgba(45,206,137,0.15) !important;
+}
+
+/* ── GLOW style — light mode: just coloured top border, light background ── */
+body.tile-style-glow.app-light .vcl-tile {
+  background: #ffffff !important;
+  border: 1px solid #e0e0f0 !important;
+  border-top: 3px solid #6c8cff !important;
+  box-shadow: 0 2px 8px rgba(108,99,255,0.1) !important;
+}
+body.tile-style-glow.app-light .home-help-btn {
+  background: #ffffff !important;
+  border: 1px solid #e0e0f0 !important;
+  border-top: 3px solid #2dce89 !important;
+  color: #1a1a2e !important;
+  box-shadow: 0 2px 8px rgba(45,206,137,0.1) !important;
 }
 
