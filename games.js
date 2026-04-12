@@ -148,7 +148,32 @@ function toggleRound() {
     const currentRoundGames = allRounds[allRounds.length - 1].games;
     const winnersCount = currentRoundGames.filter(g => g.winner).length;
     if (!currentRoundGames.length || winnersCount !== currentRoundGames.length) {
-      alert("Please mark winners for all games");
+      // Shake all unmarked trophy cups
+      currentRoundGames.forEach(function(g, idx) {
+        if (!g.winner) {
+          document.querySelectorAll('.win-cup').forEach(function(cup, ci) {
+            if (ci === idx * 2 || ci === idx * 2 + 1) {
+              cup.classList.remove('cup-shake');
+              void cup.offsetWidth; // reflow to restart animation
+              cup.classList.add('cup-shake');
+              cup.style.filter = 'sepia(1) saturate(5) hue-rotate(300deg)';
+              setTimeout(() => {
+                cup.classList.remove('cup-shake');
+                cup.style.filter = '';
+              }, 800);
+            }
+          });
+        }
+      });
+      // Toast message
+      const existing = document.getElementById('winnerToast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.id = 'winnerToast';
+      toast.textContent = '🏆 Pick a winner for each court first';
+      toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#e63757;color:#fff;padding:10px 20px;border-radius:20px;font-size:0.88rem;font-weight:700;z-index:9999;white-space:nowrap;animation:toastIn 0.3s ease;box-shadow:0 4px 16px rgba(230,55,87,0.4);';
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; setTimeout(()=>toast.remove(),400); }, 2000);
       return;
     }
 
