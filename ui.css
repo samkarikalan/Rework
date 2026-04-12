@@ -7543,4 +7543,14 @@ body.tile-style-glow.app-light .home-help-btn {
   from { opacity: 0; transform: translateX(-50%) translateY(16px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+/* ── Player list touch drag ── */
+.player-edit-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.player-edit-card:active {
+  cursor: grabbing;
+}
 

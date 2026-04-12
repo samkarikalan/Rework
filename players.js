@@ -563,6 +563,10 @@ function createPlayerCard(player, index) {
   card.addEventListener("dragstart", onDragStart);
   card.addEventListener("dragover",  onDragOver);
   card.addEventListener("drop",      onDrop);
+  // Touch drag for mobile
+  card.addEventListener("touchstart", onTouchDragStart, { passive: true });
+  card.addEventListener("touchmove",  onTouchDragMove,  { passive: false });
+  card.addEventListener("touchend",   onTouchDragEnd,   { passive: true });
   const genderImg = player.gender === "Female" ? "female.png" : "male.png";
   card.innerHTML = `
     <div class="pec-col pec-active">
@@ -611,6 +615,85 @@ function onDrop(e) {
   const [moved] = schedulerState.allPlayers.splice(draggedIndex, 1);
   schedulerState.allPlayers.splice(targetIndex, 0, moved);
   updatePlayerList();
+}
+
+/* ── Touch drag-to-reorder ── */
+let _touchDragEl   = null;
+let _touchDragIdx  = null;
+let _touchClone    = null;
+let _touchStartY   = 0;
+let _touchCardH    = 0;
+
+function onTouchDragStart(e) {
+  const card = e.currentTarget;
+  _touchDragEl  = card;
+  _touchDragIdx = Number(card.dataset.index);
+  _touchStartY  = e.touches[0].clientY;
+  _touchCardH   = card.offsetHeight;
+  // Visual feedback
+  card.style.opacity  = '0.5';
+  card.style.transform = 'scale(1.02)';
+  card.style.zIndex   = '100';
+  card.style.transition = 'none';
+}
+
+function onTouchDragMove(e) {
+  if (!_touchDragEl) return;
+  e.preventDefault();
+  const y = e.touches[0].clientY;
+  const dy = y - _touchStartY;
+  _touchDragEl.style.transform = `translateY(${dy}px) scale(1.02)`;
+
+  // Find which card we're hovering over
+  const container = document.getElementById('playerList');
+  const cards = Array.from(container.querySelectorAll('.player-edit-card'));
+  const rect = _touchDragEl.getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+
+  cards.forEach(c => { c.style.boxShadow = ''; });
+  for (const c of cards) {
+    if (c === _touchDragEl) continue;
+    const cr = c.getBoundingClientRect();
+    if (midY > cr.top && midY < cr.bottom) {
+      c.style.boxShadow = '0 0 0 2px var(--accent)';
+      break;
+    }
+  }
+}
+
+function onTouchDragEnd(e) {
+  if (!_touchDragEl) return;
+  const y = e.changedTouches[0].clientY;
+
+  // Reset styles
+  _touchDragEl.style.opacity   = '';
+  _touchDragEl.style.transform = '';
+  _touchDragEl.style.zIndex    = '';
+  _touchDragEl.style.transition = '';
+
+  // Find drop target
+  const container = document.getElementById('playerList');
+  const cards = Array.from(container.querySelectorAll('.player-edit-card'));
+  cards.forEach(c => { c.style.boxShadow = ''; });
+
+  let targetIdx = _touchDragIdx;
+  for (const c of cards) {
+    if (c === _touchDragEl) continue;
+    const cr = c.getBoundingClientRect();
+    if (y > cr.top && y < cr.bottom) {
+      targetIdx = Number(c.dataset.index);
+      break;
+    }
+  }
+
+  if (targetIdx !== _touchDragIdx) {
+    const [moved] = schedulerState.allPlayers.splice(_touchDragIdx, 1);
+    schedulerState.allPlayers.splice(targetIdx, 0, moved);
+    updatePlayerList();
+  }
+
+  _touchDragEl  = null;
+  _touchDragIdx = null;
 }
 
 function updatePlayerList() {
