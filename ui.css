@@ -2036,7 +2036,27 @@ body.tile-style-color .rounds-nav-tile .rounds-nav-sub  { color: rgba(255,255,25
 body.tile-style-color .dash-session-card { border: none !important; background: #1a1a2e !important; }
 
 /* viewer club tiles */
-body.tile-style-color .vcl-tile { border: none !important; }
+/* vcl-tile (My Clubs) — flat: default surface, color: slightly accented, glow: dark */
+body.tile-style-color .vcl-tile {
+  border: 1px solid var(--accent-dim) !important;
+  background: var(--surface) !important;
+}
+body.tile-style-glow .vcl-tile {
+  background: #1a1a2e !important;
+  border-color: rgba(108,99,255,0.25) !important;
+}
+
+/* home-help-btn — matches tile style */
+body.tile-style-color .home-help-btn {
+  background: var(--surface) !important;
+  border: 1px solid var(--accent-dim) !important;
+  color: var(--text) !important;
+}
+body.tile-style-glow .home-help-btn {
+  background: #1a1a2e !important;
+  border: 1px solid rgba(108,99,255,0.25) !important;
+  color: var(--text) !important;
+}
 
 /* vault request cards */
 body.tile-style-color .vault-request-card { border: none !important; }
