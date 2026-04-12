@@ -1283,7 +1283,15 @@ async function _doEndSession(shuttleData) {
   toast.textContent = t('sessionEnded');
   setTimeout(() => toast.remove(), 1500);
 
-  // Go to home screen
+  // Reset organiser stepper to step 1
+  if (typeof _stepCourtsSet   !== 'undefined') _stepCourtsSet   = false;
+  if (typeof _stepPairsSeen   !== 'undefined') _stepPairsSeen   = false;
+  if (typeof _homeCurrentStep !== 'undefined') _homeCurrentStep = 0;
+
+  // Clear player list UI
+  if (typeof updatePlayerList === 'function') updatePlayerList();
+
+  // Go home — showHomeScreen calls homeUpdateStepper which shows step 1
   if (typeof showHomeScreen === 'function') {
     showHomeScreen();
   }
