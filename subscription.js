@@ -84,7 +84,76 @@ function isBasic() { return isLicenseValid() && getLicensePlan() === 'basic'; }
 function hasFullAccess() { return isTrialActive() || isPro(); }
 function hasAnyAccess()  { return isTrialActive() || isLicenseValid(); }
 
+/* ── Server-issued access token (in-memory only — cannot be faked) ── */
+var _accessToken     = null;   // token string from server
+var _accessPlan      = null;   // 'pro' | 'basic' | 'trial'
+var _accessExpiry    = 0;      // token expiry timestamp (ms)
+var _accessAllowed   = false;  // server said allowed
+
+function getDeviceId() {
+  let id = localStorage.getItem('scs_device_id');
+  if (!id) {
+    id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('scs_device_id', id);
+  }
+  return id;
+}
+
+/* Call once on login and once on every session start */
+async function verifyAccessWithServer(email) {
+  try {
+    const deviceId = getDeviceId();
+    const data = await _wPost('/sub/verify', { email, deviceId });
+    if (!data) return false;
+
+    if (data.allowed) {
+      _accessAllowed = true;
+      _accessPlan    = data.plan || 'trial';
+      _accessToken   = data.token || null;
+      _accessExpiry  = Date.now() + 2 * 60 * 60 * 1000; // 2 hours
+
+      // Mirror to localStorage for UI display only (not used for gating)
+      if (data.plan && data.plan !== 'trial') {
+        localStorage.setItem(SK_PLAN,   data.plan);
+        localStorage.setItem(SK_EXPIRY, data.expires_at || '');
+      }
+    } else {
+      _accessAllowed = false;
+      _accessPlan    = null;
+      _accessToken   = null;
+      _accessExpiry  = 0;
+      if (data.reason === 'expired') {
+        _subToast('⚠️ Your subscription has expired');
+      } else if (data.reason === 'wrong_device') {
+        _subToast('⚠️ This account is active on another device');
+      }
+    }
+    return _accessAllowed;
+  } catch (e) {
+    // Network error — fall back to local check so offline still works
+    console.warn('verifyAccessWithServer failed, falling back to local:', e);
+    _accessAllowed = hasAnyAccess();
+    _accessPlan    = getLicensePlan() || (isTrialActive() ? 'trial' : null);
+    return _accessAllowed;
+  }
+}
+
+/* Token refresh — called if token is older than 1.5 hours */
+async function _refreshTokenIfNeeded(email) {
+  if (!email) return;
+  const remainingMs = _accessExpiry - Date.now();
+  if (remainingMs > 30 * 60 * 1000) return; // still > 30 min, no need
+  await verifyAccessWithServer(email);
+}
+
 function canAccessMode(mode) {
+  // Server token overrides everything if present and valid
+  if (_accessToken && Date.now() < _accessExpiry) {
+    if (!_accessAllowed) return false;
+    if (mode === 'viewer') return true;   // viewer is always free
+    return _accessPlan === 'pro' || _accessPlan === 'trial';
+  }
+  // Fallback to local (offline or before first verify)
   if (isPro()) return true;
   if (isTrialActive() && !isBasic()) return true;
   if (mode === 'viewer') return hasAnyAccess();

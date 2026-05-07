@@ -1113,24 +1113,23 @@ display: block;
 /* ── Vault Tiles (Option B -- Dark Glass) ── */
 .vault-tile-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   padding: 6px 0;
   margin: 0 16px;
 }
 .vault-tile {
-  border-radius: 20px;
-  padding: 20px 16px 16px;
+  border-radius: 18px;
+  padding: 16px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  min-height: 130px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  background: var(--surface2, #1a1a2e);
-  border: 1px solid var(--border, #2a2a40);
-  transition: transform 0.15s, box-shadow 0.15s;
+  gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
 .vault-tile::before {
@@ -1138,7 +1137,7 @@ display: block;
   position: absolute; top: 0; left: 0; right: 0; height: 3px;
   border-radius: 18px 18px 0 0;
 }
-.vault-tile:active { transform: scale(0.97); }
+.vault-tile:active { transform: scale(0.97); background: var(--surface2); }
 
 /* Coloured top borders -- glow mode only */
 body.tile-style-glow .vt-playing::before  { background: #f5a623; box-shadow: 0 0 12px rgba(245,166,35,0.6); }
@@ -1149,16 +1148,16 @@ body.tile-style-glow .vt-club::before     { background: #a78bfa; box-shadow: 0 0
 
 /* Flat mode -- light theme vault tiles */
 body.app-light .vault-tile {
-  background: #fff;
-  border-color: #e8e8f0;
+  background: var(--surface);
+  border-color: var(--border);
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-body.app-light .vt-stat { color: #1a1a2e; }
-body.app-light .vt-name { color: #1a1a2e; }
-body.app-light .vt-sub  { color: #aaa; }
+body.app-light .vt-stat { color: var(--text); }
+body.app-light .vt-name { color: var(--text); }
+body.app-light .vt-sub  { color: var(--muted); }
 
 .vt-club {
-  min-height: 72px;
+  min-height: unset;
   flex-direction: row;
   align-items: center;
   gap: 16px;
@@ -1179,26 +1178,28 @@ body.app-light .vt-sub  { color: #aaa; }
 .vt-requests .vt-badge { background: rgba(230,55,87,0.18);  color: #e63757; }
 
 .vt-icon {
-  font-size: 1.8rem;
-  margin-bottom: 10px;
-  line-height: 1;
+  width: 44px; height: 44px;
+  border-radius: 11px;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+  flex-shrink: 0;
 }
 .vt-stat {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--text, #fff);
-  line-height: 1;
-  margin-bottom: 4px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
 }
 .vt-name {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--muted, #888);
-  margin-bottom: 2px;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 .vt-sub {
-  font-size: 0.68rem;
-  color: var(--muted, #666);
+  font-size: 0.72rem;
+  color: var(--muted);
   opacity: 0.7;
 }
 
@@ -1846,210 +1847,6 @@ body.app-light .vcl-row-name { color: #1a1a2e; }
 
 
 
-/* ═══════════════════════════════════════════
-   TILE STYLE SYSTEM -- Flat / Glow / Color
-   body.tile-style-glow  → glow border style
-   body.tile-style-color → solid color style
-   default (no class)    → flat style
-═══════════════════════════════════════════ */
-
-/* ── Style selector buttons ── */
-.tile-style-btn {
-  flex: 1;
-  padding: 7px 4px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border, #eee);
-  background: var(--surface, #fff);
-  color: var(--muted, #888);
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.tile-style-btn.active {
-  background: var(--text, #1a1a2e);
-  border-color: var(--text, #1a1a2e);
-  color: #fff;
-}
-
-/* ── Live Preview Box ── */
-.style-preview-box {
-  background: var(--surface2, #f0f0f8);
-  border-radius: 12px;
-  padding: 10px;
-  margin-top: 4px;
-}
-.style-preview-label {
-  font-size: 0.58rem;
-  font-weight: 700;
-  color: var(--muted, #aaa);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 8px;
-}
-.style-preview-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-.spt {
-  border-radius: 10px;
-  padding: 10px 6px 8px;
-  text-align: center;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #eee);
-  position: relative;
-  overflow: hidden;
-}
-.spt-icon { font-size: 1rem; margin-bottom: 3px; }
-.spt-name { font-size: 0.6rem; font-weight: 700; color: var(--text, #1a1a2e); }
-.spt-sub  { font-size: 0.5rem; color: var(--muted, #aaa); margin-top: 1px; }
-.style-preview-wide {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 10px;
-  padding: 9px 10px;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #eee);
-}
-.spw-icon { font-size: 1rem; flex-shrink: 0; }
-.spw-info { flex: 1; }
-.spw-name { font-size: 0.65rem; font-weight: 700; color: var(--text, #1a1a2e); }
-.spw-sub  { font-size: 0.52rem; color: var(--muted, #aaa); margin-top: 1px; }
-.spw-arr  { color: var(--muted, #ccc); font-size: 0.8rem; }
-
-/* ─── PREVIEW BOX: JS renders inline styles — CSS only provides transitions ─── */
-#stylePreviewBox {
-  transition: background 0.35s ease;
-  border-radius: 12px;
-  overflow: hidden;
-}
-#stylePreviewBox .spt,
-#stylePreviewBox .style-preview-wide {
-  transition: background 0.35s ease, border-color 0.35s ease;
-}
-/* Glow top-bar lines on spt tiles (controlled by JS via data-style) */
-#stylePreviewBox .spt { position: relative; overflow: hidden; }
-#stylePreviewBox .spt::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  border-radius: 10px 10px 0 0;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-#stylePreviewBox[data-style="glow"] .spt::before { opacity: 1; }
-#stylePreviewBox[data-style="glow"] .spt:nth-child(1)::before { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.9); }
-#stylePreviewBox[data-style="glow"] .spt:nth-child(2)::before { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.9); }
-#stylePreviewBox[data-style="glow"] .spt:nth-child(3)::before { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.9); }
-
-/* ═══════════════════════════════════════════
-   FULL APP COVERAGE -- GLOW STYLE
-═══════════════════════════════════════════ */
-body.tile-style-glow:not(.app-light) .home-tile,
-body.tile-style-glow:not(.app-light) .pref-card,
-body.tile-style-glow:not(.app-light) .jc-club-row,
-body.tile-style-glow:not(.app-light) .match-card,
-body.tile-style-glow:not(.app-light) .dashboard-card,
-body.tile-style-glow:not(.app-light) .session-card {
-  background: var(--surface2, #1a1a2e) !important;
-  border: 1px solid var(--border, #2a2a40) !important;
-  position: relative;
-  overflow: hidden;
-}
-/* glow light mode - keep white bg, just show coloured top border */
-body.tile-style-glow.app-light .home-tile,
-body.tile-style-glow.app-light .pref-card {
-  background: #ffffff !important;
-  border: 1px solid #e8e8f0 !important;
-  position: relative;
-  overflow: hidden;
-}
-body.tile-style-glow:not(.app-light) .vault-tile {
-  background: var(--surface2, #1a1a2e) !important;
-  border: 1px solid var(--border, #2a2a40) !important;
-  position: relative;
-  overflow: hidden;
-}
-body.tile-style-glow .home-tile { padding-top: 20px !important; border-radius: 16px !important; }
-body.tile-style-glow .home-tile::before,
-body.tile-style-glow .vault-tile::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  border-radius: inherit;
-}
-body.tile-style-glow .home-tile:nth-child(1)::before,
-body.tile-style-glow .vault-tile:nth-child(1)::before { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.6); }
-body.tile-style-glow .home-tile:nth-child(2)::before,
-body.tile-style-glow .vault-tile:nth-child(2)::before { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.6); }
-body.tile-style-glow .home-tile:nth-child(3)::before,
-body.tile-style-glow .vault-tile:nth-child(3)::before { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.6); }
-body.tile-style-glow .home-tile:nth-child(4)::before,
-body.tile-style-glow .vault-tile:nth-child(4)::before { background: #e63757; box-shadow: 0 0 8px rgba(230,55,87,0.6); }
-body.tile-style-glow .home-tile:nth-child(5)::before,
-body.tile-style-glow .vault-tile:nth-child(5)::before { background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.6); }
-body.tile-style-glow .home-tile:nth-child(6)::before,
-body.tile-style-glow .vault-tile:nth-child(6)::before { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.6); }
-body.tile-style-glow .home-tile-icon { background: rgba(255,255,255,0.06) !important; }
-body.tile-style-glow .home-tile-name { color: #fff !important; }
-
-/* rounds-nav-tiles glow */
-body.tile-style-glow .rounds-nav-tile {
-  background: #1a1a2e !important;
-  border-color: #2a2a40 !important;
-  position: relative; overflow: hidden;
-}
-body.tile-style-glow .rounds-nav-tile::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  border-radius: 20px 20px 0 0;
-}
-body.tile-style-glow .rounds-nav-tile:nth-child(1)::before { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.8); }
-body.tile-style-glow .rounds-nav-tile:nth-child(2)::before { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.8); }
-body.tile-style-glow .rounds-nav-tile .rounds-nav-icon { background: rgba(255,255,255,0.05) !important; }
-body.tile-style-glow .rounds-nav-tile .rounds-nav-name { color: #fff !important; }
-body.tile-style-glow .rounds-nav-tile .rounds-nav-sub  { color: #555 !important; }
-body.tile-style-glow .home-tile-sub  { color: #555 !important; }
-
-/* ═══════════════════════════════════════════
-   FULL APP COVERAGE -- COLOR STYLE
-═══════════════════════════════════════════ */
-body.tile-style-color .home-tile { border: none !important; border-radius: 16px !important; }
-body.tile-style-color .home-tile:nth-child(1) { background: #2dce89 !important; }
-body.tile-style-color .home-tile:nth-child(2) { background: #6c8cff !important; }
-body.tile-style-color .home-tile:nth-child(3) { background: #f5a623 !important; }
-body.tile-style-color .home-tile:nth-child(4) { background: #e63757 !important; }
-body.tile-style-color .home-tile:nth-child(5) { background: #a78bfa !important; }
-body.tile-style-color .home-tile:nth-child(6) { background: #1a1a2e !important; }
-body.tile-style-color .home-tile .home-tile-icon { background: rgba(255,255,255,0.15) !important; }
-body.tile-style-color .home-tile .home-tile-name { color: #fff !important; }
-body.tile-style-color .home-tile .home-tile-sub  { color: rgba(255,255,255,0.7) !important; }
-body.tile-style-color:not(.app-light) .vault-tile:nth-child(1) { background: #2dce89 !important; }
-body.tile-style-color:not(.app-light) .vault-tile:nth-child(2) { background: #6c8cff !important; }
-body.tile-style-color:not(.app-light) .vault-tile:nth-child(3) { background: #a78bfa !important; }
-body.tile-style-color:not(.app-light) .vault-tile:nth-child(4) { background: #e63757 !important; }
-body.tile-style-color:not(.app-light) .vault-tile .vt-name,
-body.tile-style-color:not(.app-light) .vault-tile .vt-stat,
-body.tile-style-color:not(.app-light) .vault-tile .vt-sub { color: #fff !important; }
-/* color style light mode vault tiles - keep light bg, just add color accent */
-body.tile-style-color.app-light .vault-tile { background: #fff !important; }
-
-/* rounds-nav-tiles */
-body.tile-style-color .rounds-nav-tile { border: none !important; }
-body.tile-style-color .rounds-nav-tile:nth-child(1) { background: #6c8cff !important; }
-body.tile-style-color .rounds-nav-tile:nth-child(2) { background: #f5a623 !important; }
-body.tile-style-color .rounds-nav-tile .rounds-nav-icon { background: rgba(255,255,255,0.18) !important; }
-body.tile-style-color .rounds-nav-tile .rounds-nav-name { color: #fff !important; }
-body.tile-style-color .rounds-nav-tile .rounds-nav-sub  { color: rgba(255,255,255,0.75) !important; }
-
-/* dashboard session cards */
-body.tile-style-color .dash-session-card { border: none !important; background: #1a1a2e !important; }
-
-/* viewer club tiles */
-
-
-/* vault request cards */
-body.tile-style-color .vault-request-card { border: none !important; }
 
 /* ═══════════════════════════════════════════
    MODE LAUNCHER -- Full Screen
@@ -2312,15 +2109,6 @@ body.app-light .jc-club-pending {
 }
 
 /* ── Home Top Bar ── */
-.home-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-  flex-shrink: 0;
-}
 .home-logo {
   font-family: var(--font-display);
   font-size: 18px;
@@ -2912,7 +2700,7 @@ body.app-light .tile-pairs { background: rgba(245,158,11,0.12); }
   padding: 4px 9px;
 }
 
-/* Clean home topbar -- centred logo only */
+/* Clean home topbar -- centred mode title + close */
 .home-topbar {
   display: flex;
   align-items: center;
@@ -2922,6 +2710,42 @@ body.app-light .tile-pairs { background: rgba(245,158,11,0.12); }
   background: var(--bg);
   flex-shrink: 0;
 }
+.home-topbar-spacer {
+  width: 36px;
+  flex-shrink: 0;
+}
+.home-mode-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display, inherit);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  flex: 1;
+  justify-content: center;
+}
+.home-topbar-close {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--surface2, rgba(255,255,255,0.07));
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted, #888);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+.home-topbar-close:active { background: var(--surface3, rgba(255,255,255,0.13)); color: var(--text); }
 
 .home-logo {
   position: absolute;
@@ -7580,3 +7404,273 @@ body.tile-style-glow.app-light .home-help-btn {
   background: var(--surface) !important;
   z-index: 1 !important;
 }
+
+/* ═══════════════════════════════════════════
+   TILE STYLE SYSTEM -- Flat / Glow / Color
+   body.tile-style-glow  → glow border style
+   body.tile-style-color → solid color style
+   default (no class)    → flat (uses CSS vars, works in both themes)
+═══════════════════════════════════════════ */
+
+/* ── Style selector buttons ── */
+.tile-style-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border, #eee);
+  background: var(--surface, #fff);
+  color: var(--muted, #888);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tile-style-btn.active {
+  background: var(--text, #1a1a2e);
+  border-color: var(--text, #1a1a2e);
+  color: #fff;
+}
+
+/* ── Live Preview Box ── */
+.style-preview-box {
+  background: var(--surface2, #f0f0f8);
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 4px;
+}
+.style-preview-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--muted, #aaa);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.style-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.spt {
+  border-radius: 10px;
+  padding: 10px 6px 8px;
+  text-align: center;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #eee);
+  position: relative;
+  overflow: hidden;
+}
+.spt-icon { font-size: 1rem; margin-bottom: 3px; }
+.spt-name { font-size: 0.6rem; font-weight: 700; color: var(--text, #1a1a2e); }
+.spt-sub  { font-size: 0.5rem; color: var(--muted, #aaa); margin-top: 1px; }
+.style-preview-wide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #eee);
+}
+.spw-icon { font-size: 1rem; flex-shrink: 0; }
+.spw-info { flex: 1; }
+.spw-name { font-size: 0.65rem; font-weight: 700; color: var(--text, #1a1a2e); }
+.spw-sub  { font-size: 0.52rem; color: var(--muted, #aaa); margin-top: 1px; }
+.spw-arr  { color: var(--muted, #ccc); font-size: 0.8rem; }
+
+/* ─── PREVIEW BOX: JS renders inline styles ─── */
+#stylePreviewBox {
+  transition: background 0.35s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+#stylePreviewBox .spt,
+#stylePreviewBox .style-preview-wide {
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+#stylePreviewBox .spt { position: relative; overflow: hidden; }
+#stylePreviewBox .spt::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 10px 10px 0 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#stylePreviewBox[data-style="glow"] .spt::before { opacity: 1; }
+#stylePreviewBox[data-style="glow"] .spt:nth-child(1)::before { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.9); }
+#stylePreviewBox[data-style="glow"] .spt:nth-child(2)::before { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.9); }
+#stylePreviewBox[data-style="glow"] .spt:nth-child(3)::before { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.9); }
+
+/* ═══════════════════════════════════════════
+   GLOW STYLE — DARK MODE
+   Tiles get dark surface + coloured top bar
+═══════════════════════════════════════════ */
+body.tile-style-glow:not(.app-light) .home-tile,
+body.tile-style-glow:not(.app-light) .vault-tile,
+body.tile-style-glow:not(.app-light) .pref-card,
+body.tile-style-glow:not(.app-light) .settings-card,
+body.tile-style-glow:not(.app-light) .jc-club-row,
+body.tile-style-glow:not(.app-light) .match-card,
+body.tile-style-glow:not(.app-light) .dashboard-card,
+body.tile-style-glow:not(.app-light) .session-card,
+body.tile-style-glow:not(.app-light) .dash-session-card,
+body.tile-style-glow:not(.app-light) .rounds-nav-tile {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  position: relative;
+  overflow: hidden;
+}
+body.tile-style-glow:not(.app-light) .home-tile-name,
+body.tile-style-glow:not(.app-light) .vt-name,
+body.tile-style-glow:not(.app-light) .rounds-nav-name { color: var(--text) !important; }
+body.tile-style-glow:not(.app-light) .home-tile-sub,
+body.tile-style-glow:not(.app-light) .vt-sub,
+body.tile-style-glow:not(.app-light) .rounds-nav-sub  { color: var(--muted) !important; }
+body.tile-style-glow:not(.app-light) .home-tile-icon,
+body.tile-style-glow:not(.app-light) .vt-icon,
+body.tile-style-glow:not(.app-light) .rounds-nav-icon { background: rgba(255,255,255,0.06) !important; }
+
+/* ═══════════════════════════════════════════
+   GLOW STYLE — LIGHT MODE
+   Tiles get white surface + coloured top bar
+═══════════════════════════════════════════ */
+body.tile-style-glow.app-light .home-tile,
+body.tile-style-glow.app-light .vault-tile,
+body.tile-style-glow.app-light .pref-card,
+body.tile-style-glow.app-light .settings-card,
+body.tile-style-glow.app-light .jc-club-row,
+body.tile-style-glow.app-light .dash-session-card,
+body.tile-style-glow.app-light .rounds-nav-tile {
+  background: #ffffff !important;
+  border: 1px solid #e8e8f0 !important;
+  position: relative;
+  overflow: hidden;
+}
+body.tile-style-glow.app-light .home-tile-name,
+body.tile-style-glow.app-light .vt-name,
+body.tile-style-glow.app-light .rounds-nav-name { color: #1a1a2e !important; }
+body.tile-style-glow.app-light .home-tile-sub,
+body.tile-style-glow.app-light .vt-sub,
+body.tile-style-glow.app-light .rounds-nav-sub  { color: #8888aa !important; }
+body.tile-style-glow.app-light .home-tile-icon,
+body.tile-style-glow.app-light .vt-icon,
+body.tile-style-glow.app-light .rounds-nav-icon { background: rgba(0,0,0,0.06) !important; }
+
+/* ── Glow coloured top bars (both themes) ── */
+body.tile-style-glow .home-tile,
+body.tile-style-glow .vault-tile,
+body.tile-style-glow .rounds-nav-tile {
+  padding-top: 20px !important;
+  border-radius: 16px !important;
+}
+body.tile-style-glow .home-tile::before,
+body.tile-style-glow .vault-tile::before,
+body.tile-style-glow .rounds-nav-tile::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: inherit;
+}
+body.tile-style-glow .home-tile[data-tile-color="1"]::before,
+body.tile-style-glow .vault-tile[data-tile-color="1"]::before,
+body.tile-style-glow .rounds-nav-tile[data-tile-color="1"]::before { background: #2dce89; box-shadow: 0 0 8px rgba(45,206,137,0.7); }
+body.tile-style-glow .home-tile[data-tile-color="2"]::before,
+body.tile-style-glow .vault-tile[data-tile-color="2"]::before,
+body.tile-style-glow .rounds-nav-tile[data-tile-color="2"]::before { background: #6c8cff; box-shadow: 0 0 8px rgba(108,140,255,0.7); }
+body.tile-style-glow .home-tile[data-tile-color="3"]::before,
+body.tile-style-glow .vault-tile[data-tile-color="3"]::before { background: #f5a623; box-shadow: 0 0 8px rgba(245,166,35,0.7); }
+body.tile-style-glow .home-tile[data-tile-color="4"]::before,
+body.tile-style-glow .vault-tile[data-tile-color="4"]::before { background: #e63757; box-shadow: 0 0 8px rgba(230,55,87,0.7); }
+body.tile-style-glow .home-tile[data-tile-color="5"]::before  { background: #a78bfa; box-shadow: 0 0 8px rgba(167,139,250,0.7); }
+
+/* ═══════════════════════════════════════════
+   COLOR STYLE — DARK MODE
+   Tiles get solid accent colors
+═══════════════════════════════════════════ */
+body.tile-style-color:not(.app-light) .home-tile,
+body.tile-style-color:not(.app-light) .vault-tile,
+body.tile-style-color:not(.app-light) .rounds-nav-tile {
+  border: none !important;
+  border-radius: 16px !important;
+}
+body.tile-style-color:not(.app-light) .home-tile[data-tile-color="1"],
+body.tile-style-color:not(.app-light) .vault-tile[data-tile-color="1"] { background: #2dce89 !important; }
+body.tile-style-color:not(.app-light) .home-tile[data-tile-color="2"],
+body.tile-style-color:not(.app-light) .vault-tile[data-tile-color="2"] { background: #6c8cff !important; }
+body.tile-style-color:not(.app-light) .home-tile[data-tile-color="3"],
+body.tile-style-color:not(.app-light) .vault-tile[data-tile-color="3"] { background: #f5a623 !important; }
+body.tile-style-color:not(.app-light) .home-tile[data-tile-color="4"],
+body.tile-style-color:not(.app-light) .vault-tile[data-tile-color="4"] { background: #e63757 !important; }
+body.tile-style-color:not(.app-light) .home-tile[data-tile-color="5"] { background: #a78bfa !important; }
+body.tile-style-color:not(.app-light) .rounds-nav-tile[data-tile-color="1"] { background: #6c8cff !important; }
+body.tile-style-color:not(.app-light) .rounds-nav-tile[data-tile-color="2"] { background: #f5a623 !important; }
+body.tile-style-color:not(.app-light) .home-tile .home-tile-icon,
+body.tile-style-color:not(.app-light) .vault-tile .vt-icon,
+body.tile-style-color:not(.app-light) .rounds-nav-tile .rounds-nav-icon { background: rgba(255,255,255,0.18) !important; }
+body.tile-style-color:not(.app-light) .home-tile .home-tile-name,
+body.tile-style-color:not(.app-light) .home-tile .home-tile-sub,
+body.tile-style-color:not(.app-light) .vault-tile .vt-name,
+body.tile-style-color:not(.app-light) .vault-tile .vt-stat,
+body.tile-style-color:not(.app-light) .vault-tile .vt-sub,
+body.tile-style-color:not(.app-light) .rounds-nav-tile .rounds-nav-name,
+body.tile-style-color:not(.app-light) .rounds-nav-tile .rounds-nav-sub { color: #fff !important; }
+body.tile-style-color:not(.app-light) .pref-card,
+body.tile-style-color:not(.app-light) .settings-card { background: var(--surface2) !important; border: none !important; }
+body.tile-style-color:not(.app-light) .dash-session-card { background: var(--surface2) !important; border: none !important; }
+body.tile-style-color:not(.app-light) .vault-request-card { border-bottom: 1px solid var(--border) !important; }
+
+/* ═══════════════════════════════════════════
+   COLOR STYLE — LIGHT MODE
+   Tiles get softer accent colors, dark text
+═══════════════════════════════════════════ */
+body.tile-style-color.app-light .home-tile,
+body.tile-style-color.app-light .vault-tile,
+body.tile-style-color.app-light .rounds-nav-tile {
+  border: none !important;
+  border-radius: 16px !important;
+}
+body.tile-style-color.app-light .home-tile[data-tile-color="1"],
+body.tile-style-color.app-light .vault-tile[data-tile-color="1"] { background: #2dce89 !important; }
+body.tile-style-color.app-light .home-tile[data-tile-color="2"],
+body.tile-style-color.app-light .vault-tile[data-tile-color="2"] { background: #6c8cff !important; }
+body.tile-style-color.app-light .home-tile[data-tile-color="3"],
+body.tile-style-color.app-light .vault-tile[data-tile-color="3"] { background: #f5a623 !important; }
+body.tile-style-color.app-light .home-tile[data-tile-color="4"],
+body.tile-style-color.app-light .vault-tile[data-tile-color="4"] { background: #e63757 !important; }
+body.tile-style-color.app-light .home-tile[data-tile-color="5"] { background: #a78bfa !important; }
+body.tile-style-color.app-light .rounds-nav-tile[data-tile-color="1"] { background: #6c8cff !important; }
+body.tile-style-color.app-light .rounds-nav-tile[data-tile-color="2"] { background: #f5a623 !important; }
+body.tile-style-color.app-light .home-tile .home-tile-icon,
+body.tile-style-color.app-light .vault-tile .vt-icon,
+body.tile-style-color.app-light .rounds-nav-tile .rounds-nav-icon { background: rgba(255,255,255,0.25) !important; }
+body.tile-style-color.app-light .home-tile .home-tile-name,
+body.tile-style-color.app-light .home-tile .home-tile-sub,
+body.tile-style-color.app-light .vault-tile .vt-name,
+body.tile-style-color.app-light .vault-tile .vt-stat,
+body.tile-style-color.app-light .vault-tile .vt-sub,
+body.tile-style-color.app-light .rounds-nav-tile .rounds-nav-name,
+body.tile-style-color.app-light .rounds-nav-tile .rounds-nav-sub { color: #fff !important; }
+body.tile-style-color.app-light .pref-card,
+body.tile-style-color.app-light .settings-card { background: #ffffff !important; border: 1px solid #e8e8f0 !important; }
+body.tile-style-color.app-light .dash-session-card { background: #ffffff !important; border: 1px solid #e8e8f0 !important; }
+
+/* ── vcl-tile (My Clubs) — both themes ── */
+body.tile-style-color .vcl-tile[data-tile-color="3"] { background: #f5a623 !important; border: none !important; border-radius: 16px !important; }
+body.tile-style-color .vcl-tile[data-tile-color="3"] .home-tile-name,
+body.tile-style-color .vcl-tile[data-tile-color="3"] .vcl-row-name { color: #fff !important; }
+body.tile-style-color .vcl-tile[data-tile-color="3"] .home-tile-sub,
+body.tile-style-color .vcl-tile[data-tile-color="3"] .vcl-arr { color: rgba(255,255,255,0.7) !important; }
+body.tile-style-color .vcl-tile[data-tile-color="3"] .home-tile-icon { background: rgba(255,255,255,0.2) !important; }
+
+/* ── mode-select buttons ── */
+body.tile-style-color .mode-select-btn:not(.settings),
+body.tile-style-color .ml-mode { border: none !important; }
+body.tile-style-color .ml-mode.viewer    { background: #6c8cff !important; }
+body.tile-style-color .ml-mode.organiser { background: #2dce89 !important; }
+body.tile-style-color .ml-mode.vault     { background: #f5a623 !important; }
+body.tile-style-color .ml-mode .ml-mode-name { color: #fff !important; }
+body.tile-style-color .ml-mode .ml-mode-desc { color: rgba(255,255,255,0.75) !important; }
+body.tile-style-color .ml-mode .ml-arr       { color: rgba(255,255,255,0.6) !important; }
+body.tile-style-color .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.2) !important; }
+
+

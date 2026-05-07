@@ -3,19 +3,15 @@
    Caches app shell for offline use
    ============================================= */
 
-const CACHE_NAME = 'club-scheduler-v143';
+const CACHE_NAME = 'club-scheduler-v144';
 
 const ASSETS = [
-  './KariBRRApp.html',
-  './BRRStyle1.css',
-  './BRRStyle2.css',
-  './BRRStyle3.css',
-  './Export.css',
-  './HomeStyle.css',
-  './HomeStyle-new.css',
+  './index.html',
+  './ui.css',
+  './rounds.css',
   './main.js',
   './HomeScreen.js',
-
+  './home.js',
   './settings.js',
   './players.js',
   './rounds.js',
@@ -25,20 +21,26 @@ const ASSETS = [
   './viewer.js',
   './report.js',
   './profile.js',
+  './auth.js',
+  './authUI.js',
+  './subscription.js',
   './supabase.js',
   './importPlayers.js',
   './engjap.js',
   './ExportCSS.js',
+  './build.js',
+  './app.js',
   './github.js',
   './help.js',
+  './snapshot.js',
+  './manifest.json',
   './male.png',
   './female.png',
   './win-cup.png',
   './lock.png',
   './unlock.png',
-  './power.png',
-  './cs.PNG',
-  './timer.mp3',
+  './icon-192.png',
+  './icon-512.png',
   './help_en.json',
   './help_jp.json',
   './help_kr.json',
@@ -77,9 +79,9 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-/* ── Fetch: serve from cache, fall back to network ── */
+/* ── Fetch: network first, cache as offline fallback ── */
 self.addEventListener('fetch', function(event) {
-  // Skip Supabase API calls -- always go to network
+  // Always go to network for API calls
   if (event.request.url.includes('supabase.co')) return;
   if (event.request.url.includes('workers.dev')) return;
   if (event.request.url.includes('/db/')) return;
@@ -88,21 +90,20 @@ self.addEventListener('fetch', function(event) {
   if (event.request.url.includes('/generate-round')) return;
 
   event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      if (cached) return cached;
-      return fetch(event.request).then(function(response) {
-        // Cache new valid responses
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, clone);
-          });
-        }
-        return response;
-      });
+    fetch(event.request).then(function(response) {
+      // Got fresh response — update cache and return it
+      if (response && response.status === 200 && response.type === 'basic') {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(event.request, clone);
+        });
+      }
+      return response;
     }).catch(function() {
-      // Offline fallback -- return cached HTML
-      return caches.match('./KariBRRApp.html');
+      // Offline — serve from cache
+      return caches.match(event.request).then(function(cached) {
+        return cached || caches.match('./index.html');
+      });
     })
   );
 });

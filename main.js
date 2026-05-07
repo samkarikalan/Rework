@@ -209,13 +209,19 @@ async function initAppFlow() {
     return;
   }
 
-  // ── Step 2: Check for resumable session ──
-  if (typeof checkAndResume === 'function') {
-    const resumed = await checkAndResume();
-    if (resumed) return; // Restored — skip mode select
+  // ── Step 2: Verify subscription with server ──
+  const email = typeof authGetEmail === 'function' ? authGetEmail() : null;
+  if (email && typeof verifyAccessWithServer === 'function') {
+    await verifyAccessWithServer(email);
   }
 
-  // ── Step 3: Normal startup — show mode select ──
+  // ── Step 3: Check for resumable session ──
+  if (typeof checkAndResume === 'function') {
+    const resumed = await checkAndResume();
+    if (resumed) return;
+  }
+
+  // ── Step 4: Normal startup — show mode select ──
   var overlay = document.getElementById('modeSelectOverlay');
   if (overlay) overlay.style.display = 'flex';
   if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();

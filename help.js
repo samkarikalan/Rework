@@ -21,18 +21,20 @@ const SECTION_META = {
   getting_started: { icon: '🚀' },
   players:         { icon: '👥' },
   rounds:          { icon: '🏸' },
-  profile:         { icon: '👤' },
+  vault:           { icon: '🔒' },
+  viewer:          { icon: '👁' },
   clubs:           { icon: '🏟️' },
-  summary:         { icon: '📊' },
+  subscription:    { icon: '⚡' },
+  settings:        { icon: '⚙️' },
   faq:             { icon: '❓' },
 };
 
 const SECTION_LABELS = {
-  en: { getting_started:'Get Started', players:'Players', rounds:'Rounds', profile:'Profile', clubs:'Clubs', summary:'Summary', faq:'FAQ' },
-  jp: { getting_started:'はじめに', players:'プレイヤー', rounds:'ラウンド', profile:'プロフィール', clubs:'クラブ', summary:'サマリー', faq:'よくある質問' },
-  kr: { getting_started:'시작하기', players:'플레이어', rounds:'라운드', profile:'프로필', clubs:'클럽', summary:'요약', faq:'자주 묻는 질문' },
-  zh: { getting_started:'开始', players:'球员', rounds:'回合', profile:'个人资料', clubs:'俱乐部', summary:'摘要', faq:'常见问题' },
-  vi: { getting_started:'Bắt đầu', players:'Người chơi', rounds:'Vòng đấu', profile:'Hồ sơ', clubs:'Câu lạc bộ', summary:'Tóm tắt', faq:'Câu hỏi thường gặp' },
+  en: { getting_started:'Get Started', players:'Players', rounds:'Rounds', vault:'Vault', viewer:'Viewer', clubs:'Clubs', subscription:'Subscription', settings:'Settings', faq:'FAQ' },
+  jp: { getting_started:'はじめに', players:'プレイヤー', rounds:'ラウンド', vault:'ボールト', viewer:'ビューワー', clubs:'クラブ', subscription:'サブスクリプション', settings:'設定', faq:'よくある質問' },
+  kr: { getting_started:'시작하기', players:'플레이어', rounds:'라운드', vault:'볼트', viewer:'뷰어', clubs:'클럽', subscription:'구독', settings:'설정', faq:'자주 묻는 질문' },
+  zh: { getting_started:'开始', players:'球员', rounds:'回合', vault:'保险库', viewer:'查看者', clubs:'俱乐部', subscription:'订阅', settings:'设置', faq:'常见问题' },
+  vi: { getting_started:'Bắt đầu', players:'Người chơi', rounds:'Vòng đấu', vault:'Kho', viewer:'Người xem', clubs:'Câu lạc bộ', subscription:'Đăng ký', settings:'Cài đặt', faq:'Câu hỏi thường gặp' },
 };
 
 function getLang()    { return localStorage.getItem('appLanguage') || 'en'; }

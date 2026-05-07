@@ -506,6 +506,16 @@ function validateRound(round, schedulerState) {
    ================================================================ */
 async function safeGenerateRound(state) {
 
+  // ── Verify subscription token is still valid before generating ──
+  const email = typeof authGetEmail === 'function' ? authGetEmail() : null;
+  if (email && typeof _refreshTokenIfNeeded === 'function') {
+    await _refreshTokenIfNeeded(email);
+  }
+  if (typeof canAccessMode === 'function' && !canAccessMode('organiser')) {
+    if (typeof showModeUpgradePrompt === 'function') showModeUpgradePrompt('organiser');
+    throw new Error('Subscription required');
+  }
+
   // ── Serialize only what the Worker needs to generate the round ──
 
   // opponentMap: Map<name, Map<name, count>> → [[name, [[opp,count]]]]

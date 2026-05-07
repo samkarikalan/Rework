@@ -324,11 +324,12 @@
 <!-- Top bar -->
 
 <div class="home-topbar">
-  <button class="mode-pill-btn" id="modePillBtn" onclick="openModeSwitcher()">
+  <div class="home-topbar-spacer"></div>
+  <button class="home-mode-title" id="modePillBtn" onclick="openModeSwitcher()">
     <span id="modePillIcon">🏸</span>
     <span id="modePillLabel">Organiser</span>
-    <span>▾</span>
   </button>
+  <button class="home-topbar-close" onclick="openModeSwitcher()">✕</button>
 </div>
 
 <!-- Trial banner moved to Settings page -->
@@ -406,27 +407,27 @@
 
 <div id="homeOrgGrid" style="display:none;">
   <div class="home-grid">
-    <div class="home-tile" onclick="homeGo('orgClubMgmtPage',null)">
+    <div class="home-tile" data-tile-color="1" onclick="homeGo('orgClubMgmtPage',null)">
       <div class="home-tile-icon tile-pairs" id="orgTileIcon">🏢</div>
       <div class="home-tile-name" id="orgVctName">Club</div>
       <div class="home-tile-sub" id="orgVctBadge">Tap to connect</div>
     </div>
-    <div class="home-tile" onclick="homeGo('playersPage','tabBtnPlayers')">
+    <div class="home-tile" data-tile-color="2" onclick="homeGo('playersPage','tabBtnPlayers')">
       <div class="home-tile-icon tile-players">👥</div>
       <div class="home-tile-name" data-i18n="players">Players</div>
       <div class="home-tile-sub" id="tileSubPlayers">Add · Remove</div>
     </div>
-    <div class="home-tile" onclick="homeGo('fixedPairsPage','tabBtnFixedPairs')">
+    <div class="home-tile" data-tile-color="3" onclick="homeGo('fixedPairsPage','tabBtnFixedPairs')">
       <div class="home-tile-icon tile-pairs">🤝</div>
       <div class="home-tile-name" data-i18n="fixedPairs">Fixed Pairs</div>
       <div class="home-tile-sub" id="tileSubPairs">Always together</div>
     </div>
-    <div class="home-tile" onclick="homeGo('dashboardPage','tabBtnDashboard')">
+    <div class="home-tile" data-tile-color="4" onclick="homeGo('dashboardPage','tabBtnDashboard')">
       <div class="home-tile-icon">📡</div>
       <div class="home-tile-name" data-i18n="dashboard">Dashboard</div>
       <div class="home-tile-sub" id="tileSubDashboard">Live sessions</div>
     </div>
-    <div class="home-tile" onclick="homeGo('vaultPlayingPage',null)">
+    <div class="home-tile" data-tile-color="5" onclick="homeGo('vaultPlayingPage',null)">
       <div class="home-tile-icon" style="position:relative;">
         ⚡
         <div class="vt-badge" id="vtBadgePlaying" style="display:none;position:absolute;top:-6px;right:-6px;">LIVE</div>
@@ -472,21 +473,21 @@
 
   <div id="vaultTileGrid" class="vault-tile-grid">
 
-<div class="vault-tile vt-register" onclick="homeGo('vaultRegisterPage',null)">
+<div class="vault-tile vt-register" data-tile-color="1" onclick="homeGo('vaultRegisterPage',null)">
   <div class="vt-icon">📋</div>
   <div class="vt-stat" id="vtStatRegister">—</div>
   <div class="vt-name" data-i18n="register">Register</div>
   <div class="vt-sub" data-i18n="playersInClub">players in club</div>
 </div>
 
-<div class="vault-tile vt-modify" onclick="homeGo('vaultModifyPage',null)">
+<div class="vault-tile vt-modify" data-tile-color="2" onclick="homeGo('vaultModifyPage',null)">
   <div class="vt-icon">✏️</div>
   <div class="vt-stat" id="vtStatModify">—</div>
   <div class="vt-name" data-i18n="modify">Modify</div>
   <div class="vt-sub" data-i18n="tapToEdit">tap to edit</div>
 </div>
 
-<div class="vault-tile vt-requests" onclick="homeGo('vaultRequestsPage',null)">
+<div class="vault-tile vt-requests" data-tile-color="3" onclick="homeGo('vaultRequestsPage',null)">
   <div class="vt-badge" id="vtBadgeRequests" style="display:none">NEW</div>
   <div class="vt-icon">🔔</div>
   <div class="vt-stat" id="vtStatRequests">—</div>
@@ -503,7 +504,7 @@
 
 <div id="homeViewerGrid" style="display:none;">
   <div class="home-grid">
-    <div class="home-tile" onclick="homeGo('myCardPage',null)">
+    <div class="home-tile" data-tile-color="1" onclick="homeGo('myCardPage',null)">
       <div class="home-tile-icon tile-profile">
         <img id="homeTileAvatarV" src="male.png" style="width:26px;height:26px;border-radius:50%;display:none;">
         <span id="homeTileIconV">👤</span>
@@ -511,7 +512,7 @@
       <div class="home-tile-name" id="homeTileNameV">My Card</div>
       <div class="home-tile-sub" id="homeTileRatingV">Not selected</div>
     </div>
-    <div class="home-tile" onclick="homeGo('dashboardPage','tabBtnDashboard')">
+    <div class="home-tile" data-tile-color="2" onclick="homeGo('dashboardPage','tabBtnDashboard')">
       <div class="home-tile-icon">📡</div>
       <div class="home-tile-name" data-i18n="dashboard">Dashboard</div>
       <div class="home-tile-sub" id="tileSubDashboardV">Live sessions</div>
@@ -519,7 +520,7 @@
   </div>
   <!-- My Clubs expandable tile -->
   <div id="joinClubTileRow" style="margin:10px 16px 0;">
-    <div class="vcl-tile" id="tileJoinClub">
+    <div class="vcl-tile" data-tile-color="3" id="tileJoinClub">
       <div class="vcl-header" onclick="homeGo('joinClubPage',null)">
         <div class="vcl-header-left">
           <div class="home-tile-icon vcl-icon">🏢</div>
@@ -536,7 +537,7 @@
 
   <!-- Report tile below My Clubs -->
   <div style="margin:10px 16px 0;">
-    <div class="home-tile" onclick="homeGo('vaultReport2Page',null)">
+    <div class="home-tile" data-tile-color="4" onclick="homeGo('vaultReport2Page',null)">
       <div class="home-tile-icon">📊</div>
       <div class="home-tile-name" data-i18n="report">Report</div>
       <div class="home-tile-sub">monthly stats</div>
@@ -556,11 +557,12 @@
   <!-- ============================= -->
 
   <div class="top-bar">
-    <button class="mode-pill-btn" id="modePillBtn2" onclick="openModeSwitcher()">
-        <span id="modePillIcon2">🏸</span>
-        <span id="modePillLabel2">Organiser</span>
-        <span>▾</span>
-      </button>
+    <div class="home-topbar-spacer"></div>
+    <button class="home-mode-title" id="modePillBtn2" onclick="openModeSwitcher()">
+      <span id="modePillIcon2">🏸</span>
+      <span id="modePillLabel2">Organiser</span>
+    </button>
+    <button class="home-topbar-close" onclick="openModeSwitcher()">✕</button>
   </div>
 
   <!-- ============================= -->
@@ -1003,17 +1005,17 @@
   <!-- 3 action tiles -->
 
   <div class="vault-tile-grid" style="margin-bottom:14px;">
-    <div class="vault-tile vt-register" onclick="clubMgmtShowPanel('connect')" style="min-height:90px;">
+    <div class="vault-tile vt-register" data-tile-color="1" onclick="clubMgmtShowPanel('connect')" style="min-height:90px;">
       <div class="vt-icon">🔗</div>
       <div class="vt-name" data-i18n="connectClub">Connect</div>
       <div class="vt-sub" data-i18n="joinAClub">join a club</div>
     </div>
-    <div class="vault-tile vt-modify" onclick="clubMgmtShowPanel('create')" style="min-height:90px;">
+    <div class="vault-tile vt-modify" data-tile-color="2" onclick="clubMgmtShowPanel('create')" style="min-height:90px;">
       <div class="vt-icon">➕</div>
       <div class="vt-name" data-i18n="createClub">Create</div>
       <div class="vt-sub" data-i18n="newClub">new club</div>
     </div>
-    <div class="vault-tile vt-requests" onclick="clubMgmtShowPanel('delete')" style="min-height:90px;">
+    <div class="vault-tile vt-requests" data-tile-color="3" onclick="clubMgmtShowPanel('delete')" style="min-height:90px;">
       <div class="vt-icon">🗑️</div>
       <div class="vt-name" data-i18n="deleteClub">Delete</div>
       <div class="vt-sub" data-i18n="removeClub">remove club</div>
@@ -1296,12 +1298,12 @@
 <!-- Quick nav tiles -->
 
 <div class="rounds-nav-tiles">
-  <div class="rounds-nav-tile" onclick="roundsGoPlayers()">
+  <div class="rounds-nav-tile" data-tile-color="1" onclick="roundsGoPlayers()">
     <div class="rounds-nav-icon tile-players">👥</div>
     <div class="rounds-nav-name" data-i18n="players">Players</div>
     <div class="rounds-nav-sub" id="gearSubPlayers" data-i18n="addRemove">Add · Remove</div>
   </div>
-  <div class="rounds-nav-tile" onclick="roundsGoFixedPairs()">
+  <div class="rounds-nav-tile" data-tile-color="2" onclick="roundsGoFixedPairs()">
     <div class="rounds-nav-icon tile-pairs">🤝</div>
     <div class="rounds-nav-name" data-i18n="fixedPairs">Fixed Pairs</div>
     <div class="rounds-nav-sub" id="gearSubPairs">Optional</div>
