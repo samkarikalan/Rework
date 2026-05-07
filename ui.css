@@ -5737,14 +5737,15 @@ body.app-light .tile-settings { background: var(--surface3); }
   cursor: not-allowed;
 }
 
+
 /* ── Added player row highlight ── */
 .newImport-player-card.player-added {
-  background: linear-gradient(135deg, rgba(108,99,255,0.08) 0%, rgba(108,99,255,0.04) 100%) !important;
-  border-color: rgba(108,99,255,0.3) !important;
+  background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.04) 100%) !important;
+  border-color: rgba(34,197,94,0.3) !important;
 }
 body.app-dark .newImport-player-card.player-added {
-  background: linear-gradient(135deg, rgba(108,99,255,0.15) 0%, rgba(108,99,255,0.08) 100%) !important;
-  border-color: rgba(108,99,255,0.4) !important;
+  background: linear-gradient(135deg, rgba(34,197,94,0.35) 0%, rgba(34,197,94,0.20) 100%) !important;
+  border-color: rgba(34,197,94,0.7) !important;
 }
 .circle-btn.add.active-added {
   background: var(--accent) !important;
