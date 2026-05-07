@@ -36,11 +36,14 @@ color: var(--text); letter-spacing: 1px; text-transform: uppercase;
 }
 .lock-icon {
 width: 1.5rem; height: 1.5rem; border-radius: 50%;
-cursor: pointer; transition: transform 0.2s, filter 0.2s; opacity: 0.7;
+cursor: pointer; transition: transform 0.2s, filter 0.2s; opacity: 0.85;
+background: rgba(255,255,255,0.15);
+padding: 3px;
 }
 .lock-icon:hover { transform: scale(1.1); opacity: 1; }
-body.locked .lock-icon   { filter: none; opacity: 1; }
-body:not(.locked) .lock-icon { filter: grayscale(0.6); opacity: 0.55; }
+body.locked .lock-icon   { filter: none; opacity: 1; background: rgba(255,255,255,0.2); }
+body:not(.locked) .lock-icon { filter: grayscale(0.6); opacity: 0.6; }
+body.app-light .lock-icon { background: rgba(0,0,0,0.08); }
 
 /* ── Court Card ── */
 
@@ -308,6 +311,25 @@ cursor: pointer; transition: transform 0.1s, opacity 0.15s;
 
 /* ── Gender icon ── */
 .gender-icon { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+
+/* ── Rating Ring ── */
+.rating-ring-wrap {
+  position: relative;
+  width: 30px; height: 30px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rating-ring-icon {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px !important; height: 16px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  opacity: 0.95 !important;
+}
 .gender-btn { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; pointer-events: none; flex-shrink: 0; }
 .gender-btn.male   { background: rgba(96,165,250,0.2); color: #60a5fa; }
 .gender-btn.female { background: rgba(255,101,132,0.2); color: var(--accent2); }
@@ -518,8 +540,9 @@ border-color: var(--border) !important;
 }
 
 /* Repeated warnings */
-.repeated-pair { box-shadow: inset 0 0 0 2px rgba(239,68,68,0.55) !important; background: rgba(239,68,68,0.08) !important; }
-.repeated-game { border: 2px solid rgba(239,68,68,0.6) !important; box-shadow: 0 0 0 1px rgba(239,68,68,0.2) !important; }
+.repeated-pair { box-shadow: none !important; background: rgba(239,68,68,0.08) !important; }
+.repeated-game { background: rgba(239,68,68,0.07) !important; box-shadow: none !important; border: none !important; }
+.repeated-game .courtname { color: rgba(239,68,68,0.9) !important; background: rgba(239,68,68,0.15) !important; }
 
 /* Win cup */
 .win-cup {
@@ -2053,3 +2076,22 @@ body.tile-style-color .courtcard.court-6 .courtname { background: #64748b !impor
 /* Round wrapper spacing */
 .round-wrapper { margin-bottom: 0 !important; }
 
+
+/* ── Rating Ring ── */
+.rating-ring-wrap {
+  position: relative;
+  width: 30px; height: 30px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rating-ring-icon {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px !important; height: 16px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  opacity: 0.95 !important;
+}

@@ -25,7 +25,7 @@ var schedulerState = {
     fixedMap: new Map(),
     roundIndex: 0,
     pairPlayedSet: new Set(),
-    gamesMap: new Map(),
+    gamesMap: new Set(),
     markingWinnerMode: false,
     winCount: new Map(),
     pairCooldownMap: new Map(),
@@ -137,7 +137,7 @@ function updateCourtButtons() {
 }
 
 
-function goToRounds() {
+async function goToRounds() {
   const numCourtsInput = parseInt(document.getElementById("num-courts").textContent);
   //const numCourtsInput = parseInt(document.getElementById('num-courts').value);
   schedulerState.courts = numCourtsInput; // keep alias in sync for competitive_algorithm.js
@@ -165,7 +165,7 @@ function goToRounds() {
   if (allRounds.length <= 1) {
     initScheduler(numCourts);
     allRounds.length = 0;
-    allRounds.push(AischedulerNextRound(schedulerState));
+    allRounds.push(await safeGenerateRound(schedulerState));
     currentRoundIndex = 0;
     showRound(0);
     // Ensure live session is registered -- retries silently if it fails
@@ -177,9 +177,9 @@ function goToRounds() {
       updateScheduler();      
       schedulerState.roundIndex = allRounds.length - 1;
       currentRoundIndex = schedulerState.roundIndex;
-      const newRound = AischedulerNextRound(schedulerState);
+      const newRound = await safeGenerateRound(schedulerState);
       allRounds[allRounds.length - 1] = newRound;
-       showRound(currentRoundIndex);
+      showRound(currentRoundIndex);
     }  
   /*
   document.getElementById('playersPage').style.display = 'none';
@@ -217,7 +217,7 @@ async function ensureLiveSession() {
   }
 }
 
-function nextRound() {
+async function nextRound() {
   // Retry live session registration in case it failed earlier
   ensureLiveSession();
 
@@ -226,18 +226,19 @@ function nextRound() {
     showRound(currentRoundIndex);
   } else {
     updSchedule(allRounds.length - 1, schedulerState); // pass schedulerState
-    const newRound = AischedulerNextRound(schedulerState); // do NOT wrap in []
+    const newRound = await safeGenerateRound(schedulerState); // do NOT wrap in []
     allRounds.push(newRound);
     currentRoundIndex = allRounds.length - 1;
     showRound(currentRoundIndex);
     if (typeof saveRoundsToDb === 'function') saveRoundsToDb();
   }
   updateSummaryPageAccess();
+  // Note: saveSnapshot called from toggleRound after state fully settled
 }
-function endRounds() {  
+async function endRounds() {  
 	sessionFinished = true;
 	updSchedule(allRounds.length - 1, schedulerState, false); // false = don't sync ratings again
-    const newRound = AischedulerNextRound(schedulerState); // do NOT wrap in []
+    const newRound = await safeGenerateRound(schedulerState); // do NOT wrap in []
     allRounds.push(newRound);
     currentRoundIndex = allRounds.length - 2;
     showRound(currentRoundIndex);
@@ -400,6 +401,204 @@ function allPairsExhausted(queue, pairPlayedSet) {
 
 
 
+
+/* ============================================================
+   QC MODULE — validateRound
+   Validates a round before rendering.
+   Hard fails → regenerate with random fallback
+   Soft fails → log only
+============================================================ */
+function _pairKey(a, b) { return [a, b].sort().join('&'); }
+
+function validateRound(round, schedulerState) {
+  const hardFails = [];
+  const softFails = [];
+
+  if (!round || !round.games) {
+    hardFails.push('No games in round');
+    return { valid: false, hardFails, softFails };
+  }
+
+  const { games, playing } = round;
+  const { numCourts, fixedPairs } = schedulerState;
+
+  // ── Hard Check 1: Court count ──
+  if (games.length !== numCourts) {
+    hardFails.push(`Court count mismatch: got ${games.length}, expected ${numCourts}`);
+  }
+
+  // ── Hard Check 2: Each court has 2 pairs of 2 players ──
+  for (let i = 0; i < games.length; i++) {
+    const g = games[i];
+    if (!g.pair1 || g.pair1.length !== 2) hardFails.push(`Court ${i+1}: pair1 invalid`);
+    if (!g.pair2 || g.pair2.length !== 2) hardFails.push(`Court ${i+1}: pair2 invalid`);
+  }
+
+  // ── Hard Check 3: No duplicate players across courts ──
+  const allCourtPlayers = games.flatMap(g => [...(g.pair1||[]), ...(g.pair2||[])]);
+  const seen = new Set();
+  for (const p of allCourtPlayers) {
+    if (seen.has(p)) hardFails.push(`Duplicate player in courts: ${p}`);
+    seen.add(p);
+  }
+
+  // ── Hard Check 4: All playing players appear in courts ──
+  if (playing && playing.length) {
+    for (const p of playing) {
+      if (!seen.has(p)) hardFails.push(`Playing player missing from courts: ${p}`);
+    }
+  }
+
+  // ── Hard Check 5: Fixed pairs intact ──
+  if (fixedPairs && fixedPairs.length) {
+    const restingSet = new Set((round.resting || []).map(r => r.split('#')[0]));
+    for (const [a, b] of fixedPairs) {
+      // Skip if both resting
+      if (restingSet.has(a) && restingSet.has(b)) continue;
+      // If both playing, must be together as a pair
+      if (!restingSet.has(a) && !restingSet.has(b)) {
+        const together = games.some(g =>
+          (g.pair1 && g.pair1.includes(a) && g.pair1.includes(b)) ||
+          (g.pair2 && g.pair2.includes(a) && g.pair2.includes(b))
+        );
+        if (!together) hardFails.push(`Fixed pair split: ${a} & ${b}`);
+      }
+    }
+  }
+
+  // ── Hard Check 6: No repeated match from previous rounds ──
+  const { gamesMap } = schedulerState;
+  if (gamesMap && gamesMap.size > 0) {
+    for (let i = 0; i < games.length; i++) {
+      const g = games[i];
+      if (!g.pair1 || !g.pair2) continue;
+      const p1key = g.pair1.slice().sort().join('&');
+      const p2key = g.pair2.slice().sort().join('&');
+      const matchKey = [p1key, p2key].sort().join(':');
+      if (gamesMap.has(matchKey)) {
+        hardFails.push(`Court ${i+1} repeated match: ${g.pair1.join('+')} vs ${g.pair2.join('+')}`);
+      }
+    }
+  }
+
+  // ── Soft Check 7: Rating balance ──
+  for (let i = 0; i < games.length; i++) {
+    const g = games[i];
+    if (!g.pair1 || !g.pair2) continue;
+    const avg1 = g.pair1.reduce((s, p) => s + (typeof getActiveRating === 'function' ? getActiveRating(p) : 1.0), 0) / g.pair1.length;
+    const avg2 = g.pair2.reduce((s, p) => s + (typeof getActiveRating === 'function' ? getActiveRating(p) : 1.0), 0) / g.pair2.length;
+    if (Math.abs(avg1 - avg2) > 1.0) {
+      softFails.push(`Court ${i+1} rating imbalance: ${avg1.toFixed(1)} vs ${avg2.toFixed(1)}`);
+    }
+  }
+
+  if (softFails.length) console.warn('QC soft fails:', softFails);
+
+  return { valid: hardFails.length === 0, hardFails, softFails };
+}
+
+/* ── Run QC and retry if hard fail ── */
+/* ================================================================
+   safeGenerateRound — async, calls Cloudflare Worker
+   Worker ONLY generates games/resting/playing.
+   ALL schedulerState variables (Maps, Sets, etc.) stay in JS
+   and are updated by updSchedule exactly as before.
+   ================================================================ */
+async function safeGenerateRound(state) {
+
+  // ── Serialize only what the Worker needs to generate the round ──
+
+  // opponentMap: Map<name, Map<name, count>> → [[name, [[opp,count]]]]
+  const opponentMapSerial = [];
+  if (state.opponentMap instanceof Map) {
+    for (const [p, inner] of state.opponentMap) {
+      opponentMapSerial.push([p, [...inner.entries()]]);
+    }
+  }
+
+  // restCount: Map<name, count> → [[name, count]]
+  const restCountSerial = state.restCount instanceof Map
+    ? [...state.restCount.entries()]
+    : [];
+
+  // restQueue: plain array of player names
+  const restQueueSerial = Array.isArray(state.restQueue)
+    ? [...state.restQueue]
+    : [];
+
+  // pairPlayedSet: Set<string> → [string]
+  const pairPlayedSetSerial = state.pairPlayedSet instanceof Set
+    ? [...state.pairPlayedSet]
+    : [];
+
+  // gamesMap: Set<string> → [string]
+  const gamesMapSerial = state.gamesMap instanceof Set
+    ? [...state.gamesMap]
+    : [];
+
+  // allPlayers for rating/gender lookups in competitive mode
+  const allPlayersSerial = (state.allPlayers || []).map(p => ({
+    name:       p.name,
+    gender:     p.gender     || null,
+    rating:     p.rating     || 1.0,
+    clubRating: p.clubRating || null,
+  }));
+
+  const playMode = (typeof getPlayMode === 'function') ? getPlayMode() : 'random';
+
+  const payload = {
+    activeplayers:          [...(state.activeplayers || [])],
+    numCourts:              state.numCourts,
+    courts:                 state.courts || state.numCourts,
+    fixedPairs:             state.fixedPairs || [],
+    restQueue:              restQueueSerial,
+    restCount:              restCountSerial,
+    opponentMap:            opponentMapSerial,
+    pairPlayedSet:          pairPlayedSetSerial,
+    gamesMap:               gamesMapSerial,
+    allRounds:              allRounds || [],
+    playMode:               playMode,
+    minRounds:              state.minRounds || 6,
+    lastMode:               state._lastMode || null,
+    allPlayers:             allPlayersSerial,
+    roundIndex:             state.roundIndex || 0,
+    fixedPairGameQueue:     state.fixedPairGameQueue     || null,
+    fixedPairGameQueueHash: state.fixedPairGameQueueHash || null,
+  };
+
+  let resp;
+  try {
+    const res = await fetch(WORKER_URL + '/generate-round', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error('Worker ' + res.status + ': ' + errText);
+    }
+    resp = await res.json();
+  } catch(e) {
+    console.error('safeGenerateRound Worker error:', e);
+    alert('Round generation failed — please check connection.\n' + e.message);
+    throw e;
+  }
+
+  // ── Worker returns { games, resting, playing, roundIndex, lastMode } ──
+  // We update roundIndex and lastMode on state here.
+  // ALL other Maps/Sets are updated by updSchedule in JS as normal.
+  if (typeof resp.roundIndex === 'number') state.roundIndex = resp.roundIndex;
+  if (resp.lastMode) state._lastMode = resp.lastMode;
+
+  // ── Return same shape as original AischedulerNextRound ──
+  return {
+    round:   resp.roundIndex,
+    games:   resp.games   || [],
+    resting: resp.resting || [],
+    playing: resp.playing || [],
+  };
+}
+
 function updSchedule(roundIndex, schedulerState, syncToDb = true) {
   //AUTO_SAVE();
 	const data = allRounds[roundIndex];
@@ -518,8 +717,12 @@ for (const game of games) {
   }
 }
 
-// Rating updates -- all modes
-// Also track wins/losses per player this round
+// Rating updates -- DUPR-style individual player formula
+// Each player's delta depends on their own rating vs opponent average
+// K = 0.45 (max swing), spread = 1.5 (curve steepness)
+const RATING_K      = 0.45;
+const RATING_SPREAD = 1.5;
+
 const roundWins         = new Map();
 const roundLosses       = new Map();
 const roundRatingDeltas = new Map(); // uncapped delta for points
@@ -530,27 +733,31 @@ for (const game of games) {
   const winners = game.winner === 'L' ? game.pair1 : game.pair2;
   const losers  = game.winner === 'L' ? game.pair2 : game.pair1;
 
+  // Opponent averages (used individually per player)
   const winAvg  = winners.reduce((s, p) => s + (typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p)), 0) / winners.length;
   const loseAvg = losers.reduce((s, p)  => s + (typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p)), 0) / losers.length;
-  const gap = loseAvg - winAvg;
 
-  const winGain  = gap > 0.3 ? 0.4 : gap > -0.3 ? 0.2 : 0.1;
-  const loseLoss = gap < -0.3 ? 0.4 : gap < 0.3 ? 0.2 : 0.1;
-
+  // Each winner: delta = K * (1 - expected)
+  // Lower-rated winner vs strong opponents → higher reward
   for (const p of winners) {
-    const prevW = typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p);
-    setRating(p, prevW + winGain);
+    const myRating = typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p);
+    const expected = 1 / (1 + Math.pow(10, (loseAvg - myRating) / RATING_SPREAD));
+    const delta    = Math.round(RATING_K * (1 - expected) * 100) / 100;
+    setRating(p, myRating + delta);
     roundWins.set(p, (roundWins.get(p) || 0) + 1);
-    // Track uncapped delta (winGain always positive)
-    roundRatingDeltas.set(p, (roundRatingDeltas.get(p) || 0) + winGain);
+    roundRatingDeltas.set(p, (roundRatingDeltas.get(p) || 0) + delta);
   }
+
+  // Each loser: delta = -K * expected
+  // Higher-rated loser vs weak opponents → bigger penalty
   for (const p of losers) {
-    const current = typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p);
-    const updated = Math.max(1.0, current - loseLoss);
+    const myRating = typeof getActiveRating === "function" ? getActiveRating(p) : getRating(p);
+    const expected = 1 / (1 + Math.pow(10, (winAvg - myRating) / RATING_SPREAD));
+    const delta    = Math.round(RATING_K * expected * 100) / 100;
+    const updated  = Math.max(1.0, myRating - delta);
     setRating(p, updated);
     roundLosses.set(p, (roundLosses.get(p) || 0) + 1);
-    // Track uncapped delta for points (loseLoss always positive, points decrease too)
-    roundRatingDeltas.set(p, (roundRatingDeltas.get(p) || 0) - loseLoss);
+    roundRatingDeltas.set(p, (roundRatingDeltas.get(p) || 0) - delta);
   }
 }
 
@@ -615,13 +822,41 @@ function rebuildRestQueue(restQueue) {
 
   
 
-function RefreshRound() {
+async function RefreshRound() {
     // Save current position - shuffle must NOT change round number or advance index
     const savedRoundIndex = schedulerState.roundIndex;
     const savedCurrentIndex = currentRoundIndex;
 
     // Generate a new arrangement for the CURRENT round only
-    const newRound = RandomRound(schedulerState);
+    // Route by mode: competitive re-runs the rating-aware scheduler,
+    // random uses the pure random shuffle
+    let newRound;
+    if (typeof getPlayMode === 'function' && getPlayMode() === 'competitive') {
+      // In competitive mode the scheduler is deterministic, so we temporarily
+      // mark the current round's pairs as 'used'. This forces the algorithm
+      // to find a genuinely different balanced arrangement.
+      // We restore pairPlayedSet immediately after so state is unchanged.
+      const currentRound = allRounds[currentRoundIndex];
+      const tempKeys = [];
+      if (currentRound && currentRound.games) {
+        for (const game of currentRound.games) {
+          for (const pair of [game.pair1, game.pair2]) {
+            const key = [...pair].sort().join('&');
+            if (!schedulerState.pairPlayedSet.has(key)) {
+              schedulerState.pairPlayedSet.add(key);
+              tempKeys.push(key);
+            }
+          }
+        }
+      }
+      newRound = await safeGenerateRound(schedulerState);
+      // Restore: remove the temporarily added keys
+      for (const key of tempKeys) {
+        schedulerState.pairPlayedSet.delete(key);
+      }
+    } else {
+      newRound = RandomRound(schedulerState);
+    }
 
     // Keep the round number exactly the same as before
     newRound.round = savedRoundIndex;
@@ -633,6 +868,8 @@ function RefreshRound() {
     // Replace current round in-place
     allRounds[currentRoundIndex] = newRound;
     showRound(currentRoundIndex);
+    if (typeof saveSnapshot     === 'function') saveSnapshot();
+    if (typeof saveRoundsToDb   === 'function') saveRoundsToDb();
 }
 
 function ratingToColor(r) {

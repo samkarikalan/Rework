@@ -3,7 +3,7 @@
    Caches app shell for offline use
    ============================================= */
 
-const CACHE_NAME = 'club-scheduler-v140';
+const CACHE_NAME = 'club-scheduler-v143';
 
 const ASSETS = [
   './KariBRRApp.html',
@@ -27,7 +27,6 @@ const ASSETS = [
   './profile.js',
   './supabase.js',
   './importPlayers.js',
-  './competitive_algorithm.js',
   './engjap.js',
   './ExportCSS.js',
   './github.js',
@@ -82,6 +81,11 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   // Skip Supabase API calls -- always go to network
   if (event.request.url.includes('supabase.co')) return;
+  if (event.request.url.includes('workers.dev')) return;
+  if (event.request.url.includes('/db/')) return;
+  if (event.request.url.includes('/auth/')) return;
+  if (event.request.url.includes('/sub/')) return;
+  if (event.request.url.includes('/generate-round')) return;
 
   event.respondWith(
     caches.match(event.request).then(function(cached) {

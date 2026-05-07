@@ -547,12 +547,13 @@ if (tierEl) { tierEl.textContent = tier.label; tierEl.style.background = tier.co
 
 // 5. Period stats from sessions jsonb
 const now       = new Date();
-// Use date strings for comparison to avoid timezone issues
-const todayStr  = now.toISOString().split('T')[0];
-const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); 
-const weekStr   = weekStart.toISOString().split('T')[0];
-const monthStr  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-01';
-const yearStr   = now.getFullYear() + '-01-01';
+// Use LOCAL date strings for comparison (avoids UTC-vs-local timezone issues)
+const _pad      = n => String(n).padStart(2, '0');
+const todayStr  = `${now.getFullYear()}-${_pad(now.getMonth()+1)}-${_pad(now.getDate())}`;
+const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+const weekStr   = `${weekStart.getFullYear()}-${_pad(weekStart.getMonth()+1)}-${_pad(weekStart.getDate())}`;
+const monthStr  = `${now.getFullYear()}-${_pad(now.getMonth()+1)}-01`;
+const yearStr   = `${now.getFullYear()}-01-01`;
 
 let wW=0,lW=0,pW=0,cW=0, wM=0,lM=0,pM=0,cM=0, wY=0,lY=0,pY=0,cY=0;
 (sessions || []).forEach(s => {

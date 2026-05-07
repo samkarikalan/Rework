@@ -140,12 +140,13 @@ function toggleRound() {
     document.getElementById("roundsPage").classList.add("active-mode");
     _syncModeBanner();
     _syncShuffleBtn(); // disable shuffle while round is active
+    if (typeof saveSnapshot === 'function') saveSnapshot();
 
   } else if (currentState === "active") {
     // ── RETURN TO IDLE MODE (advance round) ──
 
     // Require all winners marked -- both modes
-    const currentRoundGames = allRounds[allRounds.length - 1].games;
+    const currentRoundGames = allRounds[currentRoundIndex] ? allRounds[currentRoundIndex].games : [];
     const winnersCount = currentRoundGames.filter(g => g.winner).length;
     if (!currentRoundGames.length || winnersCount !== currentRoundGames.length) {
       // Shake all unmarked trophy cups
@@ -201,6 +202,7 @@ function toggleRound() {
 
     _syncModeBanner();
     _syncShuffleBtn();
+    if (typeof saveSnapshot === 'function') saveSnapshot();
 
   } else if (currentState === "done") {
     // done behaves same as idle -- just re-enter active
@@ -1909,22 +1911,76 @@ function getTeamTypeFromPairs(playerNames) {
 }
 
 
+/* ── Rating Ring Helper ──────────────────────────────────────────────────── */
+function createRatingRing(playerName, gender) {
+  const rating  = typeof getActiveRating === 'function' ? getActiveRating(playerName) : 1.0;
+  const pct     = Math.max(0, Math.min(1, (rating - 1.0) / 4.0));
+  const size    = 30;
+  const r       = 13;
+  const cx = size / 2, cy = size / 2;
+  const circ    = 2 * Math.PI * r;
+  const dash    = circ * pct;
+  const gap     = circ - dash;
+  const segG    = 1.5;
+  const segs    = 12;
+  const segL    = (circ / segs) - segG;
+  let color = '#f44336';
+  if (rating >= 4.0)      color = '#4caf50';
+  else if (rating >= 3.0) color = '#2196f3';
+  else if (rating >= 2.0) color = '#ff9800';
+  const iconSrc = gender === 'Female' ? 'female.png' : 'male.png';
+  const wrap = document.createElement('div');
+  wrap.className = 'rating-ring-wrap';
+  wrap.innerHTML = `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"
+         style="position:absolute;top:0;left:0;transform:rotate(-90deg)">
+      <circle cx="${cx}" cy="${cy}" r="${r}"
+        fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"
+        stroke-dasharray="${segL.toFixed(1)} ${segG}"
+        stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}"
+        fill="none" stroke="${color}" stroke-width="3"
+        stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
+        stroke-linecap="round" opacity="0.9"/>
+    </svg>
+    <img src="${iconSrc}" alt="${gender || 'Male'}"
+         class="gender-icon rating-ring-icon"/>
+  `;
+  return wrap;
+}
+
+/* ── Rating Ring ── */
+function createRatingRing(playerName, gender) {
+  const rating  = typeof getActiveRating === 'function' ? getActiveRating(playerName) : 1.0;
+  const pct     = Math.max(0, Math.min(1, (rating - 1.0) / 4.0));
+  const size    = 30; const r = 13; const cx = 15; const cy = 15;
+  const circ    = 2 * Math.PI * r;
+  const dash    = circ * pct; const gap = circ - dash;
+  const segG    = 1.5; const segL = (circ / 12) - segG;
+  let color = '#f44336';
+  if (rating >= 4.0) color = '#4caf50';
+  else if (rating >= 3.0) color = '#2196f3';
+  else if (rating >= 2.0) color = '#ff9800';
+  const iconSrc = gender === 'Female' ? 'female.png' : 'male.png';
+  const wrap = document.createElement('div');
+  wrap.className = 'rating-ring-wrap';
+  wrap.innerHTML =
+    '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" style="position:absolute;top:0;left:0;transform:rotate(-90deg)">' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3" stroke-dasharray="' + segL.toFixed(1) + ' ' + segG + '" stroke-linecap="round"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="3" stroke-dasharray="' + dash.toFixed(2) + ' ' + gap.toFixed(2) + '" stroke-linecap="round" opacity="0.9"/>' +
+    '</svg>' +
+    '<img src="' + iconSrc + '" alt="' + (gender||'Male') + '" class="gender-icon rating-ring-icon"/>';
+  return wrap;
+}
+
 function makeRestButton(player, data, index) {
   const btn = document.createElement('button');
   btn.className = 'rest-btn';
 
-  // ───────── GENDER ICON (IMAGE-BASED) ─────────
+  // ───────── GENDER ICON with rating ring ─────────
   if (IS_MIXED_SESSION && player?.gender) {
-    const genderIcon = document.createElement('img');
-    genderIcon.className = 'gender-icon';
-
-    genderIcon.src =
-      player.gender === 'Female'
-        ? 'female.png'
-        : 'male.png';
-
-    genderIcon.alt = player.gender;
-    btn.appendChild(genderIcon);
+    const restName = player.displayName || player.name || '';
+    btn.appendChild(createRatingRing(restName, player.gender));
   }
 
   // ───────── LABEL ─────────
@@ -2004,12 +2060,9 @@ function makePlayerButton(name, teamSide, gameIndex, playerIndex, data, index) {
     ? 'Lplayer-btn'
     : 'Rplayer-btn';
 
-  /* ───────── AVATAR (always shown, like fixed card) ───────── */
-  const genderIcon = document.createElement('img');
-  genderIcon.className = 'gender-icon';
-  genderIcon.src = (player?.gender === 'Female') ? 'female.png' : 'male.png';
-  genderIcon.alt = player?.gender || 'Male';
-  btn.appendChild(genderIcon);
+  /* ───────── AVATAR with rating ring ───────── */
+  const playerNameClean = name.split('#')[0];
+  btn.appendChild(createRatingRing(playerNameClean, player?.gender || 'Male'));
 
   /* ───────── PLAYER NAME ───────── */
   const nameSpan = document.createElement('span');
@@ -2528,6 +2581,8 @@ function checkAllWinnersMarked() {
     endBtn.style.boxShadow = allMarked ? '0 0 0 2px #2dce89' : '';
     endBtn.title = allMarked ? '' : '';
   }
+  // Save snapshot whenever winner state changes
+  if (typeof saveSnapshot === 'function') saveSnapshot();
 }
 
 // toggleRoundSettings -- unified version

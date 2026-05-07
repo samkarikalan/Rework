@@ -7,7 +7,7 @@
 const REPORT_GITHUB_OWNER = 'kariscs';
 const REPORT_GITHUB_REPO  = 'SCS_Report';
 const REPORT_GITHUB_API   = 'https://api.github.com';
-const REPORT_PAGE_URL     = 'https://kariscs.github.io/SCS_Report/';
+const REPORT_PAGE_URL     = 'https://scs-app.com/';
 
 /* ── Get current month string e.g. "2026-04" ── */
 function reportCurrentMonth() {
@@ -27,27 +27,50 @@ async function reportFetchData() {
 
   const month = reportCurrentMonth();
 
-  // 1. Get all completed sessions for this club this month -- same as dashboard
-  const allSessions = await sbGet('sessions',
-    `club_id=eq.${club.id}&status=eq.completed&select=id,date,players,rounds_data,shuttle_data`
-  );
-  const monthSessions = (allSessions || []).filter(s => s.date && s.date.startsWith(month));
+  // ── Try server first, fall back to local ──
+  let memberships = null;
+  let allSessions = [];
+  let usingLocal  = false;
 
-  // 2. Get memberships for current rating/points
-  const memberships = await sbGet('memberships',
-    `club_id=eq.${club.id}&select=id,nickname,club_rating,club_points`
-  );
+  try {
+    // 1. Get all sessions for this club this month
+    allSessions = await sbGet('sessions',
+      `club_id=eq.${club.id}&select=id,date,players,rounds_data,shuttle_data`
+    ) || [];
+
+    // 2. Get memberships for current rating/points
+    memberships = await sbGet('memberships',
+      `club_id=eq.${club.id}&select=id,nickname,club_rating,club_points`
+    );
+  } catch(e) {
+    // ── Offline: fall back to local data ──
+    usingLocal = true;
+    const localPlayers = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
+    memberships = localPlayers.map(p => ({
+      nickname:    p.displayName || p.name || '',
+      club_rating: p.activeRating || p.rating || 1.0,
+      club_points: p.club_points  || 0
+    }));
+
+    // Build sessions from local allRounds if available
+    if (typeof allRounds !== 'undefined' && allRounds.length) {
+      const _rNow = new Date(); const _rD = d => String(d).padStart(2,'0');
+      const _rToday = `${_rNow.getFullYear()}-${_rD(_rNow.getMonth()+1)}-${_rD(_rNow.getDate())}`;
+      allSessions = [{ date: _rToday, players: memberships.map(m => ({ name: m.nickname })), rounds_data: allRounds, shuttle_data: null }];
+    }
+  }
+
   if (!memberships || !memberships.length) throw new Error('No players found');
 
-  // 3. Build per-player stats from sessions table
+  const monthSessions = allSessions.filter(s => s.date && s.date.startsWith(month));
+
+  // 3. Build per-player stats from sessions
   const statsMap = {};
-
   for (const sess of monthSessions) {
-    const sessPlayers  = sess.players || [];
+    const sessPlayers   = sess.players || [];
     const costPerPlayer = sess.shuttle_data ? (parseFloat(sess.shuttle_data.cost_per_player) || 0) : 0;
-    const roundsData   = sess.rounds_data || [];
+    const roundsData    = sess.rounds_data || [];
 
-    // Count wins/losses from rounds_data
     const winsMap = {}, lossesMap = {};
     for (const round of roundsData) {
       for (const game of (round.games || [])) {
@@ -59,7 +82,6 @@ async function reportFetchData() {
       }
     }
 
-    // Each player in this session gets +1 session
     for (const p of sessPlayers) {
       const name = (p.name || p.player_name || '').trim();
       if (!name) continue;
@@ -71,26 +93,26 @@ async function reportFetchData() {
     }
   }
 
-  // 4. Merge with membership ratings/points
+  // 4. Merge with ratings/points — show ALL members
   const players = memberships.map(m => {
     const name  = m.nickname || '';
     const st    = statsMap[name] || { wins: 0, losses: 0, cost: 0, sessions: 0 };
     const games = st.wins + st.losses;
     return {
       name,
-      rating:     parseFloat(m.club_rating) || 1.0,
-      points:     Math.round((parseFloat(m.club_points) || 0) * 10) / 10,
-      monthWins:  st.wins,
-      monthLosses:st.losses,
-      monthGames: games,
-      monthCost:  Math.round(st.cost),
-      sessCount:  st.sessions,
-      winRate:    games > 0 ? Math.round((st.wins / games) * 100) : 0,
+      rating:      parseFloat(m.club_rating) || 1.0,
+      points:      Math.round((parseFloat(m.club_points) || 0) * 100) / 100,
+      monthWins:   st.wins,
+      monthLosses: st.losses,
+      monthGames:  games,
+      monthCost:   Math.round(st.cost),
+      sessCount:   st.sessions,
+      winRate:     games > 0 ? Math.round((st.wins / games) * 100) : 0,
     };
-  }).filter(p => p.sessCount > 0 || p.rating > 1.0)
+  }).filter(p => p.name)
     .sort((a, b) => b.rating - a.rating);
 
-  return { club, players, month, monthLabel: reportMonthLabel() };
+  return { club, players, month, monthLabel: reportMonthLabel(), usingLocal };
 }
 
 /* ── Build HTML string ── */
@@ -185,26 +207,7 @@ body{font-family:'DM Sans',sans-serif;background:#0a0a12;color:#fff;padding:16px
 </head>
 <body>
 
-<!-- WIDGET 1 -- RATING -->
-<div class="widget w1">
-  <div class="w-header">
-    <div class="w-club">${club.name} · ${monthLabel}</div>
-    <div class="w-title">Rating</div>
-    <div class="w-icon">⭐</div>
-    <div class="w-meta">
-      <div class="w-meta-item">Top <strong>${topRating}</strong></div>
-      <div class="w-meta-item">Avg <strong>${avgRating}</strong></div>
-      <div class="w-meta-item">Scale <strong>0 - 5</strong></div>
-    </div>
-  </div>
-  <div class="w-divider"></div>
-  <div class="w-rows">
-    ${playerRows('rating', 5, p=>p.rating, p=>p.rating.toFixed(1))}
-  </div>
-  <div class="w-axis">${axisLabels(['0','1','2','3','4','5'])}</div>
-</div>
-
-<!-- WIDGET 2 -- SESSIONS -->
+<!-- WIDGET 1 -- SESSIONS -->
 <div class="widget w2">
   <div class="w-header">
     <div class="w-club">${club.name} · ${monthLabel}</div>
@@ -222,7 +225,7 @@ body{font-family:'DM Sans',sans-serif;background:#0a0a12;color:#fff;padding:16px
   <div class="w-axis">${axisLabels(['0','','','','',maxSess])}</div>
 </div>
 
-<!-- WIDGET 3 -- COST -->
+<!-- WIDGET 2 -- COST -->
 <div class="widget w3">
   <div class="w-header">
     <div class="w-club">${club.name} · ${monthLabel}</div>
@@ -238,6 +241,25 @@ body{font-family:'DM Sans',sans-serif;background:#0a0a12;color:#fff;padding:16px
     ${playerRows('monthCost', maxCost, p=>p.monthCost, p=>'¥'+p.monthCost.toLocaleString())}
   </div>
   <div class="w-axis">${axisLabels(['¥0','','','','','¥'+maxCost.toLocaleString()])}</div>
+</div>
+
+<!-- WIDGET 3 -- RATING -->
+<div class="widget w1">
+  <div class="w-header">
+    <div class="w-club">${club.name} · ${monthLabel}</div>
+    <div class="w-title">Rating</div>
+    <div class="w-icon">⭐</div>
+    <div class="w-meta">
+      <div class="w-meta-item">Top <strong>${topRating}</strong></div>
+      <div class="w-meta-item">Avg <strong>${avgRating}</strong></div>
+      <div class="w-meta-item">Scale <strong>0 - 5</strong></div>
+    </div>
+  </div>
+  <div class="w-divider"></div>
+  <div class="w-rows">
+    ${playerRows('rating', 5, p=>p.rating, p=>p.rating.toFixed(1))}
+  </div>
+  <div class="w-axis">${axisLabels(['0','1','2','3','4','5'])}</div>
 </div>
 
 <!-- WIDGET 4 -- POINTS -->
@@ -352,4 +374,123 @@ async function reportGenerate() {
     setStatus('❌ ' + e.message, '#e63757');
     if (btnEl) btnEl.disabled = false;
   }
+}
+
+
+/* ============================================================
+   VIEWER REPORT — fetch + render per month
+============================================================ */
+async function reportFetchMonthData(year, month) {
+  const club = (typeof getMyClub === 'function') ? getMyClub() : null;
+  if (!club || !club.id) throw new Error('No active club selected');
+
+  const monthStr = year + '-' + String(month).padStart(2, '0');
+  let sessions = [];
+  try {
+    const all = await sbGet('sessions',
+      'club_id=eq.' + club.id + '&select=id,date,players,rounds_data,shuttle_data');
+    sessions = (all || []).filter(function(s) { return s.date && s.date.startsWith(monthStr); });
+  } catch(e) { sessions = []; }
+
+  let memberships = [];
+  try {
+    memberships = await sbGet('memberships',
+      'club_id=eq.' + club.id + '&select=id,nickname,club_rating,club_points') || [];
+  } catch(e) { memberships = []; }
+
+  const statsMap = {};
+  for (const sess of sessions) {
+    const costPP = sess.shuttle_data ? (parseFloat(sess.shuttle_data.cost_per_player) || 0) : 0;
+    const wins = {}, losses = {};
+    for (const round of (sess.rounds_data || [])) {
+      for (const game of (round.games || [])) {
+        if (!game.winner) continue;
+        const w = game.winner === 'L' ? game.pair1 : game.pair2;
+        const l = game.winner === 'L' ? game.pair2 : game.pair1;
+        (w||[]).forEach(function(n) { wins[n]   = (wins[n]   || 0) + 1; });
+        (l||[]).forEach(function(n) { losses[n] = (losses[n] || 0) + 1; });
+      }
+    }
+    for (const p of (sess.players || [])) {
+      const name = (p.name || p.player_name || '').trim();
+      if (!name) continue;
+      if (!statsMap[name]) statsMap[name] = { wins:0, losses:0, cost:0, sessions:0 };
+      statsMap[name].sessions += 1;
+      statsMap[name].wins     += wins[name]   || 0;
+      statsMap[name].losses   += losses[name] || 0;
+      statsMap[name].cost     += costPP;
+    }
+  }
+
+  const players = memberships.map(function(m) {
+    const name = m.nickname || '';
+    const st   = statsMap[name] || { wins:0, losses:0, cost:0, sessions:0 };
+    return { name, rating: parseFloat(m.club_rating)||1.0, points: parseFloat(m.club_points)||0,
+             sessions: st.sessions, cost: Math.round(st.cost), wins: st.wins, losses: st.losses };
+  }).filter(function(p) { return p.name; }).sort(function(a,b) { return b.rating - a.rating; });
+
+  const totalSessions = sessions.length;
+  const totalCost     = players.reduce(function(s,p) { return s+p.cost; }, 0);
+  const avgRating     = players.length ? (players.reduce(function(s,p){return s+p.rating;},0)/players.length).toFixed(1) : '--';
+  const topRating     = players.length ? players[0].rating.toFixed(1) : '--';
+  const topPoints     = players.length ? [...players].sort(function(a,b){return b.points-a.points;})[0] : null;
+  const mostSessions  = players.length ? [...players].sort(function(a,b){return b.sessions-a.sessions;})[0] : null;
+
+  return { club, players, year, month, monthStr, totalSessions, totalCost, topRating, avgRating, topPoints, mostSessions };
+}
+
+function reportRenderViewerPage(data) {
+  const ct = document.getElementById('r2Content');
+  if (!ct || !data) return;
+  const { club, players, year, month, totalSessions, totalCost, topRating, avgRating, topPoints, mostSessions } = data;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const label  = (club ? club.name : '') + ' · ' + (months[month-1]||'') + ' ' + year;
+
+  const maxSess   = Math.max.apply(null, players.map(function(p){return p.sessions;}), 1);
+  const maxCost   = Math.max.apply(null, players.map(function(p){return p.cost;}), 1);
+  const maxRating = Math.max.apply(null, players.map(function(p){return p.rating;}), 5);
+  const maxPoints = Math.max.apply(null, players.map(function(p){return p.points;}), 1);
+
+  function pct(v, mx) { return mx > 0 ? Math.min(100, Math.round(v/mx*100)) : 0; }
+  function medal(i) { return i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':(i+1)+' '; }
+
+  function widget(color, bg, title, icon, subtitle, sorted, valFn, labelFn) {
+    var rows = sorted.map(function(p,i) {
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+        '<div style="width:82px;font-size:0.72rem;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + medal(i) + p.name + '</div>' +
+        '<div style="flex:1;height:16px;background:rgba(255,255,255,0.07);border-radius:6px;overflow:hidden;">' +
+          '<div style="height:100%;width:' + pct(valFn(p), valFn(sorted[0])) + '%;background:' + color + ';border-radius:6px;"></div>' +
+        '</div>' +
+        '<div style="width:38px;font-size:0.7rem;color:#aaa;text-align:right;">' + labelFn(p) + '</div>' +
+      '</div>';
+    }).join('');
+    return '<div style="background:' + bg + ';border-radius:16px;padding:16px;margin-bottom:10px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+        '<div style="font-size:0.62rem;color:' + color + ';font-weight:700;letter-spacing:1px;">' + label.toUpperCase() + '</div>' +
+        '<span style="font-size:1.4rem;">' + icon + '</span>' +
+      '</div>' +
+      '<div style="font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:2px;">' + title + '</div>' +
+      '<div style="font-size:0.72rem;color:#6b7db3;margin-bottom:12px;">' + subtitle + '</div>' +
+      rows +
+    '</div>';
+  }
+
+  const sessSorted   = [...players].sort(function(a,b){return b.sessions-a.sessions;});
+  const costSorted   = [...players].sort(function(a,b){return b.cost-a.cost;});
+  const ratingSorted = [...players].sort(function(a,b){return b.rating-a.rating;});
+  const pointsSorted = [...players].sort(function(a,b){return b.points-a.points;});
+
+  ct.innerHTML =
+    widget('#14b8a6','#0d2d2a','Sessions','🎮',
+      'Total ' + totalSessions + ' · Most ' + (mostSessions?mostSessions.sessions:0),
+      sessSorted, function(p){return p.sessions;}, function(p){return p.sessions;}) +
+    widget('#f59e0b','#2d1f0d','Cost','💴',
+      'Total ¥' + totalCost.toLocaleString(),
+      costSorted, function(p){return p.cost;}, function(p){return '¥'+p.cost;}) +
+    widget('#7c3aed','#1a0d2e','Rating','⭐',
+      'Top ' + topRating + ' · Avg ' + avgRating,
+      ratingSorted, function(p){return p.rating;}, function(p){return p.rating.toFixed(1);}) +
+    widget('#e85d75','#2d0d1a','Points','🏆',
+      'Top ' + (topPoints?topPoints.points.toFixed(1):'--'),
+      pointsSorted, function(p){return p.points;}, function(p){return p.points.toFixed(1);});
 }

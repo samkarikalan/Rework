@@ -1113,7 +1113,7 @@ display: block;
 /* ── Vault Tiles (Option B -- Dark Glass) ── */
 .vault-tile-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   padding: 6px 0;
   margin: 0 16px;
@@ -6017,19 +6017,23 @@ body.app-dark .newImport-player-card.player-added {
   color: var(--muted) !important;
   flex-shrink: 0 !important;
 }
+.fixed-card-actions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-top: 4px !important;
+}
 .fc-delete-btn {
   all: unset !important;
   font-size: 18px !important;
   cursor: pointer !important;
   color: var(--muted) !important;
   transition: color 0.2s, opacity 0.2s !important;
-  flex-shrink: 0 !important;
-  padding: 4px !important;
+  padding: 4px 2px !important;
   opacity: 0.45 !important;
 }
 .fc-delete-btn:hover { color: var(--red) !important; opacity: 1 !important; }
 .fc-dropdown {
-  margin-top: 3px !important;
+  margin-top: 4px !important;
 }
 
 
@@ -7211,27 +7215,27 @@ body.appear-transitioning * { transition: background 0.5s ease, color 0.4s ease 
 
 /* ── Fixed Pairs page: Add button and pairs list ── */
 .schedule-btn {
-  display: block;
-  width: 100%;
-  padding: 13px;
-  margin: 12px 0 8px;
-  border-radius: var(--r-xl);
-  border: none;
-  background: var(--accent);
+  display: block !important;
+  width: 100% !important;
+  padding: 13px !important;
+  margin: 12px 0 8px !important;
+  border-radius: var(--r-xl) !important;
+  border: none !important;
+  background: var(--accent) !important;
   color: #fff !important;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px var(--accent-glow);
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  box-shadow: 0 4px 12px var(--accent-glow) !important;
 }
 .schedule-btn:active { transform: scale(0.97); }
 .schedule-btn.disabled-btn {
-  background: var(--surface3);
+  background: var(--surface3) !important;
   color: var(--muted) !important;
-  box-shadow: none;
-  opacity: 0.5;
-  pointer-events: none;
+  box-shadow: none !important;
+  opacity: 0.5 !important;
+  pointer-events: none !important;
 }
 .fixed-pairs-list {
   margin-top: 8px;
@@ -7554,3 +7558,25 @@ body.tile-style-glow.app-light .home-help-btn {
   cursor: grabbing;
 }
 
+
+/* ── Settings page: bottom sheet ── */
+/* homePageOverlay becomes the backdrop */
+/* homePageOverlay becomes backdrop when settings is open */
+#homePageOverlay.settings-open {
+  background: rgba(0,0,0,0.55) !important;
+  justify-content: flex-end !important;
+  overflow-y: hidden !important;
+}
+#settingsPage {
+  border-radius: 20px 20px 0 0 !important;
+  background: var(--surface) !important;
+  padding: 0 !important;
+  animation: sheetSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+#settingsPage .sheet-header {
+  border-radius: 20px 20px 0 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  background: var(--surface) !important;
+  z-index: 1 !important;
+}

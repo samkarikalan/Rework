@@ -93,14 +93,39 @@ function openModeSwitcher() {
   // Sync language label
   if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
   overlay.style.display = 'flex';
+
+  // Apply lock UI for non-pro users
+  var hasFull = typeof hasFullAccess === 'function' ? hasFullAccess() : true;
+  ['organiser', 'vault'].forEach(function(mode) {
+    var btn = overlay.querySelector('.ml-mode.' + mode);
+    if (!btn) return;
+    // Remove existing badge
+    var existing = btn.querySelector('.pro-badge');
+    if (existing) existing.remove();
+    if (!hasFull) {
+      btn.style.opacity = '0.5';
+      btn.style.position = 'relative';
+      var badge = document.createElement('span');
+      badge.className = 'pro-badge';
+      badge.style.cssText = 'position:absolute;top:8px;right:8px;background:#7c3aed;color:#fff;font-size:0.6rem;padding:2px 8px;border-radius:20px;font-weight:700;letter-spacing:0.5px;';
+      badge.textContent = '🔒 PRO';
+      btn.appendChild(badge);
+    } else {
+      btn.style.opacity = '1';
+    }
+  });
 }
 
 function switchMode(mode) {
-  const overlay = document.getElementById('modeSelectOverlay');
-  if (overlay) overlay.style.display = 'none';
-
-  // Viewer needs no club
+  // Check subscription access
+  if (typeof canAccessMode === 'function' && !canAccessMode(mode)) {
+    if (typeof showModeUpgradePrompt === 'function') showModeUpgradePrompt(mode);
+    return;
+  }
+  // Viewer needs no club -- hide overlay and proceed
   if (mode === 'viewer') {
+    const overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) overlay.style.display = 'none';
     appMode = mode;
     sessionStorage.setItem('appMode', mode);
     localStorage.setItem('kbrr_app_mode', mode);
@@ -111,28 +136,31 @@ function switchMode(mode) {
   }
 
   // Organiser / Vault -- check club first
+  // Keep modeSelectOverlay visible so Cancel returns to it
   var club = (typeof getMyClub === 'function') ? getMyClub() : null;
   if (!club || !club.id) {
     _showClubSetupSheet(mode);
     return;
   }
 
-  // Organiser -- must be authenticated to the club (user or admin password entered)
+  // Organiser -- must be authenticated to the club
   if (mode === 'organiser') {
     var clubMode = (typeof getClubMode === 'function') ? getClubMode() : null;
     if (!clubMode) {
-      // Has a club stored but never logged in with password -- prompt login
       _showClubSetupSheet(mode);
       return;
     }
   }
 
-  // Vault -- also needs admin auth
+  // Vault -- needs admin auth
   if (mode === 'vault') {
     requestVaultMode();
     return;
   }
 
+  // All checks passed -- now hide overlay and proceed
+  const overlay = document.getElementById('modeSelectOverlay');
+  if (overlay) overlay.style.display = 'none';
   appMode = mode;
   sessionStorage.setItem('appMode', mode);
   localStorage.setItem('kbrr_app_mode', mode);
@@ -181,10 +209,15 @@ async function initAppFlow() {
     return;
   }
 
-  // ── Step 2: Always show mode select on load ──
+  // ── Step 2: Check for resumable session ──
+  if (typeof checkAndResume === 'function') {
+    const resumed = await checkAndResume();
+    if (resumed) return; // Restored — skip mode select
+  }
+
+  // ── Step 3: Normal startup — show mode select ──
   var overlay = document.getElementById('modeSelectOverlay');
   if (overlay) overlay.style.display = 'flex';
-  // Sync language label on static overlay
   if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
 }
 
@@ -242,6 +275,17 @@ function isPageVisible(pageId) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+  // License check — must have valid key to use app
+  // Check license on every app open
+  (async function() {
+    const email = localStorage.getItem('scs_sub_email');
+    if (email && typeof checkLicense === 'function') {
+      await checkLicense(email);
+    } else {
+      if (typeof _initTrial === 'function') _initTrial();
+      if (typeof subShowTrialBanner === 'function') subShowTrialBanner();
+    }
+  })();
   // Restore theme and font size from saved prefs FIRST
   if (typeof initTheme    === 'function') initTheme();
   if (typeof initFontSize === 'function') initFontSize();
@@ -301,6 +345,13 @@ window.addEventListener('beforeunload', () => {
   consolidateMasterDB();   // merge any new players added during session on close
   if (typeof dbCompleteSession === "function") dbCompleteSession();
   if (typeof dbReleaseMySession === "function") dbReleaseMySession();
+});
+
+// ── Sync when back online ──
+window.addEventListener('online', async () => {
+  console.log('Back online -- flushing sync queue...');
+  if (typeof flushSyncQueue === 'function') await flushSyncQueue();
+  if (typeof syncToLocal    === 'function') await syncToLocal();
 });
 
 /* =========================
@@ -530,18 +581,66 @@ function showPage(pageID, el) {
     if (subEl)   subEl.textContent   = t('monthlyStats') || 'Monthly stats';
     // Render preview
     if (typeof reportFetchData === 'function') {
+      const preview   = document.getElementById('reportPreview');
+      const statusEl  = document.getElementById('reportStatus');
+
+      // Step 1 — show local data immediately (never blank)
+      try {
+        const localPlayers = JSON.parse(localStorage.getItem('newImportHistory') || '[]');
+        if (localPlayers.length && preview) {
+          const localData = {
+            club: (typeof getMyClub === 'function') ? getMyClub() : { name: '' },
+            month: reportCurrentMonth(),
+            monthLabel: reportMonthLabel(),
+            usingLocal: true,
+            players: localPlayers
+              .filter(p => p.displayName || p.name)
+              .map(p => ({
+                name:        p.displayName || p.name || '',
+                rating:      parseFloat(p.activeRating || p.rating) || 1.0,
+                points:      parseFloat(p.club_points) || 0,
+                monthWins:   0, monthLosses: 0, monthGames: 0,
+                monthCost:   0, sessCount: 0, winRate: 0
+              }))
+              .sort((a, b) => b.rating - a.rating)
+          };
+          const iframe = document.createElement('iframe');
+          iframe.style.cssText = 'width:100%;height:80vh;border:none;border-radius:16px;';
+          iframe.srcdoc = reportBuildHTML(localData);
+          preview.innerHTML = '';
+          preview.appendChild(iframe);
+          if (statusEl) { statusEl.textContent = '📱 Local data — syncing...'; statusEl.style.color = 'var(--muted)'; }
+        }
+      } catch(e) { /* silent */ }
+
+      // Step 2 — fetch from server and update
       reportFetchData().then(data => {
-        const html = reportBuildHTML(data);
-        const preview = document.getElementById('reportPreview');
         if (preview) {
           const iframe = document.createElement('iframe');
           iframe.style.cssText = 'width:100%;height:80vh;border:none;border-radius:16px;';
-          iframe.srcdoc = html;
+          iframe.srcdoc = reportBuildHTML(data);
           preview.innerHTML = '';
           preview.appendChild(iframe);
         }
-      }).catch(() => {});
+        if (statusEl) { statusEl.textContent = data.usingLocal ? '⚠️ Offline — local data only' : ''; statusEl.style.color = '#f5a623'; }
+      }).catch(e => {
+        // Server failed — local data already showing, just update status
+        if (statusEl) { statusEl.textContent = '⚠️ Offline — showing local data'; statusEl.style.color = '#f5a623'; }
+      });
     }
+  }
+
+  if (pageID === "vaultReport2Page") {
+    if (typeof r2Init === 'function') r2Init();
+  }
+
+  // QC — start watching current mode
+  if (pageID === 'homeScreen' || pageID === 'viewerHome') {
+    if (typeof qcStart === 'function') qcStart('viewer');
+  } else if (pageID === 'playersPage' || pageID === 'roundsPage') {
+    if (typeof qcStart === 'function') qcStart('organiser');
+  } else if (pageID === 'vaultPage' || pageID === 'vaultRegisterPage') {
+    if (typeof qcStart === 'function') qcStart('vault');
   }
 
   if (pageID === "myCardPage") {
@@ -768,21 +867,23 @@ function updateSessionLiveBar() {
    VAULT MODE -- Admin password gate
 ============================================================= */
 function requestVaultMode() {
-  const overlay = document.getElementById('modeSelectOverlay');
-  if (overlay) overlay.style.display = 'none';
-
-  if (appMode === 'vault') { switchMode('vault'); return; }
-
-  // Check club first
+  // Pro subscription required for Vault mode
+  if (typeof canAccessMode === 'function' && !canAccessMode('vault')) {
+    if (typeof showModeUpgradePrompt === 'function') showModeUpgradePrompt('vault');
+    return;
+  }
+  // No club — show Join Club sheet (keep mode select visible behind it)
   var club = (typeof getMyClub === 'function') ? getMyClub() : null;
   if (!club || !club.id) {
     _showClubSetupSheet('vault');
     return;
   }
 
-  // Already authenticated as admin or user this session
-  const clubMode = localStorage.getItem('kbrr_club_mode');
+  // Already authenticated this session — go straight to vault
+  var clubMode = (typeof getClubMode === 'function') ? getClubMode() : null;
   if (clubMode === 'admin' || clubMode === 'user') {
+    const overlay = document.getElementById('modeSelectOverlay');
+    if (overlay) overlay.style.display = 'none';
     appMode = 'vault';
     sessionStorage.setItem('appMode', 'vault');
     localStorage.setItem('kbrr_app_mode', 'vault');
@@ -791,7 +892,9 @@ function requestVaultMode() {
     if (typeof showHomeScreen === 'function') showHomeScreen();
     return;
   }
-  _showVaultPasswordPrompt();
+
+  // Has club but not authenticated — show Join Club sheet
+  _showClubSetupSheet('vault');
 }
 
 /* =============================================================
@@ -1217,6 +1320,166 @@ async function confirmEndSession() {
   await _doEndSession(shuttleData);
 }
 
+/* ── Edit Session Cost (organiser only) ── */
+function showEditCostSheet(sessionId, existingData, sessionPlayers) {
+  const existing = document.getElementById('editCostOverlay');
+  if (existing) existing.remove();
+
+  const isFlat    = !existingData || existingData.mode === 'flat';
+  const flatVal   = existingData?.cost_per_player || '';
+  const tubePrice = existingData?.tube_price       || '';
+  const shuttles  = existingData?.shuttles_used    || '';
+  const courtFee  = existingData?.court_fee        || '';
+  const miscFee   = existingData?.misc_fee         || '';
+  const players   = (sessionPlayers && sessionPlayers.length) ? sessionPlayers.length : (existingData?.player_count || 0);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'editCostOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-end;';
+  overlay.innerHTML = `
+    <div class="shuttle-sheet" id="editCostSheet">
+      <div class="shuttle-handle"></div>
+      <div class="shuttle-title">✏️ Edit Session Cost</div>
+      <div class="shuttle-mode-toggle">
+        <button class="shuttle-mode-btn ${isFlat?'':'active'}" id="editModeA" onclick="editCostSwitchMode('itemized')">📋 Itemized</button>
+        <button class="shuttle-mode-btn ${isFlat?'active':''}" id="editModeB" onclick="editCostSwitchMode('flat')">💴 Flat Fee</button>
+      </div>
+      <div id="editModeItemized" style="${isFlat?'display:none':''}">
+        <div class="shuttle-2col">
+          <div class="shuttle-input-group">
+            <div class="shuttle-input-label">🪶 Price/tube</div>
+            <input type="number" id="editTubePrice" class="shuttle-input" value="${tubePrice}" placeholder="e.g. 6000" oninput="editCostCalc()">
+          </div>
+          <div class="shuttle-input-group">
+            <div class="shuttle-input-label">Shuttles used</div>
+            <input type="number" id="editShuttleCount" class="shuttle-input" value="${shuttles}" placeholder="e.g. 16" oninput="editCostCalc()">
+          </div>
+        </div>
+        <div class="shuttle-input-group">
+          <div class="shuttle-input-label">🏟 Court fee (total)</div>
+          <input type="number" id="editCourtFee" class="shuttle-input" value="${courtFee}" placeholder="¥0" oninput="editCostCalc()">
+        </div>
+        <div class="shuttle-input-group" style="margin-top:8px">
+          <div class="shuttle-input-label">📦 Misc fee (total)</div>
+          <input type="number" id="editMiscFee" class="shuttle-input" value="${miscFee}" placeholder="¥0" oninput="editCostCalc()">
+        </div>
+      </div>
+      <div id="editModeFlat" style="${isFlat?'':'display:none'}">
+        <div class="shuttle-input-group">
+          <div class="shuttle-input-label">💴 Amount per player</div>
+          <input type="number" id="editFlatFee" class="shuttle-input shuttle-input-lg" value="${flatVal}" placeholder="¥0" oninput="editCostCalc()">
+        </div>
+      </div>
+      <div class="shuttle-result" id="editCostResult"></div>
+      <div class="shuttle-actions">
+        <button class="shuttle-skip-btn" onclick="document.getElementById('editCostOverlay').remove()">Cancel</button>
+        <button class="shuttle-confirm-btn" onclick="saveEditedCost('${sessionId}', _editCostPlayers)">💾 Save</button>
+      </div>
+    </div>`;
+
+  window._editCostPlayers = sessionPlayers || [];
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  editCostCalc();
+}
+
+function editCostSwitchMode(mode) {
+  document.getElementById('editModeItemized').style.display = mode === 'itemized' ? '' : 'none';
+  document.getElementById('editModeFlat').style.display     = mode === 'flat'     ? '' : 'none';
+  document.getElementById('editModeA').classList.toggle('active', mode === 'itemized');
+  document.getElementById('editModeB').classList.toggle('active', mode === 'flat');
+  editCostCalc();
+}
+
+function editCostCalc() {
+  const isFlat  = document.getElementById('editModeFlat')?.style.display !== 'none';
+  const result  = document.getElementById('editCostResult');
+  if (!result) return;
+  if (isFlat) {
+    const flat = parseFloat(document.getElementById('editFlatFee')?.value) || 0;
+    result.innerHTML = flat ? `<span class="shuttle-per-player">¥${Math.round(flat).toLocaleString()} / player</span>` : '';
+  } else {
+    const tubePrice = parseFloat(document.getElementById('editTubePrice')?.value)    || 0;
+    const count     = parseFloat(document.getElementById('editShuttleCount')?.value) || 0;
+    const courtFee  = parseFloat(document.getElementById('editCourtFee')?.value)     || 0;
+    const miscFee   = parseFloat(document.getElementById('editMiscFee')?.value)      || 0;
+    const shuttle   = tubePrice && count ? (tubePrice / 12) * count : 0;
+    const total     = shuttle + courtFee + miscFee;
+    const pc        = window._editCostPlayers ? window._editCostPlayers.length : 0;
+    const perPlayer = pc > 0 ? Math.round(total / pc) : 0;
+    if (total) {
+      result.innerHTML = `<span class="shuttle-per-player">Total ¥${Math.round(total).toLocaleString()}${pc ? ' · ¥' + perPlayer.toLocaleString() + '/player' : ''}</span>`;
+    }
+  }
+}
+
+async function saveEditedCost(sessionId, sessionPlayers) {
+  const playerCount = Array.isArray(sessionPlayers) ? sessionPlayers.length : (sessionPlayers || 0);
+  const isFlat = document.getElementById('editModeFlat')?.style.display !== 'none';
+  let shuttleData = null;
+
+  if (isFlat) {
+    const flat = parseFloat(document.getElementById('editFlatFee')?.value) || 0;
+    if (flat) shuttleData = { mode: 'flat', cost_per_player: Math.round(flat), player_count: playerCount };
+  } else {
+    const tubePrice = parseFloat(document.getElementById('editTubePrice')?.value)    || 0;
+    const count     = parseFloat(document.getElementById('editShuttleCount')?.value) || 0;
+    const courtFee  = parseFloat(document.getElementById('editCourtFee')?.value)     || 0;
+    const miscFee   = parseFloat(document.getElementById('editMiscFee')?.value)      || 0;
+    const shuttle   = tubePrice && count ? (tubePrice / 12) * count : 0;
+    const total     = shuttle + courtFee + miscFee;
+    const perPlayer = playerCount > 0 ? Math.round(total / playerCount) : 0;
+    if (total) shuttleData = {
+      mode: 'itemized', tube_price: tubePrice, shuttles_used: count,
+      court_fee: courtFee, misc_fee: miscFee,
+      total_cost: Math.round(total), cost_per_player: perPlayer, player_count: playerCount
+    };
+  }
+
+  if (!shuttleData) { alert('Please enter cost details'); return; }
+
+  try {
+    // 1. Update sessions.shuttle_data
+    await sbPatch('sessions', `id=eq.${sessionId}`, { shuttle_data: shuttleData });
+
+    // 2. Update players.sessions[].cost_per_player matched by session_id
+    const club = (typeof getMyClub === 'function') ? getMyClub() : null;
+    if (club && club.id && Array.isArray(sessionPlayers) && sessionPlayers.length) {
+      for (const p of sessionPlayers) {
+        const name = p.name || p.player_name || '';
+        if (!name) continue;
+        try {
+          const mrows = await sbGet('memberships',
+            `club_id=eq.${club.id}&nickname=ilike.${encodeURIComponent(name)}&select=player_id`
+          ).catch(() => []);
+          if (!mrows || !mrows.length) continue;
+          const prows = await sbGet('players',
+            `id=eq.${mrows[0].player_id}&select=id,sessions`
+          ).catch(() => []);
+          if (!prows || !prows.length) continue;
+          const existing = prows[0].sessions || [];
+          // Match by session_id (new entries) — reliable even with multiple sessions per day
+          const updated = existing.map(entry =>
+            entry.session_id === sessionId
+              ? { ...entry, cost_per_player: shuttleData.cost_per_player }
+              : entry
+          );
+          // Only patch if something changed
+          if (JSON.stringify(updated) !== JSON.stringify(existing)) {
+            await sbPatch('players', `id=eq.${prows[0].id}`, { sessions: updated }).catch(() => {});
+          }
+        } catch(e) { /* silent per player */ }
+      }
+    }
+
+    document.getElementById('editCostOverlay')?.remove();
+    if (typeof loadDashboard === 'function') loadDashboard();
+    _qcToast('✅ Cost updated — ¥' + shuttleData.cost_per_player.toLocaleString() + '/player');
+  } catch(e) {
+    alert('Failed to save: ' + e.message);
+  }
+}
+
 async function skipShuttleAndEnd() {
   document.getElementById('shuttleSheetOverlay')?.remove();
   await _doEndSession(null);
@@ -1282,6 +1545,9 @@ async function _doEndSession(shuttleData) {
   // Remove toast
   toast.textContent = t('sessionEnded');
   setTimeout(() => toast.remove(), 1500);
+
+  // Clear saved snapshot — session is done
+  if (typeof clearSnapshot === 'function') clearSnapshot();
 
   // Reset organiser stepper to step 1
   if (typeof _stepCourtsSet   !== 'undefined') _stepCourtsSet   = false;

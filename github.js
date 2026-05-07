@@ -143,7 +143,7 @@ async function dbAddPlayer(name, gender, homeClub) {
     gender,
     homeClub,
     rating: 1.0,
-    registeredDate: new Date().toISOString().split("T")[0]
+    registeredDate: (() => { const _n=new Date(); const _p=n=>String(n).padStart(2,'0'); return `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}`; })()
   };
 
   players.push(newPlayer);
@@ -268,7 +268,7 @@ async function dbAddClub(clubName) {
   const newClub = {
     id: `club-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     name: clubName.trim(),
-    registeredDate: new Date().toISOString().split("T")[0]
+    registeredDate: (() => { const _n=new Date(); const _p=n=>String(n).padStart(2,'0'); return `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}`; })()
   };
 
   clubs.push(newClub);

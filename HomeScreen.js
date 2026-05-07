@@ -59,6 +59,12 @@ go: function() { homeGo('roundsPage', 'tabBtnRounds'); }
 
 /* ── Main entry: show home screen ── */
 function showHomeScreen() {
+  if (typeof qcStop === 'function') qcStop(); // stop QC when leaving a mode
+  // Auth guard
+  if (typeof authIsLoggedIn === 'function' && !authIsLoggedIn()) {
+    if (typeof authShowScreen === 'function') authShowScreen('welcome');
+    return;
+  }
 var homeEl = document.getElementById('homePageOverlay');
 if (!homeEl) return;
 
@@ -571,6 +577,26 @@ if (typeof homeRefreshScreen === 'function') await homeRefreshScreen();
 if (typeof updateProfileBtn === 'function') updateProfileBtn();
 }
 
+/* ── QC dot indicators ── */
+function viewerQCAddDots() {
+  var configs = [
+    { elId: 'myCardQC',  sel: '[onclick*="myCardPage"]' },
+    { elId: 'dashQC',    sel: '[onclick*="dashboardPage"]' },
+    { elId: 'clubsQC',   sel: '#joinClubTileRow' },
+    { elId: 'reportQC',  sel: '[onclick*="vaultReport2Page"]' },
+  ];
+  configs.forEach(function(d) {
+    if (document.getElementById(d.elId)) return;
+    var tile = document.querySelector(d.sel);
+    if (!tile) return;
+    tile.style.position = 'relative';
+    var dot = document.createElement('div');
+    dot.id = d.elId;
+    dot.style.cssText = 'position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;display:none;z-index:10;';
+    tile.appendChild(dot);
+  });
+}
+
 async function homeRefreshJoinClubTile() {
 var sub     = document.getElementById('tileSubJoinClub');
 var listEl  = document.getElementById('vcl-list-inner');
@@ -617,23 +643,17 @@ var pendingIds = (pending || []).map(function(p){ return p.club_id; });
         });
 
       if (items.length > 0) {
-        listEl.innerHTML = items.map(function(item) {
-          var isActive = item.id === activeClubId;
-          var activeClass = isActive ? ' vcl-row-active' : '';
-          var clickHandler = item.pending ? '' : ' onclick="vclSetActiveClub(\'' + item.id + '\',\'' + item.name.replace(/'/g,"\\\'" ) + '\')"';
-          return '<div class="vcl-row' + activeClass + '"' + clickHandler + '>' +
-            '<span class="vcl-dot">' + (item.pending ? '⏳' : (isActive ? '✅' : '🏸')) + '</span>' +
+        // Show only active club on home screen
+        var activeItem = items.find(function(i){ return i.id === activeClubId; }) || items[0];
+        listEl.innerHTML =
+          '<div class="vcl-row vcl-row-active">' +
+            '<span class="vcl-dot">✅</span>' +
             '<div class="vcl-row-info">' +
-              '<span class="vcl-row-name">' + item.name + '</span>' +
-              (item.nick ? '<span class="vcl-row-nick">' + t('asNick') + ' ' + item.nick + '</span>' : '') +
+              '<span class="vcl-row-name">' + activeItem.name + '</span>' +
+              (activeItem.nick ? '<span class="vcl-row-nick">' + t('asNick') + ' ' + activeItem.nick + '</span>' : '') +
             '</div>' +
-            (item.pending
-              ? '<span class="vcl-badge vcl-badge-pending">' + t('badgePending') + '</span>'
-              : (isActive
-                ? '<span class="vcl-badge vcl-badge-active">' + t('badgeActive') + '</span>'
-                : '<span class="vcl-badge vcl-badge-member">' + t('badgeMember') + '</span>')) +
+            '<span class="vcl-badge vcl-badge-active">' + t('badgeActive') + '</span>' +
           '</div>';
-        }).join('');
       } else {
         listEl.innerHTML = '';
       }
@@ -669,6 +689,24 @@ if (nickEl) nickEl.style.display = 'none';
 
 // Load all my clubs
 await _renderMyClubsList();
+}
+
+function jcActivateClub(row) {
+  var id   = row.getAttribute('data-cid');
+  var name = row.getAttribute('data-cname');
+  if (!id) return;
+  // Update all rows instantly
+  document.querySelectorAll('.jc-club-item').forEach(function(r) {
+    var rid      = r.getAttribute('data-cid');
+    var isNowActive = rid === id;
+    r.querySelector('.jc-club-icon').textContent = isNowActive ? '✅' : '🏸';
+    r.querySelector('.jc-club-badge, [class*="badge"]').style.background = isNowActive ? '#1db954' : '';
+    r.querySelector('.jc-club-badge, [class*="badge"]').style.color = isNowActive ? '#fff' : '';
+    r.querySelector('.jc-club-badge, [class*="badge"]').textContent = isNowActive ? 'Active' : 'Member';
+    if (isNowActive) { r.removeAttribute('onclick'); r.style.cursor = ''; }
+    else { r.setAttribute('onclick', 'jcActivateClub(this)'); r.style.cursor = 'pointer'; }
+  });
+  if (typeof vclSetActiveClub === 'function') vclSetActiveClub(id, name);
 }
 
 async function _renderMyClubsList() {
@@ -708,18 +746,26 @@ var clubs = allIds.length
 var clubMap = {};
 clubs.forEach(function(c){ clubMap[c.id] = c.name; });
 
+var activeClubId2 = (typeof getMyClub === 'function') ? ((getMyClub()||{}).id||null) : null;
 var html = '';
 
-// Member clubs
+// Member clubs — tick on active, tap others to activate
 (memberships || []).forEach(function(m) {
-  var cname = clubMap[m.club_id] || m.club_id;
-  html += '<div class="jc-club-row">' +
-    '<div class="jc-club-icon">🏸</div>' +
+  var cname    = clubMap[m.club_id] || m.club_id;
+  var isActive = m.club_id === activeClubId2;
+  var icon     = isActive ? '✅' : '🏸';
+  var badge    = isActive
+    ? '<span class="jc-club-badge" style="background:#1db954;color:#fff;">' + (t('active')||'Active') + '</span>'
+    : '<span class="jc-club-badge">' + t('badgeMember') + '</span>';
+  html += '<div class="jc-club-row jc-club-item"' +
+    (isActive ? '' : ' style="cursor:pointer;" onclick="jcActivateClub(this)"') +
+    ' data-cid="' + m.club_id + '" data-cname="' + cname.replace(/"/g,'&quot;') + '">' +
+    '<div class="jc-club-icon">' + icon + '</div>' +
     '<div class="jc-club-info">' +
       '<div class="jc-club-name">' + cname + '</div>' +
       '<div class="jc-club-nick">' + t('asNick') + ' ' + m.nickname + '</div>' +
     '</div>' +
-    '<span class="jc-club-badge">' + t('badgeMember') + '</span>' +
+    badge +
   '</div>';
 });
 

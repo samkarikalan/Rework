@@ -279,6 +279,23 @@ function _buildSessionCard({ clubName, starter, players, totalRounds, isLive, se
     card.appendChild(shuttleRow);
   }
 
+  // Edit Cost button -- organiser mode only, past sessions only
+  const isOrg = typeof appMode !== 'undefined' ? appMode === 'organiser' : localStorage.getItem('kbrr_app_mode') === 'organiser';
+  if (!isLive && isOrg && sessionId) {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'dash-force-end-btn';
+    editBtn.style.cssText = 'background:rgba(108,99,255,0.15);color:#6c63ff;border-color:rgba(108,99,255,0.3);margin-top:8px;';
+    editBtn.textContent = '✏️ Edit Cost';
+    editBtn.onclick = (e) => {
+      e.stopPropagation();
+      showEditCostSheet(sessionId, shuttleData, players);
+    };
+    const editFooter = document.createElement('div');
+    editFooter.className = 'dash-card-footer';
+    editFooter.appendChild(editBtn);
+    card.appendChild(editFooter);
+  }
+
   // Force End button -- admin only, live sessions only
   const isAdmin = (typeof isAdminMode === 'function') ? isAdminMode() : localStorage.getItem('kbrr_club_mode') === 'admin';
   if (isLive && isAdmin) {
@@ -317,8 +334,12 @@ function _openSessionRounds(sessionId) {
 function _formatDate(dateStr) {
   if (!dateStr) return '';
   const d     = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
-  const today = new Date();
-  const diff  = Math.floor((today - d) / (1000*60*60*24));
+  const now   = new Date();
+  // Compare using local date strings to avoid midnight UTC boundary issues
+  const _p    = n => String(n).padStart(2,'0');
+  const dStr  = `${d.getFullYear()}-${_p(d.getMonth()+1)}-${_p(d.getDate())}`;
+  const tStr  = `${now.getFullYear()}-${_p(now.getMonth()+1)}-${_p(now.getDate())}`;
+  const diff  = Math.round((new Date(tStr) - new Date(dStr)) / (1000*60*60*24));
   if (diff === 0) return t('today');
   if (diff === 1) return t('yesterday');
   if (diff < 7)  return `${diff} days ago`;

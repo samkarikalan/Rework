@@ -47,11 +47,23 @@ function parsePlayerLines(text, defaultGender) {
     line = line.trim();
     if (!line) continue;
 
+    // Stop at waitlist/court full section
+    if (/court full|waitlist|\bwl\b/i.test(line)) break;
+
+    // Skip non-player lines (URLs, markdown headers, date/time, venue)
+    if (/https?:\/\//i.test(line)) continue;
+    if (/^\*|\*$/.test(line)) continue;  // skip lines starting or ending with *
+    if (/\d{1,2}:\d{2}/.test(line)) continue;
+    if (/\d{1,2}-[A-Za-z]{3}/.test(line)) continue;
+
     let gender = defaultGender;
 
     // Remove leading numbering: "1. John" → "John"
     const numMatch = line.match(/^(\d+\.?\s*)?(.*)$/);
     if (numMatch) line = numMatch[2].trim();
+    line = line.replace(/\.$/, '').trim();
+    // Remove trailing dot: "Anand P." → "Anand P"
+    line = line.replace(/\.$/, '').trim();
 
     // "name, gender" format
     if (line.includes(",")) {
@@ -90,9 +102,7 @@ const newImportState = {
 function playerAvailDot(displayName) {
   const busy = (newImportState.unavailablePlayers || new Set())
     .has((displayName || "").trim().toLowerCase());
-  return busy
-    ? `<span class="avail-dot busy" title="${t('alreadyPlayingSession')}">🔴</span>`
-    : `<span class="avail-dot free" title="${t('availableStatus')}">🟢</span>`;
+  return ``;
 }
 function playerIsBusy(displayName) {
   return (newImportState.unavailablePlayers || new Set())
@@ -126,12 +136,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // Selected cards click handler
   newImportSelectedCards.addEventListener("click", newImportHandleSelectedCardClick);
 
-  // Browse list click handler (delegated on parent since list is re-rendered)
+  // Browse list click handler — checks clicked element then walks up to card for tap-to-add
   document.addEventListener("click", function(e) {
-    const browseAction = e.target.dataset.browseAction;
-    if (!browseAction) return;
-    const browsePlayer = e.target.dataset.browsePlayer;
-    if (!browsePlayer) return;
+    let browseAction = e.target.dataset.browseAction;
+    let browsePlayer = e.target.dataset.browsePlayer;
+
+    // If no action on element, check parent card for tap-to-add
+    if (!browseAction) {
+      const card = e.target.closest('[data-browse-action="add"]');
+      if (card) {
+        browseAction = card.dataset.browseAction;
+        browsePlayer = card.dataset.browsePlayer;
+      }
+    }
+
+    if (!browseAction || !browsePlayer) return;
     newImportHandleBrowseCardClick(browseAction, browsePlayer);
   });
 });
@@ -147,8 +166,8 @@ function newImportShowModal() {
   _newImportFilterToClub(); // filter both to current club (async, refreshes cards when done)
   newImportRefreshSelectCards();
   newImportRefreshSelectedCards();
-  // Ensure active tab matches displayed content
-  newImportShowSelectMode(newImportState.currentSelectMode || 'history');
+  // Default to Browse tab and load players immediately
+  addPlayersShowTab('browse');
   // Show Replace button only if players already in session
   var replaceBtn = document.getElementById('newImportReplaceBtn');
   if (replaceBtn) {
@@ -397,15 +416,19 @@ function newImportRefreshSelectCards() {
       const card = document.createElement("div");
       card.className = "newImport-player-card" + (busy ? " player-busy" : "") + (added ? " player-added" : "") + (inSession ? " player-in-session" : "");
       const rating1 = getActiveRating(p.displayName).toFixed(1);
-      const statusDot = busy
-        ? `<span class="avail-dot busy" title="${t('alreadyPlayingSession')}">🔴</span>`
-        : `<span class="avail-dot free" title="${t('availableStatus')}">🟢</span>`;
+      const statusDot = ``;
 
+      // Tap card to add (if not busy/inSession/already added)
+      if (!added && !busy && !inSession) {
+        card.dataset.action = 'add';
+        card.dataset.player = p.displayName;
+        card.style.cursor = 'pointer';
+      }
       card.innerHTML = `
         <div class="newImport-player-top">
           <img src="${p.gender === "Male" ? "male.png" : "female.png"}"
                style="${(busy || inSession) ? "opacity:0.4" : ""}; cursor:default">
-          <div class="newImport-player-name" style="${(busy || inSession) ? "opacity:0.5" : ""}">${p.displayName}${inSession ? ' <span style="font-size:0.7rem;color:var(--muted);">✓ added</span>' : ''}</div>
+          <div class="newImport-player-name" style="${(busy || inSession) ? "opacity:0.5" : ""}">${p.displayName}${inSession ? ' <span style="font-size:0.7rem;color:var(--muted);">✓ added</span>' : ''}${added ? ' <span style="font-size:0.7rem;color:var(--accent);">✓</span>' : ''}</div>
           ${statusDot}
         </div>
         <div class="newImport-player-actions">
@@ -415,11 +438,6 @@ function newImportRefreshSelectCards() {
             ${fav ? "★" : "☆"}
           </button>
           <button class="circle-btn delete" data-action="delete" data-player="${p.displayName}">×</button>
-          <button class="circle-btn add ${added ? 'active-added' : ''} ${(busy || inSession) ? 'disabled-btn' : ''}"
-            data-action="${(busy || inSession) ? '' : 'add'}" data-player="${p.displayName}"
-            ${(busy || inSession) ? "disabled title='Already in session'" : ""}>
-            ${added ? "−" : "+"}
-          </button>
         </div>
       `;
       newImportSelectCards.appendChild(card);
@@ -591,11 +609,20 @@ function newImportHandleSetClick(e) {
    CARD ACTIONS (history / favorites individual players)
 ========================= */
 function newImportHandleCardClick(e) {
-  const action = e.target.dataset.action;
-  if (!action) return;
+  // Check clicked element first, then walk up to card for tap-to-add
+  let action = e.target.dataset.action;
+  let playerName = e.target.dataset.player;
 
-  const playerName = e.target.dataset.player;
-  if (!playerName) return;
+  // If no action on the element itself, check if it's a tap on the card
+  if (!action) {
+    const card = e.target.closest('[data-action="add"]');
+    if (card) {
+      action = card.dataset.action;
+      playerName = card.dataset.player;
+    }
+  }
+
+  if (!action || !playerName) return;
 
   const source =
     newImportState.currentSelectMode === "favorites"
@@ -606,16 +633,20 @@ function newImportHandleCardClick(e) {
   const player = source.find(p => p.displayName.trim().toLowerCase() === playerNameNorm);
   if (!player) return;
 
-  // ADD / REMOVE SELECTED (toggle)
+  // TAP TO ADD (only adds, never removes — use − in selected panel to remove)
   if (action === "add") {
-    const si = newImportState.selectedPlayers.findIndex(p => p.displayName.trim().toLowerCase() === playerNameNorm);
-    if (si >= 0) {
-      newImportState.selectedPlayers.splice(si, 1);
-    } else {
+    const alreadyAdded = newImportState.selectedPlayers.some(p => p.displayName.trim().toLowerCase() === playerNameNorm);
+    if (!alreadyAdded) {
       addToListIfNotExists(newImportState.selectedPlayers, player);
+      newImportRefreshSelectedCards();
+      // Re-render the correct tab immediately
+      const favPanel = document.getElementById('addPlayersFavPanel');
+      if (favPanel && favPanel.style.display !== 'none') {
+        newImportRenderFavorites();
+      } else {
+        newImportRefreshSelectCards();
+      }
     }
-    newImportRefreshSelectedCards();
-    newImportRefreshSelectCards();
     return;
   }
 
@@ -649,31 +680,34 @@ function newImportHandleCardClick(e) {
 }
 
 function newImportHandleSelectedCardClick(e) {
-  const action = e.target.dataset.action;
-  if (!action) return;
+  // Check clicked element then walk up to card for tap-to-remove
+  let action = e.target.dataset.action;
+  let idx    = e.target.dataset.index;
 
-  const playerName = e.target.dataset.player;
-
-  // TOGGLE FAVORITE from selected list
-  if (action === "favorite" && playerName) {
-    const player = newImportState.selectedPlayers.find(p => p.displayName.trim().toLowerCase() === playerName.trim().toLowerCase());
-    if (!player) return;
-    const i = newImportState.favoritePlayers.findIndex(p => p.displayName.trim().toLowerCase() === playerName.trim().toLowerCase());
-    if (i >= 0) newImportState.favoritePlayers.splice(i, 1);
-    else addToListIfNotExists(newImportState.favoritePlayers, player);
-    newImportSaveFavorites();
-    newImportRefreshSelectedCards();
-    newImportRefreshSelectCards();
-    return;
+  if (!action) {
+    const card = e.target.closest('[data-action="remove-selected"]');
+    if (card) {
+      action = card.dataset.action;
+      idx    = card.dataset.index;
+    }
   }
 
-  // DELETE from selected (×) or REMOVE from selected (−)
-  if ((action === "delete-selected" || action === "remove-selected")) {
-    const idx = parseInt(e.target.dataset.index);
-    if (!isNaN(idx)) {
-      newImportState.selectedPlayers.splice(idx, 1);
+  if (!action) return;
+
+  // TAP CARD TO REMOVE from selected
+  if (action === "remove-selected") {
+    const i = parseInt(idx);
+    if (!isNaN(i)) {
+      newImportState.selectedPlayers.splice(i, 1);
       newImportRefreshSelectedCards();
-      newImportRefreshSelectCards();
+      // Re-render active tab
+      const favPanel = document.getElementById('addPlayersFavPanel');
+      if (favPanel && favPanel.style.display !== 'none') {
+        newImportRenderFavorites();
+      } else {
+        newImportRefreshSelectCards();
+      }
+      addPlayersBrowseFilter();
     }
     return;
   }
@@ -687,11 +721,13 @@ function newImportHandleBrowseCardClick(action, playerName) {
   const displayName = player.displayName || player.name || "";
 
   if (action === "add") {
-    const si = newImportState.selectedPlayers.findIndex(p => (p.displayName || "").toLowerCase() === displayName.toLowerCase());
-    if (si >= 0) newImportState.selectedPlayers.splice(si, 1);
-    else addToListIfNotExists(newImportState.selectedPlayers, player);
-    newImportRefreshSelectedCards();
-    addPlayersBrowseFilter();
+    // Tap to add only — never removes via tap
+    const alreadyAdded = newImportState.selectedPlayers.some(p => (p.displayName || "").toLowerCase() === displayName.toLowerCase());
+    if (!alreadyAdded) {
+      addToListIfNotExists(newImportState.selectedPlayers, player);
+      newImportRefreshSelectedCards();
+      addPlayersBrowseFilter();
+    }
     return;
   }
 
@@ -722,9 +758,11 @@ function newImportRefreshSelectedCards() {
 
   newImportState.selectedPlayers.forEach((p, i) => {
     const card = document.createElement("div");
-    card.className = "newImport-player-card";
+    card.className = "newImport-player-card player-added";
+    card.dataset.action = 'remove-selected';
+    card.dataset.index  = i;
+    card.style.cursor   = 'pointer';
     const rating2 = getActiveRating(p.displayName).toFixed(1);
-    const fav2 = newImportState.favoritePlayers.some(fp => fp.displayName.trim().toLowerCase() === p.displayName.trim().toLowerCase());
     const busy2 = playerIsBusy(p.displayName);
     card.innerHTML = `
       <div class="newImport-player-top">
@@ -735,12 +773,6 @@ function newImportRefreshSelectedCards() {
       </div>
       <div class="newImport-player-actions">
         <span class="rating-badge" data-player="${p.displayName}">${rating2}</span>
-        <button class="circle-btn favorite ${fav2 ? 'active-favorite' : ''}"
-          data-action="favorite" data-player="${p.displayName}">
-          ${fav2 ? "★" : "☆"}
-        </button>
-        <button class="circle-btn delete" data-action="delete-selected" data-index="${i}">×</button>
-        <button class="circle-btn add active-added" data-action="remove-selected" data-index="${i}">−</button>
       </div>
     `;
     newImportSelectedCards.appendChild(card);
@@ -924,9 +956,23 @@ function addPlayer() {
 
   // Combine local + supabase found players
   const allFound = [...foundLocally, ...fromSupabase];
+  // Filter out non-player lines from skipped list
+  // (URLs, date/time, venue, markdown headers, waitlist section)
+  const isGarbageLine = (name) => {
+    if (!name || !name.trim()) return true;
+    if (/https?:\/\//i.test(name)) return true;           // URLs
+    if (/^\*.*\*$/.test(name.trim())) return true;         // *header* lines
+    if (/\d{1,2}:\d{2}/.test(name)) return true;          // time like 19:30
+    if (/\d{1,2}-[A-Za-z]{3}/.test(name)) return true;    // date like 24-Apr
+    if (/court full|waitlist|wl/i.test(name)) return true; // waitlist markers
+    if (name.trim().length < 2) return true;               // too short
+    return false;
+  };
+
   const skipped  = notFoundNames
     .filter(p => !fromSupabase.some(s => s.displayName.trim().toLowerCase() === p.displayName.trim().toLowerCase()))
-    .map(p => p.displayName);
+    .map(p => p.displayName)
+    .filter(name => !isGarbageLine(name));
 
   allFound.forEach(reg => {
     addToListIfNotExists(newImportState.selectedPlayers, reg);
@@ -976,44 +1022,36 @@ function addPlayerSendToRegister(names) {
   const feedback = document.getElementById("addPlayerFeedback");
   if (feedback) feedback.style.display = "none";
 
-  // Check if admin mode
-  if (typeof isAdminMode === "function" && !isAdminMode()) {
-    alert("Admin mode required to register players. Please join your club as admin in Settings.");
-    return;
-  }
-
-  // Force-show Register tab button before switching (it may be hidden)
-  // (Vault tab removed from import modal -- register now handled via Vault page)
-
-  // Switch to addplayers tab as fallback
-  const addBtn = document.getElementById("newImportAddplayersBtn");
-  if (addBtn) addBtn.style.display = "inline-block";
-  document.querySelectorAll(".newImport-subtab-btn").forEach(b => b.classList.remove("active"));
-  if (addBtn) addBtn.classList.add("active");
-  newImportState.currentSelectMode = "addplayers";
-  ["newImportSelectCards","newImportAddPlayersSection","newImportSearch",
-   "newImportClearHistoryBtn","newImportClearFavoritesBtn"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-
-  // Render register tab UI keeping existing staging
-  newImportRenderRegister(true);
+  // Close import modal
+  if (typeof newImportHideModal === "function") newImportHideModal();
+  if (typeof hideImportModal    === "function") hideImportModal();
 
   // Pre-fill staging list with skipped names
-  names.forEach(name => {
-    if (!_regStagingList.find(s => s.name.toLowerCase() === name.toLowerCase())) {
-      _regStagingList.push({
-        id:     Date.now() + Math.random(),
-        name:   name.trim(),
-        gender: "Male",
-        rating: 1.0,
-        status: "pending"
-      });
-    }
-  });
+  if (typeof _regStagingList !== "undefined") {
+    names.forEach(name => {
+      if (!_regStagingList.find(s => s.name.toLowerCase() === name.toLowerCase())) {
+        _regStagingList.push({
+          id:     Date.now() + Math.random(),
+          name:   name.trim(),
+          gender: "Male",
+          rating: 1.0,
+          status: "pending"
+        });
+      }
+    });
+  }
 
-  regRenderStaging();
+  // Navigate to vault register page
+  if (typeof homeGo === "function") {
+    homeGo("vaultRegisterPage", null);
+    // Switch to bulk tab and show staging
+    setTimeout(() => {
+      if (typeof vaultRegisterShowTab === "function") vaultRegisterShowTab("bulk");
+      if (typeof regRenderStaging     === "function") regRenderStaging();
+    }, 300);
+  } else {
+    alert("Please go to Vault → Register to add these players: " + names.join(", "));
+  }
 }
 
 /* =========================
@@ -1134,9 +1172,7 @@ function regRenderStaging() {
 
     const cardClass = done ? "newImport-player-card reg-card-done" : "newImport-player-card";
     const genderImg = p.gender === "Female" ? "female.png" : "male.png";
-    const busyNote  = (!done && playerIsBusy(p.name))
-      ? `<span class="avail-dot busy" title="${t('currentlyPlayingSession')}">🔴</span>`
-      : "";
+    const busyNote  = "";
 
     return `
       <div class="${cardClass}" id="regCard-${i}">
@@ -1264,24 +1300,142 @@ async function regRegisterAll() {
 
 let _browseAllPlayers = []; // cached list for current scope
 
+/* Render favorites tab content into the addPlayersFavPanel */
+function newImportRenderFavorites() {
+  newImportLoadFavorites();
+  const setsContainer = document.getElementById('newImportFavSetsContainer');
+  const listContainer = document.getElementById('newImportFavList');
+  if (!setsContainer || !listContainer) return;
+
+  setsContainer.innerHTML = '';
+  listContainer.innerHTML = '';
+
+  // ── Favorite Sets ──
+  const sets = newImportLoadFavoriteSets();
+  sets.forEach(set => {
+    const safeName = set.name.replace(/'/g, "\'");
+    const setCard  = document.createElement('div');
+    setCard.className    = 'newImport-set-card';
+    setCard.dataset.open = 'false';
+    setCard.innerHTML = `
+      <div class="newImport-set-header">
+        <div class="newImport-set-info">
+          <span class="newImport-set-icon">★</span>
+          <span class="newImport-set-name">${set.name}</span>
+          <span class="newImport-set-count">${set.players.length} players</span>
+          <span class="newImport-set-chevron">▶</span>
+        </div>
+        <div class="newImport-set-actions">
+          <button class="newImport-set-addall-btn" data-setname="${safeName}">+ All</button>
+          <button class="newImport-set-delete-btn" data-setname="${safeName}">×</button>
+        </div>
+      </div>
+      <div class="newImport-set-players" style="display:none">
+        ${set.players.map(p => {
+          const busy = playerIsBusy(p.displayName);
+          return `
+          <div class="newImport-set-player-row${busy ? ' player-busy' : ''}">
+            <img src="${p.gender === 'Male' ? 'male.png' : 'female.png'}"
+              class="newImport-set-player-img"
+              style="${busy ? 'opacity:0.4' : ''}; cursor:default">
+            <span class="newImport-set-player-name" style="${busy ? 'opacity:0.5' : ''}">${p.displayName}</span>
+            ${playerAvailDot(p.displayName)}
+            <span class="rating-badge" style="font-size:0.68rem;padding:2px 5px;" data-player="${p.displayName}">${getActiveRating(p.displayName).toFixed(1)}</span>
+            <button class="newImport-set-player-remove-btn"
+              data-setname="${safeName}"
+              data-name="${p.displayName.replace(/"/g, '&quot;')}">×</button>
+            <button class="newImport-set-player-add-btn ${busy ? 'disabled-btn' : ''}"
+              data-name="${p.displayName.replace(/"/g, '&quot;')}"
+              data-gender="${p.gender}"
+              ${busy ? 'disabled' : ''}>+</button>
+          </div>`;
+        }).join('')}
+        <div class="newImport-set-addplayer-row" style="position:relative">
+          <input type="text"
+            class="newImport-set-addplayer-input"
+            data-setname="${safeName}"
+            autocomplete="off"
+            placeholder="${t('searchToAddPlayer')}">
+          <div class="newImport-set-addplayer-dropdown" data-setname="${safeName}" style="display:none"></div>
+        </div>
+      </div>
+    `;
+    setsContainer.appendChild(setCard);
+  });
+
+  // Wire set card click events
+  setsContainer.addEventListener('click',   newImportHandleSetClick);
+  setsContainer.addEventListener('keydown', newImportHandleSetClick);
+  setsContainer.addEventListener('input',   newImportHandleSetClick);
+
+  // ── Individual favorite players ──
+  const source = [...newImportState.favoritePlayers]
+    .sort((a, b) => a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }));
+
+  const unavailable = newImportState.unavailablePlayers || new Set();
+
+  source.forEach(p => {
+    const nameNorm  = p.displayName.trim().toLowerCase();
+    const added     = newImportState.selectedPlayers.some(sp => sp.displayName.trim().toLowerCase() === nameNorm);
+    const busy      = unavailable.has(nameNorm);
+    const inSession = typeof schedulerState !== 'undefined' && schedulerState.allPlayers &&
+      schedulerState.allPlayers.some(sp => sp.name.trim().toLowerCase() === nameNorm);
+    const rating1   = getActiveRating(p.displayName).toFixed(1);
+    const statusDot = ``;
+
+    const card = document.createElement('div');
+    card.className = 'newImport-player-card' + (busy ? ' player-busy' : '') + (added ? ' player-added' : '') + (inSession ? ' player-in-session' : '');
+    // Tap card to add (if not busy/inSession/already added)
+    if (!added && !busy && !inSession) {
+      card.dataset.action = 'add';
+      card.dataset.player = p.displayName;
+      card.style.cursor = 'pointer';
+    }
+    card.innerHTML = `
+      <div class="newImport-player-top">
+        <img src="${p.gender === 'Male' ? 'male.png' : 'female.png'}"
+             style="${(busy || inSession) ? 'opacity:0.4' : ''}; cursor:default">
+        <div class="newImport-player-name" style="${(busy || inSession) ? 'opacity:0.5' : ''}">${p.displayName}${inSession ? ' <span style="font-size:0.7rem;color:var(--muted);">✓ added</span>' : ''}${added ? ' <span style="font-size:0.7rem;color:var(--accent);">✓</span>' : ''}</div>
+        ${statusDot}
+      </div>
+      <div class="newImport-player-actions">
+        <span class="rating-badge" data-player="${p.displayName}" style="${(busy || inSession) ? 'opacity:0.4' : ''}">${rating1}</span>
+        <button class="circle-btn favorite active-favorite"
+          data-action="favorite" data-player="${p.displayName}">★</button>
+        <button class="circle-btn delete" data-action="delete" data-player="${p.displayName}">×</button>
+      </div>
+    `;
+    listContainer.appendChild(card);
+  });
+
+  // Wire individual card click events
+  listContainer.addEventListener('click', newImportHandleCardClick);
+}
+
 function addPlayersShowTab(tab) {
   const typeBtn    = document.getElementById("addPlayersTypeBtn");
   const browseBtn  = document.getElementById("addPlayersBrowseBtn");
+  const favBtn     = document.getElementById("addPlayersFavBtn");
   const typePanel  = document.getElementById("addPlayersTypePanel");
   const browsePanel = document.getElementById("addPlayersBrowsePanel");
+  const favPanel   = document.getElementById("addPlayersFavPanel");
   if (!typePanel || !browsePanel) return;
 
+  // Deactivate all tabs and hide all panels
+  [typeBtn, browseBtn, favBtn].forEach(b => b?.classList.remove("active"));
+  [typePanel, browsePanel, favPanel].forEach(p => { if (p) p.style.display = "none"; });
+
   if (tab === "browse") {
-    typeBtn?.classList.remove("active");
     browseBtn?.classList.add("active");
-    typePanel.style.display   = "none";
     browsePanel.style.display = "block";
     addPlayersBrowseLoad();
+  } else if (tab === "favorites") {
+    favBtn?.classList.add("active");
+    if (favPanel) favPanel.style.display = "block";
+    newImportRenderFavorites();
   } else {
-    browseBtn?.classList.remove("active");
     typeBtn?.classList.add("active");
-    browsePanel.style.display = "none";
-    typePanel.style.display   = "block";
+    typePanel.style.display = "block";
   }
 }
 
@@ -1361,11 +1515,11 @@ function addPlayersBrowseRender(players) {
     const nameSafe   = name.replace(/'/g, "\\'");
     const busy       = playerIsBusy(name);
     return `
-      <div class="newImport-player-card${busy ? ' player-busy' : ''}${isSelected ? ' player-added' : ''}">
+      <div class="newImport-player-card${busy ? ' player-busy' : ''}${isSelected ? ' player-added' : ''}"
+        ${!busy && !isSelected ? `data-browse-action="add" data-browse-player="${nameSafe}" style="cursor:pointer"` : ''}>
         <div class="newImport-player-top">
-          <img src="${genderImg}" data-browse-action="${busy ? '' : 'gender'}" data-browse-player="${nameSafe}"
-               style="${busy ? 'opacity:0.4' : ''}">
-          <div class="newImport-player-name" style="${busy ? 'opacity:0.5' : ''}">${name}</div>
+          <img src="${genderImg}" style="${busy ? 'opacity:0.4' : ''}; cursor:default">
+          <div class="newImport-player-name" style="${busy ? 'opacity:0.5' : ''}">${name}${isSelected ? ' <span style="font-size:0.7rem;color:var(--accent);">✓</span>' : ''}</div>
           ${playerAvailDot(name)}
         </div>
         <div class="newImport-player-actions">
@@ -1373,11 +1527,6 @@ function addPlayersBrowseRender(players) {
           <button class="circle-btn favorite ${fav ? 'active-favorite' : ''}"
             data-browse-action="favorite" data-browse-player="${nameSafe}">
             ${fav ? "★" : "☆"}
-          </button>
-          <button class="circle-btn add ${isSelected ? 'active-added' : ''} ${busy ? 'disabled-btn' : ''}"
-            data-browse-action="${busy ? '' : 'add'}" data-browse-player="${nameSafe}"
-            ${busy ? "disabled title=t('alreadyPlayingSession')" : ""}>
-            ${isSelected ? "−" : "+"}
           </button>
         </div>
       </div>`;

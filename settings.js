@@ -1280,16 +1280,15 @@ if (typeof showHomeScreen === 'function') showHomeScreen();
 async function sbPopulateDeleteDropdown() {
 const select = document.getElementById("sbDeleteClubSelect");
 if (!select) return;
-try {
-const clubs = await dbGetClubs();
+// Only show the currently connected club — prevent deleting other clubs
+const myClub = getMyClub();
 select.innerHTML = '<option value="">' + (t('selectClubDelete')||'-- Select club to delete --') + '</option>';
-clubs.forEach(c => {
-const opt = document.createElement("option");
-opt.value = c.id;
-opt.textContent = c.name;
-select.appendChild(opt);
-});
-} catch (e) { /* silent */ }
+if (myClub && myClub.id && myClub.name) {
+  const opt = document.createElement("option");
+  opt.value = myClub.id;
+  opt.textContent = myClub.name;
+  select.appendChild(opt);
+}
 }
 
 function getClubMode() {
@@ -1423,4 +1422,20 @@ function mlSyncLangDisplay() {
 var label = _mlLangLabel();
 var el = document.getElementById('mlLangCurrent');
 if (el) el.textContent = label + ' ▾';
+// Also sync auth welcome lang button
+var authEl = document.getElementById('authLangCurrent');
+if (authEl) authEl.textContent = label + ' ▾';
+}
+
+/* ── Auth welcome screen lang toggle (separate IDs to avoid conflict) ── */
+function authToggleLang() {
+  var picker = document.getElementById('authLangPicker');
+  if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+
+function authSelectLang(code, flag, name) {
+  var picker = document.getElementById('authLangPicker');
+  if (picker) picker.style.display = 'none';
+  settingsSelectLang(code, flag, name);
+  mlSyncLangDisplay();
 }

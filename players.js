@@ -190,6 +190,8 @@ function addFixedCard(p1, p2, key) {
         <span class="fp-label fp-label-chosen" id="fcLabel_${key}_2">${p2}</span>
         <span class="fp-chevron">▼</span>
       </div>
+    </div>
+    <div class="fixed-card-actions">
       <button class="pec-btn delete fc-delete-btn" onclick="fcDeletePair('${key}')">🗑</button>
     </div>
     <div id="fcDropdown_${key}_1" class="fp-dropdown fc-dropdown" style="display:none"></div>
@@ -523,6 +525,8 @@ function addPlayersFromText() {
     let gender = defaultGender;
     const m = line.match(/^(\d+\.?\s*)?(.*)$/);
     if (m) line = m[2].trim();
+    line = line.replace(/\.$/, '').trim();
+    line = line.replace(/\.$/, '').trim(); // Remove trailing dot: "Anand P." → "Anand P"
     if (line.includes(",")) {
       const [name, g] = line.split(",").map(p => p.trim());
       line = name;
@@ -709,6 +713,8 @@ function updatePlayerList() {
   updateRoundsPageAccess();
   // Refresh home tiles to reflect updated player count
   if (typeof homeRefreshTiles === 'function') homeRefreshTiles();
+  // Save snapshot if session in progress
+  if (typeof saveSnapshot === 'function') saveSnapshot();
 }
 
 /* =========================

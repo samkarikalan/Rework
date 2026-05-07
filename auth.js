@@ -11,6 +11,200 @@ var AUTH_MOCK_MODE = false; // ← set false when Supabase tables ready
 /* ── Current session ── */
 var _authUser = null; // { id, userId, nickname, email }
 
+/* ============================================================
+   SINGLE-DEVICE SESSION ENFORCEMENT
+   Uses active_sessions table: { user_account_id, token, device_info, updated_at }
+   ============================================================ */
+
+var SESSION_CHECK_INTERVAL = null;
+var SESSION_CHECK_MS = 2 * 60 * 1000; // check every 2 minutes
+
+/* Generate a random session token */
+function _generateSessionToken() {
+  var arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+/* Get/set local session token */
+function _getLocalToken() {
+  return localStorage.getItem('scs_session_token') || null;
+}
+function _setLocalToken(token) {
+  if (token) localStorage.setItem('scs_session_token', token);
+  else localStorage.removeItem('scs_session_token');
+}
+
+/* Device info string */
+function _getDeviceInfo() {
+  var ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android';
+  return 'Browser';
+}
+
+/* Write a session row to server — upsert on user_account_id (atomic, no race condition) */
+async function _writeServerSession(userId, token) {
+  var now  = new Date().toISOString();
+  var data = {
+    user_account_id: userId,
+    token:           token,
+    device_info:     _getDeviceInfo(),
+    updated_at:      now
+  };
+
+  // Try upsert first
+  try {
+    await sbUpsert('active_sessions', data, 'user_account_id');
+    return;
+  } catch(e) {}
+
+  // Fallback: delete then insert
+  try {
+    await sbDelete('active_sessions', 'user_account_id=eq.' + userId);
+  } catch(ed) {}
+  try {
+    await sbPost('active_sessions', data, 'return=representation');
+  } catch(e2) {}
+}
+
+/* Read server token for this user.
+   Returns: { token: string } if row found,
+            { noRow: true }  if no session on server,
+            { networkError: true } if fetch failed — be lenient, don't kick user out */
+async function _readServerToken(userId) {
+  try {
+    var rows = await sbGet('active_sessions', 'user_account_id=eq.' + userId + '&select=token');
+    if (rows && rows.length) return { token: rows[0].token };
+    return { noRow: true };
+  } catch(e) {
+    return { networkError: true };
+  }
+}
+
+/* Delete server session row — called on logout */
+async function _deleteServerSession(userId) {
+  try {
+    await sbDelete('active_sessions', 'user_account_id=eq.' + userId);
+  } catch(e) {}
+}
+
+/* Verify current session against server — called on startup and periodically.
+   Returns true if valid, false if session was displaced by another device. */
+async function authVerifySession() {
+  var user = authGetUser();
+  if (!user) return false;
+
+  var localToken = _getLocalToken();
+  if (!localToken) return false;
+
+  var serverResult = await _readServerToken(user.id);
+
+  // Network error — be lenient, don't kick user out
+  if (serverResult.networkError) return true;
+
+  // No row on server — session was deleted (logout from another tab, admin clear, etc.)
+  // Treat as session expired → force logout so user must re-authenticate.
+  if (serverResult.noRow) {
+    _authUser = null;
+    _setLocalToken(null);
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('kbrr_my_club_id');
+    localStorage.removeItem('kbrr_my_club_name');
+    localStorage.removeItem('kbrr_my_player');
+    localStorage.removeItem('kbrr_app_mode');
+    _stopSessionWatch();
+    if (typeof authShowScreen === 'function') authShowScreen('welcome');
+    _showDisplacedNotice();
+    return false;
+  }
+
+  var serverToken = serverResult.token;
+  if (serverToken !== localToken) {
+    // Another device has taken over — force logout
+    _authUser = null;
+    _setLocalToken(null);
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('kbrr_my_club_id');
+    localStorage.removeItem('kbrr_my_club_name');
+    localStorage.removeItem('kbrr_my_player');
+    localStorage.removeItem('kbrr_app_mode');
+    _stopSessionWatch();
+    if (typeof authShowScreen === 'function') authShowScreen('welcome');
+    _showDisplacedNotice();
+    return false;
+  }
+
+  return true;
+}
+
+function _showDisplacedNotice() {
+  // Small toast informing user they were logged out
+  var existing = document.getElementById('scs-displaced-toast');
+  if (existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.id = 'scs-displaced-toast';
+  toast.style.cssText = [
+    'position:fixed', 'top:20px', 'left:50%', 'transform:translateX(-50%)',
+    'background:#e63757', 'color:#fff', 'padding:12px 20px', 'border-radius:12px',
+    'font-size:0.85rem', 'font-weight:600', 'z-index:99999',
+    'box-shadow:0 4px 20px rgba(0,0,0,0.3)', 'text-align:center',
+    'max-width:280px', 'line-height:1.4'
+  ].join(';');
+  toast.textContent = '⚠️ You were signed out because another device signed in.';
+  document.body.appendChild(toast);
+  setTimeout(function() { if (toast.parentNode) toast.remove(); }, 5000);
+}
+
+/* Start background polling to detect remote logout */
+function _startSessionWatch() {
+  _stopSessionWatch();
+  SESSION_CHECK_INTERVAL = setInterval(async function() {
+    await authVerifySession();
+  }, SESSION_CHECK_MS);
+}
+
+function _stopSessionWatch() {
+  if (SESSION_CHECK_INTERVAL) {
+    clearInterval(SESSION_CHECK_INTERVAL);
+    SESSION_CHECK_INTERVAL = null;
+  }
+}
+
+/* Check if user is already logged in on ANOTHER device.
+   Returns:
+     { hasSession: false }                         — no other session, safe to log in
+     { hasSession: true, deviceInfo, serverToken } — another device is active → show prompt
+     { networkError: true }                        — cannot reach server → block login (fail-closed)
+*/
+async function authCheckExistingSession(userId) {
+  var localToken = _getLocalToken(); // token already stored on THIS device (null = fresh login)
+  try {
+    var rows = await sbGet('active_sessions',
+      'user_account_id=eq.' + userId + '&select=token,device_info,updated_at');
+
+    if (!rows || !rows.length) {
+      return { hasSession: false }; // no session row — safe to proceed
+    }
+
+    var serverToken = rows[0].token;
+    var deviceInfo  = rows[0].device_info || 'another device';
+
+    // If server token matches THIS device's local token → it's our own session, no conflict
+    if (localToken && serverToken === localToken) {
+      return { hasSession: false };
+    }
+
+    // A different token exists on the server → another device is logged in
+    return { hasSession: true, deviceInfo: deviceInfo, serverToken: serverToken };
+
+  } catch(e) {
+    // Cannot verify — fail-closed: do NOT silently allow login
+    return { networkError: true };
+  }
+}
+
 /* ── Mock DB for testing ── */
 var _mockUsers = JSON.parse(localStorage.getItem('mock_users') || '[]');
 var _mockClubMembers = JSON.parse(localStorage.getItem('mock_club_members') || '[]');
@@ -96,6 +290,10 @@ async function authLogin(email, password) {
   if (!email) return { error: t('enterEmail') };
   if (!password) return { error: t('enterPassword') };
 
+  // Clear any stale local token before checking — ensures this device
+  // is never mistaken for its own previous session during conflict check.
+  _setLocalToken(null);
+
   // ── Real Supabase -- filter by email + password server-side ──
   try {
     var rows = await sbGet('user_accounts',
@@ -110,11 +308,44 @@ async function authLogin(email, password) {
     }
     var u = rows[0];
     var authUser = { id: u.id, email: u.email, nickname: u.nickname, displayName: u.nickname };
+
+    // ── Single-session check (fail-closed) ──
+    var sessionCheck = await authCheckExistingSession(u.id);
+
+    if (sessionCheck.networkError) {
+      // Cannot reach server to verify — block login rather than allow silently
+      return { error: 'Unable to verify session. Please check your connection and try again.' };
+    }
+
+    if (sessionCheck.hasSession) {
+      // Another device is logged in — return conflict info for UI to show prompt
+      return { conflict: true, user: authUser, deviceInfo: sessionCheck.deviceInfo };
+    }
+
+    // No conflict — create session
+    var token = _generateSessionToken();
+    await _writeServerSession(u.id, token);
+    _setLocalToken(token);
+
     _authUser = authUser;
     localStorage.setItem('auth_user', JSON.stringify(authUser));
     return { user: authUser };
   } catch(e) {
     return { error: e.message || t('loginFailed') };
+  }
+}
+
+/* ── Force login — displaces existing session on other device ── */
+async function authForceLogin(authUser) {
+  try {
+    var token = _generateSessionToken();
+    await _writeServerSession(authUser.id, token);
+    _setLocalToken(token);
+    _authUser = authUser;
+    localStorage.setItem('auth_user', JSON.stringify(authUser));
+    return { user: authUser };
+  } catch(e) {
+    return { error: e.message || 'Failed to establish session' };
   }
 }
 
@@ -134,7 +365,10 @@ async function authResetPassword(email, recoveryWord, newPassword) {
       '&select=id');
     if (!rows || !rows.length) return { error: t('emailRecoveryWrong') };
 
-    await sbPatch('user_accounts', 'id=eq.' + rows[0].id, { password_hash: newPassword });
+    var targetId = rows[0].id;
+    await sbPatch('user_accounts', 'id=eq.' + targetId, { password_hash: newPassword });
+    // Invalidate any active session for this user — forces re-login on all devices
+    await _deleteServerSession(targetId).catch(function(){});
     return { success: true };
   } catch(e) {
     return { error: e.message || t('resetFailed') };
@@ -146,7 +380,7 @@ async function authClaimAccount(clubId, nickname, defaultPassword, email, newPas
   try {
     // 1. Find membership by club + nickname
     var memberships = await sbGet('memberships',
-      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id'
+      'club_id=eq.' + clubId + '&nickname=ilike.' + nickname + '&select=id,player_id,user_account_id'
     );
     if (!memberships || !memberships.length)
       return { error: t('nicknameNotFound') };
@@ -192,6 +426,9 @@ async function authClaimAccount(clubId, nickname, defaultPassword, email, newPas
     } catch(e) { /* silent */ }
 
     var authUser = { id: u.id, email: u.email, nickname: u.nickname, displayName: u.nickname };
+    var token = _generateSessionToken();
+    await _writeServerSession(u.id, token);
+    _setLocalToken(token);
     _authUser = authUser;
     localStorage.setItem('auth_user', JSON.stringify(authUser));
     return { user: authUser };
@@ -203,13 +440,20 @@ async function authClaimAccount(clubId, nickname, defaultPassword, email, newPas
 
 /* ── Logout ── */
 function authLogout() {
+  var user = _authUser || authGetUser();
+  _stopSessionWatch();
+  if (user && user.id) {
+    _deleteServerSession(user.id).catch(function(){});
+  }
   _authUser = null;
+  _setLocalToken(null);
   localStorage.removeItem('auth_user');
   localStorage.removeItem('kbrr_my_club_id');
   localStorage.removeItem('kbrr_my_club_name');
   localStorage.removeItem('kbrr_my_player');
   localStorage.removeItem('kbrr_app_mode');
-  if (typeof authShowScreen === 'function') authShowScreen('login');
+  if (typeof clearSubscription === 'function') clearSubscription();
+  if (typeof authShowScreen === 'function') authShowScreen('welcome');
 }
 
 /* ── Forgot password -- send OTP ── */
@@ -278,7 +522,7 @@ async function authJoinClub(inviteCode) {
       return { success: true, club: club };
     }
 
-    _mockClubMembers.push({ clubId: club.id, userId: user.id, joinedAt: new Date().toISOString() });
+    _mockClubMembers.push({ clubId: club.id, userId: user.id, joinedAt: (() => { const _n=new Date(),_p=n=>String(n).padStart(2,'0'); return `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}:${_p(_n.getSeconds())}`; })() });
     _saveMockMembers();
     setMyClub(club.id, club.name);
     return { success: true, club: club };
@@ -364,7 +608,7 @@ async function authRequestJoin(clubId, chosenNickname) {
 
     // Check nickname conflict in this club
     var conflict = await sbGet('memberships',
-      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id');
+      'club_id=eq.' + clubId + '&nickname=ilike.' + nickname + '&select=id,player_id,user_account_id');
     if (conflict && conflict.length) {
       var cm = conflict[0];
       // If unclaimed -- ask for default password to verify identity
@@ -403,7 +647,7 @@ async function authClaimAndJoin(clubId, nickname, defaultPassword) {
   try {
     // Find membership
     var memberships = await sbGet('memberships',
-      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id,user_account_id'
+      'club_id=eq.' + clubId + '&nickname=ilike.' + nickname + '&select=id,player_id,user_account_id'
     );
     if (!memberships || !memberships.length)
       return { error: t('nicknameNotFound') };
@@ -451,22 +695,22 @@ async function authClaimAndJoin(clubId, nickname, defaultPassword) {
 /* ── Get pending join requests for a club (admin) ── */
 async function authGetJoinRequests(clubId) {
   try {
+    // Fetch nickname from club_join_requests (the name they chose when requesting to join)
     var requests = await sbGet('club_join_requests',
-      'club_id=eq.' + clubId + '&status=eq.pending&select=id,user_account_id,requested_at');
+      'club_id=eq.' + clubId + '&status=eq.pending&select=id,user_account_id,nickname,requested_at');
 
-    // Get user details for each request
     var result = [];
     for (var i = 0; i < requests.length; i++) {
       var req = requests[i];
       try {
         var users = await sbGet('user_accounts',
-          'id=eq.' + req.user_account_id + '&select=id,nickname,email');
+          'id=eq.' + req.user_account_id + '&select=id,email');
         if (users && users.length) {
           result.push({
             requestId:     req.id,
             requestedAt:   req.requested_at,
             userAccountId: req.user_account_id,
-            nickname:      users[0].nickname,
+            nickname:      req.nickname,
             email:         users[0].email
           });
         }
@@ -484,31 +728,25 @@ async function authAcceptRequest(requestId, clubId, userAccountId, nickname, gen
     // Update request status
     await sbPatch('club_join_requests', 'id=eq.' + requestId, {
       status:      'accepted',
-      reviewed_at: new Date().toISOString()
+      reviewed_at: (() => { const _n=new Date(),_p=n=>String(n).padStart(2,'0'); return `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}:${_p(_n.getSeconds())}`; })()
     });
 
     // Find existing membership by club + nickname and link user_account
     var memberships = await sbGet('memberships',
-      'club_id=eq.' + clubId + '&nickname=ilike.' + encodeURIComponent(nickname) + '&select=id,player_id'
-    ).catch(() => []);
+      'club_id=eq.' + clubId + '&nickname=ilike.' + nickname + '&select=id,player_id'
+    );
 
     if (memberships && memberships.length) {
       // Link existing membership to user account
       await sbPatch('memberships', 'id=eq.' + memberships[0].id, { user_account_id: userAccountId });
-      // Also update players table -- mark as registered
-      await sbPatch('players',
-        'club_id=eq.' + clubId + '&name=ilike.' + encodeURIComponent(nickname),
-        { user_account_id: userAccountId }
-      ).catch(function(){});
     } else {
       // Create player + membership (player not pre-registered)
+      // Match dbAddPlayer pattern -- players table has no club_id or user_account_id
       var created = await sbPost('players', {
-        name:            nickname,
-        gender:          gender || 'Male',
-        club_id:         clubId,
-        global_rating:   1.0,
-        global_points:   0,
-        user_account_id: userAccountId
+        name:          nickname,
+        gender:        gender || 'Male',
+        global_rating: 1.0,
+        global_points: 0
       });
       await sbPost('memberships', {
         player_id:       created[0].id,
@@ -531,7 +769,7 @@ async function authRejectRequest(requestId) {
   try {
     await sbPatch('club_join_requests', 'id=eq.' + requestId, {
       status:      'rejected',
-      reviewed_at: new Date().toISOString()
+      reviewed_at: (() => { const _n=new Date(),_p=n=>String(n).padStart(2,'0'); return `${_n.getFullYear()}-${_p(_n.getMonth()+1)}-${_p(_n.getDate())}T${_p(_n.getHours())}:${_p(_n.getMinutes())}:${_p(_n.getSeconds())}`; })()
     });
     return { success: true };
   } catch(e) {
@@ -561,19 +799,12 @@ authHandleInviteLink();
    OTP VERIFICATION -- via Supabase Edge Functions + Resend
    ============================================================ */
 
-const EDGE_BASE    = 'https://hplkoxdorbfjhwbvqatn.supabase.co/functions/v1';
-const EDGE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwbGtveGRvcmJmamh3YnZxYXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MTcyOTgsImV4cCI6MjA5MDE5MzI5OH0.G-04VeYkUGMF93qw61ryTaQ0Q7xK3dOAHLDvG6l31vc';
-
-/* Send OTP to email */
+/* Send OTP to email — via Cloudflare Worker (keys hidden server-side) */
 async function authSendOtp(email) {
   try {
-    const res = await fetch(EDGE_BASE + '/send-otp', {
+    const res = await fetch(WORKER_URL + '/auth/send-otp', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + EDGE_ANON_KEY,
-        'apikey': EDGE_ANON_KEY
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.toLowerCase().trim() })
     });
     const data = await res.json();
@@ -584,16 +815,12 @@ async function authSendOtp(email) {
   }
 }
 
-/* Verify OTP entered by user */
+/* Verify OTP entered by user — via Cloudflare Worker */
 async function authVerifyOtp(email, otp) {
   try {
-    const res = await fetch(EDGE_BASE + '/verify-otp', {
+    const res = await fetch(WORKER_URL + '/auth/verify-otp', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + EDGE_ANON_KEY,
-        'apikey': EDGE_ANON_KEY
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.toLowerCase().trim(), otp: otp.trim() })
     });
     const data = await res.json();
@@ -612,25 +839,38 @@ async function authSyncPlayerLinks(user) {
   try {
     if (!user || !user.id) return;
 
-    // Get all memberships for this user
-    var memberships = await sbGet('memberships',
-      'user_account_id=eq.' + user.id + '&select=club_id,nickname'
+    // Step 1: Find unlinked memberships matching this user's nickname
+    var unlinked = await sbGet('memberships',
+      'user_account_id=is.null&select=id,player_id,nickname'
     ).catch(function(){ return []; });
 
-    if (!memberships || !memberships.length) return;
+    if (!unlinked || !unlinked.length) return;
 
-    // For each membership -- find unlinked player row with matching name
-    for (var i = 0; i < memberships.length; i++) {
-      var m = memberships[i];
-      if (!m.club_id || !m.nickname) continue;
+    // Step 2: Get this user's nicknames from their linked memberships
+    var myMemberships = await sbGet('memberships',
+      'user_account_id=eq.' + user.id + '&select=nickname'
+    ).catch(function(){ return []; });
 
-      await sbPatch(
-        'players',
-        'club_id=eq.' + m.club_id +
-        '&name=ilike.' + encodeURIComponent(m.nickname) +
-        '&user_account_id=is.null',
+    if (!myMemberships || !myMemberships.length) return;
+
+    var myNicknames = myMemberships.map(function(m){ return (m.nickname || '').toLowerCase(); });
+
+    // Step 3: Link matching unlinked memberships and their players
+    for (var i = 0; i < unlinked.length; i++) {
+      var m = unlinked[i];
+      if (!m.nickname || !myNicknames.includes(m.nickname.toLowerCase())) continue;
+
+      // Link membership
+      await sbPatch('memberships', 'id=eq.' + m.id,
         { user_account_id: user.id }
       ).catch(function(){});
+
+      // Link player row if exists
+      if (m.player_id) {
+        await sbPatch('players', 'id=eq.' + m.player_id + '&user_account_id=is.null',
+          { user_account_id: user.id }
+        ).catch(function(){});
+      }
     }
   } catch(e) {
     // Silent -- never block login

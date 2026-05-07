@@ -82,9 +82,74 @@ async function authDoLogin() {
     return;
   }
 
-  // Login success -- update profile button then check club
+  // Another device is logged in -- show conflict modal
+  if (result.conflict) {
+    authShowConflictModal(result.user, result.deviceInfo);
+    return;
+  }
+
+  // Login success -- proceed (authAfterLogin starts session watch)
   if (typeof updateProfileBtn === 'function') updateProfileBtn();
   authAfterLogin(result.user);
+}
+
+/* -- Session conflict modal -- another device is logged in -- */
+var _conflictPendingUser = null;
+
+function authShowConflictModal(user, deviceInfo) {
+  _conflictPendingUser = user;
+  var existing = document.getElementById('scs-conflict-modal');
+  if (existing) existing.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'scs-conflict-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99998;padding:20px;box-sizing:border-box;';
+
+  modal.innerHTML = '<div style="background:var(--card-bg,#1e1e2e);border-radius:18px;padding:28px 24px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.5);text-align:center;">'
+    + '<div style="font-size:2rem;margin-bottom:12px;">📱</div>'
+    + '<div style="font-size:1rem;font-weight:700;color:var(--text,#fff);margin-bottom:8px;">Already Signed In</div>'
+    + '<div style="font-size:0.82rem;color:var(--muted,#aaa);line-height:1.5;margin-bottom:22px;">Your account is active on <strong style="color:var(--text,#fff);">' + (deviceInfo || 'another device') + '</strong>. Only one device can be signed in at a time.</div>'
+    + '<button id="scsConflictForce" style="width:100%;padding:13px;background:linear-gradient(135deg,#e63757,#c0392b);color:#fff;border:none;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">🔐 Log out other device &amp; sign in</button>'
+    + '<button id="scsConflictCancel" style="width:100%;padding:11px;background:none;border:1px solid var(--border,#333);color:var(--muted,#aaa);border-radius:12px;font-size:0.88rem;cursor:pointer;font-family:inherit;">Cancel</button>'
+    + '</div>';
+
+  document.body.appendChild(modal);
+
+  document.getElementById('scsConflictForce').onclick = async function() {
+    this.disabled = true;
+    this.textContent = 'Signing in...';
+    try {
+      var r = await authForceLogin(_conflictPendingUser);
+      modal.remove();
+      _conflictPendingUser = null;
+      if (r && r.user) {
+        if (typeof updateProfileBtn === 'function') updateProfileBtn();
+        authAfterLogin(r.user);
+      } else {
+        // Force login failed — show error in modal
+        this.disabled = false;
+        this.textContent = '🔐 Log out other device & sign in';
+        var errEl = modal.querySelector('.scs-conflict-err');
+        if (!errEl) {
+          errEl = document.createElement('div');
+          errEl.className = 'scs-conflict-err';
+          errEl.style.cssText = 'font-size:0.78rem;color:#e63757;margin-top:8px;';
+          modal.querySelector('div').appendChild(errEl);
+        }
+        errEl.textContent = 'Network error. Please try again.';
+      }
+    } catch(e) {
+      this.disabled = false;
+      this.textContent = '🔐 Log out other device & sign in';
+    }
+  };
+
+  document.getElementById('scsConflictCancel').onclick = function() {
+    modal.remove();
+    _conflictPendingUser = null;
+    // Return user to login screen cleanly
+    if (typeof authShowScreen === 'function') authShowScreen('login');
+  };
 }
 
 /* ── Do Sign Up ── */
@@ -129,20 +194,51 @@ async function authCompleteSignup(otp) {
   var loginResult = await authLogin(email, password);
   if (loginResult.error) { authShowScreen('login'); return; }
 
+  // Signup is fresh account — no conflict expected, but handle defensively
+  if (loginResult.conflict) {
+    // Force session since this is their own new account
+    var forced = await authForceLogin(loginResult.user);
+    _pendingSignup = null;
+    authHideOtpScreen();
+    if (forced && forced.user) authAfterLogin(forced.user);
+    return;
+  }
+
   _pendingSignup = null;
   authHideOtpScreen();
   authAfterLogin(loginResult.user);
 }
 
-/* ── After successful login -- check club ── */
+/* ── After successful login -- single entry point for all post-login setup ── */
 async function authAfterLogin(user) {
-  // Set player nickname for profile
+  // ── 1. Start the single session heartbeat (auth.js) ──────
+  // This polls active_sessions every 2 mins and kicks out this device
+  // if another device has taken over the session token.
+  if (typeof _startSessionWatch === 'function') _startSessionWatch();
+
+  // ── 2. Subscription: store email + restore plan + start plan watch ──
+  // Does NOT do session check (that is auth.js's job above).
+  if (user.email) {
+    var _email = user.email.trim().toLowerCase();
+    localStorage.setItem('scs_sub_email', _email);
+    if (typeof _initTrial      === 'function') _initTrial();
+    if (typeof restorePlanByEmail === 'function') {
+      restorePlanByEmail(_email).then(function(restored) {
+        if (restored && typeof _subToast === 'function')
+          _subToast('✅ Plan restored — ' + (typeof getLicensePlan === 'function' ? getLicensePlan().toUpperCase() : ''));
+      }).catch(function(){});
+    }
+    if (typeof startPlanWatch  === 'function') startPlanWatch();
+    if (typeof subShowTrialBanner === 'function') subShowTrialBanner();
+  }
+
+  // ── 3. Player / UI setup ─────────────────────────────────
   if (typeof setMyPlayer === 'function' && user.nickname) {
     setMyPlayer({ name: user.nickname, gender: 'Male' });
   }
   if (typeof updateProfileBtn === 'function') updateProfileBtn();
 
-  // Silent background sync -- link players rows where nickname matches but user_account_id is null
+  // ── 4. Silent background sync ────────────────────────────
   authSyncPlayerLinks(user).catch(function(){});
 
   // Check for pending invite
@@ -248,6 +344,8 @@ function authShowClubPicker(memberships, user) {
       return '<button class="auth-club-pick-btn" onclick="authPickClub(\''+cid+'\',\''+cname+'\',\''+nick+'\')">'+
         '<strong>'+cname+'</strong><span>'+nick+'</span></button>';
     }).join('');
+  // Apply current language to dynamically built screen
+  if (typeof setLanguage === 'function' && typeof currentLang !== 'undefined') setLanguage(currentLang);
 }
 
 async function authPickClub(clubId, clubName, nickname) {
@@ -430,6 +528,163 @@ async function authDoRequestJoin(clubId, clubName) {
 }
 
 /* ── Load join requests for admin (Vault Requests tab) ── */
+
+function authToggleLang() {
+  var p = document.getElementById('authLangPicker');
+  if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function authSelectLang(code, flag, label) {
+  var cur = document.getElementById('authLangCurrent');
+  if (cur) cur.textContent = flag + ' ' + label + ' ▾';
+  var p = document.getElementById('authLangPicker');
+  if (p) p.style.display = 'none';
+  if (typeof setLanguage === 'function') setLanguage(code);
+}
+
+
+/* ── Report page ── */
+function r2Init() {
+  const now  = new Date();
+  const yearEl = document.getElementById('r2Year');
+  if (yearEl) yearEl.textContent = now.getFullYear();
+  r2BuildMonths(now.getFullYear(), now.getMonth() + 1);
+  r2SelectMonth(now.getMonth() + 1);
+}
+
+function r2BuildMonths(year, activeMonth) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const container = document.getElementById('r2Months');
+  if (!container) return;
+  container.innerHTML = months.map(function(m, i) {
+    var isActive = (i + 1) === activeMonth;
+    return '<button onclick="r2SelectMonth(' + (i+1) + ')" data-month="' + (i+1) + '" ' +
+      'style="flex-shrink:0;border:none;cursor:pointer;padding:6px 14px;border-radius:20px;font-size:0.78rem;font-family:inherit;' +
+      (isActive ? 'background:#7c3aed;color:#fff;font-weight:700;' : 'background:var(--card-bg,#1e1e2e);color:var(--muted);') + '"' +
+      (isActive ? ' id="r2ActiveMonth"' : '') + '>' + m + '</button>';
+  }).join('');
+}
+
+function r2SelectMonth(month) {
+  document.querySelectorAll('#r2Months button').forEach(function(btn) {
+    var isActive = parseInt(btn.dataset.month) === month;
+    btn.style.background = isActive ? '#7c3aed' : 'var(--card-bg,#1e1e2e)';
+    btn.style.color      = isActive ? '#fff'    : 'var(--muted)';
+    btn.style.fontWeight = isActive ? '700'     : 'normal';
+    btn.id = isActive ? 'r2ActiveMonth' : (btn.id === 'r2ActiveMonth' ? '' : btn.id);
+  });
+  vaultLoadReport();
+}
+
+function r2ChangeYear(dir) {
+  var yearEl = document.getElementById('r2Year');
+  if (!yearEl) return;
+  yearEl.textContent = parseInt(yearEl.textContent) + dir;
+  vaultLoadReport();
+}
+
+function vaultLoadReport() {
+  const yearEl  = document.getElementById('r2Year');
+  const monthEl = document.getElementById('r2ActiveMonth');
+  const ct      = document.getElementById('r2Content');
+  const year    = yearEl  ? parseInt(yearEl.textContent)    : new Date().getFullYear();
+  const month   = monthEl ? parseInt(monthEl.dataset.month) : new Date().getMonth() + 1;
+  if (ct) ct.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted);">⏳ Loading...</div>';
+  if (typeof reportFetchMonthData !== 'function') {
+    if (ct) ct.innerHTML = '<div style="padding:24px;text-align:center;color:#e63757;">❌ Report module not loaded</div>';
+    return;
+  }
+  reportFetchMonthData(year, month).then(function(data) {
+    reportRenderViewerPage(data);
+  }).catch(function(e) {
+    if (ct) ct.innerHTML = '<div style="padding:24px;text-align:center;color:#e63757;">❌ ' + (e.message || 'Failed to load') + '</div>';
+  });
+}
+
+
+/* ============================================================
+   VIEWER QC MODULE
+   Checks each home tile and auto-fixes silently.
+   Shows message only if cannot fix.
+============================================================ */
+async function viewerQCCheck() {
+  const fixes = [];
+  const msgs  = [];
+
+  // ── QC 1: My Card ──
+  const ratingEl = document.getElementById('homeTileRatingV');
+  const nameEl   = document.getElementById('homeTileNameV');
+  const ratingTxt = ratingEl ? ratingEl.textContent : '';
+  if (!ratingTxt || ratingTxt === 'Not selected' || ratingTxt === 'Loading...') {
+    // Try fix: refresh screen
+    try {
+      if (typeof homeRefreshScreen === 'function') await homeRefreshScreen();
+      fixes.push('My Card refreshed');
+    } catch(e) {
+      msgs.push('My Card: Please select your player profile');
+    }
+  }
+  viewerQCDot('myCardQC', ratingTxt && ratingTxt !== 'Not selected' && ratingTxt !== 'Loading...' ? 'green' : 'yellow');
+
+  // ── QC 2: Dashboard ──
+  const dashEl  = document.getElementById('tileSubDashboardV');
+  const dashTxt = dashEl ? dashEl.textContent : '';
+  if (!dashTxt || dashTxt === 'Loading...') {
+    try {
+      if (typeof dbGetLiveSessions === 'function') {
+        const sessions = await dbGetLiveSessions();
+        const count = (sessions || []).length;
+        if (dashEl) dashEl.textContent = count > 0 ? count + ' live session' + (count !== 1 ? 's' : '') : 'No live sessions';
+        fixes.push('Dashboard refreshed');
+      }
+    } catch(e) {
+      msgs.push('Dashboard: Connection issue');
+    }
+  }
+  viewerQCDot('dashQC', dashTxt && dashTxt !== 'Loading...' ? 'green' : 'yellow');
+
+  // ── QC 3: My Clubs ──
+  const club = (typeof getMyClub === 'function') ? getMyClub() : null;
+  if (!club || !club.id) {
+    try {
+      if (typeof homeRefreshJoinClubTile === 'function') await homeRefreshJoinClubTile();
+      fixes.push('My Clubs refreshed');
+    } catch(e) {}
+    const clubOk = club && club.id;
+    if (!clubOk) msgs.push('My Clubs: Please join or select a club');
+    viewerQCDot('clubsQC', clubOk ? 'green' : 'red');
+  } else {
+    viewerQCDot('clubsQC', 'green');
+  }
+
+  // ── QC 4: Report ──
+  // Report just checks if club is set
+  viewerQCDot('reportQC', club && club.id ? 'green' : 'yellow');
+
+  // Show message if needed
+  if (msgs.length > 0) {
+    viewerQCShowMsg(msgs.join(' · '));
+  }
+}
+
+function viewerQCDot(id, color) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var colors = { green: '#1db954', yellow: '#f59e0b', red: '#e63757' };
+  el.style.background = colors[color] || colors.yellow;
+  el.style.display = 'block';
+}
+
+function viewerQCShowMsg(msg) {
+  var existing = document.getElementById('viewerQCMsg');
+  if (existing) existing.remove();
+  var div = document.createElement('div');
+  div.id = 'viewerQCMsg';
+  div.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface,#1e1e2e);color:var(--text,#fff);padding:10px 18px;border-radius:20px;font-size:0.78rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;border:1px solid var(--border,#2a2a4a);';
+  div.textContent = msg;
+  document.body.appendChild(div);
+  setTimeout(function() { div.remove(); }, 4000);
+}
+
 async function vaultLoadRequests() {
   var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
   var listEl = document.getElementById('vaultRequestsList');
@@ -460,40 +715,61 @@ async function vaultLoadRequests() {
         '<div class="vault-request-id">' + req.email + '</div>' +
       '</div>' +
       '<div class="vault-request-actions">' +
-        '<button class="vault-request-accept" onclick="vaultAcceptRequest(\'' + req.requestId + '\',\'' + req.userAccountId + '\',\'' + req.nickname.replace(/'/g, "\\'") + '\')">✓ Accept</button>' +
-        '<button class="vault-request-reject" onclick="vaultRejectRequest(\'' + req.requestId + '\')">✗ Reject</button>' +
+        '<button class="vault-request-accept" onclick="vaultAcceptRequest(\'' + req.requestId + '\',\'' + req.userAccountId + '\',\'' + req.nickname.replace(/'/g, "\\'") + '\',this)">✓ Accept</button>' +
+        '<button class="vault-request-reject" onclick="vaultRejectRequest(\'' + req.requestId + '\',this)">✗ Reject</button>' +
       '</div>' +
     '</div>';
   }).join('');
 }
 
 /* ── Accept request ── */
-async function vaultAcceptRequest(requestId, userAccountId, nickname) {
+async function vaultAcceptRequest(requestId, userAccountId, nickname, btn) {
   var club = (typeof getMyClub === 'function') ? getMyClub() : { id: null };
   if (!club || !club.id) return;
 
+  // Show loading state on button
+  var acceptBtn = btn || event.target;
+  var originalText = acceptBtn ? acceptBtn.textContent : '';
+  if (acceptBtn) { acceptBtn.disabled = true; acceptBtn.textContent = '⏳ Accepting...'; }
+
   var result = await authAcceptRequest(requestId, club.id, userAccountId, nickname, 'Male');
+
   if (result.error) {
-    alert('Failed: ' + result.error);
+    if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.textContent = originalText; }
+    if (typeof showToast === 'function') showToast('❌ Failed: ' + result.error);
+    else alert('Failed: ' + result.error);
     return;
   }
-  // Refresh list
+
+  // Success feedback
+  if (typeof showToast === 'function') showToast('✅ ' + nickname + ' accepted and added to club!');
+
   // Invalidate player cache and resync so organiser sees the new player immediately
   localStorage.removeItem('kbrr_cache_players');
   localStorage.removeItem('kbrr_cache_ts');
   if (typeof syncToLocal === 'function') await syncToLocal();
+
+  // Refresh the requests list and home tiles
   vaultLoadRequests();
-  // Refresh players tile on home
   if (typeof homeRefreshTiles === 'function') homeRefreshTiles();
 }
 
 /* ── Reject request ── */
-async function vaultRejectRequest(requestId) {
+async function vaultRejectRequest(requestId, btn) {
+  var rejectBtn = btn || event.target;
+  var originalText = rejectBtn ? rejectBtn.textContent : '';
+  if (rejectBtn) { rejectBtn.disabled = true; rejectBtn.textContent = '⏳...'; }
+
   var result = await authRejectRequest(requestId);
+
   if (result.error) {
-    alert('Failed: ' + result.error);
+    if (rejectBtn) { rejectBtn.disabled = false; rejectBtn.textContent = originalText; }
+    if (typeof showToast === 'function') showToast('❌ Failed: ' + result.error);
+    else alert('Failed: ' + result.error);
     return;
   }
+
+  if (typeof showToast === 'function') showToast('🚫 Request rejected.');
   vaultLoadRequests();
 }
 
@@ -609,4 +885,154 @@ async function authCompleteClaim(otp) {
   _pendingClaim = null;
   authHideOtpScreen();
   authAfterLogin(result.user);
+}
+
+/* ============================================================
+   QC MODULE v1.0
+   Watches viewer / organiser / vault modes
+   Auto-fixes silently. Toast only if can't fix.
+   Update this module as app grows.
+============================================================ */
+
+var _qcTimer      = null;
+var _qcMode       = null;
+var _qcInterval   = 5000; // check every 5s
+
+function qcStart(mode) {
+  qcStop(); // clear any existing
+  _qcMode = mode;
+  _qcRun();
+  _qcTimer = setInterval(_qcRun, _qcInterval);
+}
+
+function qcStop() {
+  if (_qcTimer) { clearInterval(_qcTimer); _qcTimer = null; }
+  _qcMode = null;
+}
+
+async function _qcRun() {
+  // ── Settings (all modes) ──────────────────────────────────
+  _qcApplySettings();
+
+  if (_qcMode === 'viewer')     await _qcViewer();
+  if (_qcMode === 'organiser')  await _qcOrganiser();
+  if (_qcMode === 'vault')      await _qcVault();
+}
+
+// ── Settings fix ─────────────────────────────────────────────
+function _qcApplySettings() {
+  try {
+    const theme = localStorage.getItem('app-theme');
+    const font  = localStorage.getItem('appFontSize');
+    const tile  = localStorage.getItem('kbrr_tile_style');
+    const lang  = localStorage.getItem('kbrr_lang');
+    if (theme && typeof applyTheme    === 'function') applyTheme(theme);
+    if (font  && typeof setFontSize   === 'function') setFontSize(font);
+    if (tile  && typeof setTileStyle  === 'function') setTileStyle(tile);
+    if (lang  && typeof setLanguage   === 'function') setLanguage(lang);
+  } catch(e) {}
+}
+
+// ── Viewer QC ─────────────────────────────────────────────────
+async function _qcViewer() {
+  // License integrity check
+  try {
+    if (typeof qcCheckLicense === 'function') await qcCheckLicense();
+  } catch(e) {}
+
+  // My Card
+  try {
+    const ratingEl = document.getElementById('homeTileRatingV');
+    const txt = ratingEl ? ratingEl.textContent : '';
+    if (!txt || txt === 'Loading...' || txt === 'Not selected') {
+      if (typeof homeRefreshTiles === 'function') await homeRefreshTiles();
+    }
+  } catch(e) {}
+
+  // Dashboard
+  try {
+    const dashEl = document.getElementById('tileSubDashboardV');
+    if (dashEl && dashEl.textContent === 'Loading...') {
+      const sessions = typeof dbGetLiveSessions === 'function' ? await dbGetLiveSessions() : [];
+      const count = (sessions||[]).length;
+      dashEl.textContent = count > 0 ? count + ' live session' + (count!==1?'s':'') : 'No live sessions';
+    }
+  } catch(e) {}
+
+  // Active club
+  try {
+    const club = typeof getMyClub === 'function' ? getMyClub() : null;
+    if (!club || !club.id) {
+      if (typeof homeRefreshJoinClubTile === 'function') await homeRefreshJoinClubTile();
+    }
+  } catch(e) {}
+}
+
+// ── Organiser QC ──────────────────────────────────────────────
+async function _qcOrganiser() {
+  // License integrity check
+  try {
+    if (typeof qcCheckLicense === 'function') await qcCheckLicense();
+  } catch(e) {}
+
+  // Players loaded
+  try {
+    const players = typeof getActivePlayers === 'function' ? getActivePlayers() : [];
+    if (!players || players.length === 0) {
+      if (typeof syncToLocal === 'function') syncToLocal();
+    }
+  } catch(e) {}
+
+  // Courts set - read from DOM element like the app does
+  try {
+    const courtsEl = document.getElementById('num-courts');
+    const courts = courtsEl ? parseInt(courtsEl.textContent || '0') : 1;
+    if (courtsEl && courts === 0) {
+      _qcToast('⚠️ No courts set — please configure in Settings');
+    }
+  } catch(e) {}
+
+  // Cost edit: verify session entries have session_id for reliable cost editing
+  // (new sessions will have it, old ones won't — no action needed, just informational)
+}
+
+// ── Vault QC ──────────────────────────────────────────────────
+async function _qcVault() {
+  // Logged in
+  try {
+    const user = typeof authGetUser === 'function' ? authGetUser() : null;
+    if (!user) {
+      _qcToast('⚠️ Not logged in — please sign in to Vault');
+      return;
+    }
+  } catch(e) {}
+
+  // Club selected
+  try {
+    const club = typeof getMyClub === 'function' ? getMyClub() : null;
+    if (!club || !club.id) {
+      if (typeof homeRefreshJoinClubTile === 'function') await homeRefreshJoinClubTile();
+    }
+  } catch(e) {}
+
+  // Sync status
+  try {
+    if (typeof vaultSyncStatus === 'function') vaultSyncStatus();
+  } catch(e) {}
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function _qcToast(msg) {
+  var existing = document.getElementById('qcToast');
+  if (existing && existing.textContent === msg) return; // don't repeat same msg
+  if (existing) existing.remove();
+  var div = document.createElement('div');
+  div.id = 'qcToast';
+  div.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);' +
+    'background:var(--surface,#1e1e2e);color:var(--text,#fff);padding:10px 18px;border-radius:20px;' +
+    'font-size:0.78rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);' +
+    'max-width:90vw;text-align:center;pointer-events:none;border:1px solid var(--border,#2a2a4a);';
+  div.textContent = msg;
+  document.body.appendChild(div);
+  setTimeout(function() { div.remove(); }, 4000);
 }
