@@ -350,3 +350,23 @@ body.app-light #demoNav {
   color: #fff;
   box-shadow: 0 4px 14px var(--accent-glow);
 }
+
+/* ── Auth welcome — Help button ─────────────────────────────── */
+.auth-btn-help {
+  width: 100%;
+  padding: 13px;
+  background: none;
+  border: 1.5px solid var(--border2);
+  border-radius: 14px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.15s, color 0.15s;
+  margin-top: 4px;
+}
+.auth-btn-help:active {
+  background: var(--surface2);
+  color: var(--text);
+}

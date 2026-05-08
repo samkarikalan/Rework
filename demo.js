@@ -215,83 +215,259 @@ var DEMO_ROLES = [
     color: 'rgba(45,206,137,0.15)',
     border:'rgba(45,206,137,0.4)',
     slides: [
+
+      /* ── Slide 1: Organiser home screen ── */
       {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-pill" style="background:rgba(45,206,137,0.2);color:#2dce89;">🏆 Organiser Mode</div>
-          <div class="demo-scene-title">Run your session</div>
-          <div class="demo-scene-sub">Schedule rounds · Enter scores · Manage players</div>
-        </div>`,
-        title: 'What is Organiser Mode?',
-        desc:  'Organiser mode is for the person running the badminton session. You start a session, add players, generate fair rounds, record scores, and close the session when done.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-card" style="margin-bottom:10px;">
-            <div class="demo-scene-label">Select Club</div>
-            <div class="demo-input-mock">🏟 Tokyo Badminton Club ▾</div>
-          </div>
-          <div class="demo-btn-mock">▶ Start Session</div>
-          <div class="demo-scene-sub" style="margin-top:10px;">Only one active session per club at a time</div>
-        </div>`,
-        title: 'Start a Session',
-        desc:  'Tap "Organiser" on the home screen, select your club, and tap "Start Session". This opens the session and lets viewers join. Only one session can be active per club at a time.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-label" style="margin-bottom:8px;">Players</div>
-          <div class="demo-player-list">
-            <div class="demo-player-row"><span class="demo-avatar" style="background:#6c8cff;">A</span><span>Ali</span><span class="demo-tag active">Playing</span></div>
-            <div class="demo-player-row"><span class="demo-avatar" style="background:#2dce89;">S</span><span>Sam</span><span class="demo-tag active">Playing</span></div>
-            <div class="demo-player-row"><span class="demo-avatar" style="background:#ff6584;">Z</span><span>Zoe</span><span class="demo-tag rest">Resting</span></div>
-          </div>
-          <div class="demo-btn-mock" style="margin-top:10px;">＋ Add Player</div>
-        </div>`,
-        title: 'Add Players to the Session',
-        desc:  'On the Players page, tap "Add Player" to mark club members as active for this session. Toggle each player between Playing and Resting using the play button next to their name.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-label" style="margin-bottom:8px;">Round 3 — 3 Courts</div>
-          <div class="demo-court-card" style="width:100%;margin-bottom:8px;">
-            <div class="demo-court-num">Court 1</div>
-            <div class="demo-court-match">Ali &amp; Sam &nbsp;<span style="color:var(--text-dim)">vs</span>&nbsp; Jay &amp; Kim</div>
-          </div>
-          <div class="demo-court-card" style="width:100%;margin-bottom:8px;">
-            <div class="demo-court-num">Court 2</div>
-            <div class="demo-court-match">Mia &amp; Leo &nbsp;<span style="color:var(--text-dim)">vs</span>&nbsp; Zoe &amp; Max</div>
-          </div>
-          <div class="demo-btn-mock">⚡ Generate Next Round</div>
-        </div>`,
-        title: 'Generate Rounds Automatically',
-        desc:  'Go to the Rounds page and tap "Generate Next Round". The algorithm pairs players fairly based on rating and play history — trying to ensure everyone plays with and against different people each round.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-label" style="margin-bottom:8px;">Enter Result — Court 1</div>
-          <div class="demo-score-entry">
-            <div class="demo-score-team">
-              <div class="demo-score-name">Ali &amp; Sam</div>
-              <div class="demo-score-input-mock">21</div>
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="home-grid" style="margin:0;">
+              <div class="home-tile" style="pointer-events:none;">
+                <div class="home-tile-icon tile-pairs" id="orgTileIcon">🏢</div>
+                <div class="home-tile-name">Club</div>
+                <div class="home-tile-sub">Tap to connect</div>
+              </div>
+              <div class="home-tile" style="pointer-events:none;">
+                <div class="home-tile-icon tile-players">👥</div>
+                <div class="home-tile-name">Players</div>
+                <div class="home-tile-sub">Add · Remove</div>
+              </div>
+              <div class="home-tile" style="pointer-events:none;">
+                <div class="home-tile-icon tile-pairs">🤝</div>
+                <div class="home-tile-name">Fixed Pairs</div>
+                <div class="home-tile-sub">Always together</div>
+              </div>
+              <div class="home-tile" style="pointer-events:none;">
+                <div class="home-tile-icon">📡</div>
+                <div class="home-tile-name">Dashboard</div>
+                <div class="home-tile-sub">Live sessions</div>
+              </div>
+              <div class="home-tile" style="pointer-events:none;">
+                <div class="home-tile-icon" style="position:relative;">⚡</div>
+                <div class="home-tile-name">Playing</div>
+                <div class="home-tile-sub">—</div>
+              </div>
             </div>
-            <div style="color:var(--text-dim);font-size:1.1rem;align-self:center;">–</div>
-            <div class="demo-score-team">
-              <div class="demo-score-name">Jay &amp; Kim</div>
-              <div class="demo-score-input-mock">15</div>
-            </div>
-          </div>
-          <div class="demo-btn-mock" style="margin-top:10px;">✓ Save Result</div>
-        </div>`,
-        title: 'Record Game Results',
-        desc:  'Tap a court card to open the score entry screen. Enter the score for each team and tap Save. Results update player ratings and appear immediately on the Viewer scoreboard.',
+          </div>`,
+        title: 'Organiser Home Screen',
+        desc:  'The Organiser home shows five tiles: Club (connect to your club), Players (manage who is playing), Fixed Pairs (lock two players together), Dashboard (live sessions), and Playing (the active round). Start by connecting to your club.',
       },
+
+      /* ── Slide 2: Players page ── */
       {
-        visual: `<div class="demo-visual-scene">
-          <div style="font-size:2.8rem;margin-bottom:10px;">🏅</div>
-          <div class="demo-scene-title">Session complete!</div>
-          <div class="demo-scene-sub">Summary → ratings updated → session closed</div>
-        </div>`,
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="sheet-header" style="position:relative;top:0;">
+              <div class="sheet-header-spacer"></div>
+              <span class="sheet-title">👥 Players</span>
+              <div class="sheet-header-spacer"></div>
+            </div>
+            <div class="card browse-card" style="pointer-events:none;margin:8px 0 4px;">
+              <div class="browse-left">
+                <span class="browse-title">➕ Add Players</span>
+                <span class="browse-sub">Select from saved players</span>
+              </div>
+              <div class="browse-arrow">›</div>
+            </div>
+            <div class="card" style="padding:0 4px;">
+              <div class="player-list" style="pointer-events:none;">
+                <div class="player-edit-card male">
+                  <span class="pec-active">✔</span>
+                  <span class="pec-sl">1</span>
+                  <span class="pec-gender"></span>
+                  <span class="pec-name">Ali</span>
+                  <span class="pec-rating" style="font-size:0.75rem;color:var(--muted);">1450</span>
+                </div>
+                <div class="player-edit-card female">
+                  <span class="pec-active">✔</span>
+                  <span class="pec-sl">2</span>
+                  <span class="pec-gender"></span>
+                  <span class="pec-name">Sam</span>
+                  <span class="pec-rating" style="font-size:0.75rem;color:var(--muted);">1380</span>
+                </div>
+                <div class="player-edit-card male inactive">
+                  <span class="pec-active"></span>
+                  <span class="pec-sl">3</span>
+                  <span class="pec-gender"></span>
+                  <span class="pec-name">Jay</span>
+                  <span class="pec-rating" style="font-size:0.75rem;color:var(--muted);">1310</span>
+                </div>
+              </div>
+            </div>
+          </div>`,
+        title: 'Players Page — Who Is Playing',
+        desc:  'On the Players page, tap "Add Players" to bring in club members for this session. Each player row shows their sequence number and rating. The checkbox on the left marks them as active (playing) — greyed-out rows are inactive (sitting out).',
+      },
+
+      /* ── Slide 3: Rounds page — before start ── */
+      {
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="rounds-top-bar" style="position:relative;">
+              <button class="rtb-back" style="pointer-events:none;">‹ Home</button>
+              <button class="rtb-settings" style="pointer-events:none;">⚙️</button>
+              <button class="rtb-settings" style="pointer-events:none;">🕓</button>
+              <div class="rtb-spacer"></div>
+              <div class="rtb-live">
+                <div class="rtb-dot"></div>
+                <span class="rtb-live-txt">LIVE</span>
+                <button class="rtb-end" style="pointer-events:none;">End</button>
+              </div>
+            </div>
+            <div class="title-card" style="pointer-events:none;">
+              <div id="roundTitle" style="font-size:1rem;font-weight:700;">Round 3</div>
+              <span class="mode-banner-badge ready-mode">READY</span>
+            </div>
+            <div class="action-card" style="pointer-events:none;margin:8px 0 0;">
+              <button class="action mid small disabled-btn">🎲</button>
+              <button class="action right primary next-round-state">
+                <span>Next Round</span>
+                <span class="icon"> ▶</span>
+              </button>
+            </div>
+          </div>`,
+        title: 'Rounds Page — Generate & Start',
+        desc:  'The Rounds page is the session hub. The top bar shows Home, Settings (⚙️), and History (🕓) buttons, and a pulsing LIVE badge once a session is active. Tap "Next Round" to generate and start the next round. Tap 🎲 to reshuffle pairings.',
+      },
+
+      /* ── Slide 4: Round settings sheet ── */
+      {
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="rounds-nav-tiles" style="pointer-events:none;margin:0 0 10px;">
+              <div class="rounds-nav-tile" data-tile-color="1">
+                <div class="rounds-nav-icon tile-players">👥</div>
+                <div class="rounds-nav-name">Players</div>
+                <div class="rounds-nav-sub">Add · Remove</div>
+              </div>
+              <div class="rounds-nav-tile" data-tile-color="2">
+                <div class="rounds-nav-icon tile-pairs">🤝</div>
+                <div class="rounds-nav-name">Fixed Pairs</div>
+                <div class="rounds-nav-sub">Optional</div>
+              </div>
+            </div>
+            <div class="setting-row" style="pointer-events:none;">
+              <label class="setting-label">Courts</label>
+              <div class="counter">
+                <button class="circle-btn">−</button>
+                <span style="font-weight:700;padding:0 8px;">3</span>
+                <button class="circle-btn">+</button>
+              </div>
+            </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row" style="pointer-events:none;">
+              <label class="setting-label"><span>⚡</span> Competitive</label>
+              <label class="switch">
+                <input type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>`,
+        title: 'Round Settings — Courts & Mode',
+        desc:  'Tap ⚙️ to open Round Settings. Use the + / − counter to set the number of active courts. Toggle Competitive mode on for rating-based pairing, or leave it off for casual random pairing. Quick-nav tiles let you jump to Players or Fixed Pairs without leaving the round.',
+      },
+
+      /* ── Slide 5: Active round — courts ── */
+      {
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="round-wrapper" style="pointer-events:none;">
+              <div class="round-header">Round 3</div>
+              <div class="courtcard court-1">
+                <div class="courtname">Court 1</div>
+                <div class="teams">
+                  <div class="team" data-team-side="L">
+                    <button class="Lplayer-btn" style="pointer-events:none;">Ali</button>
+                    <button class="Lplayer-btn" style="pointer-events:none;">Sam</button>
+                  </div>
+                  <div class="vs-divider"><div class="vs-line"></div><span>VS</span><div class="vs-line"></div></div>
+                  <div class="team" data-team-side="R">
+                    <button class="Rplayer-btn" style="pointer-events:none;">Jay</button>
+                    <button class="Rplayer-btn" style="pointer-events:none;">Kim</button>
+                  </div>
+                </div>
+              </div>
+              <div class="courtcard court-2">
+                <div class="courtname">Court 2</div>
+                <div class="teams">
+                  <div class="team" data-team-side="L">
+                    <button class="Lplayer-btn" style="pointer-events:none;">Mia</button>
+                    <button class="Lplayer-btn" style="pointer-events:none;">Leo</button>
+                  </div>
+                  <div class="vs-divider"><div class="vs-line"></div><span>VS</span><div class="vs-line"></div></div>
+                  <div class="team" data-team-side="R">
+                    <button class="Rplayer-btn" style="pointer-events:none;">Zoe</button>
+                    <button class="Rplayer-btn" style="pointer-events:none;">Max</button>
+                  </div>
+                </div>
+              </div>
+              <div class="round-header" style="padding-left:12px;">Sitting out</div>
+              <div class="rest-box" style="pointer-events:none;display:flex;">
+                <span class="rest-btn" style="cursor:default;">Kari</span>
+              </div>
+            </div>
+          </div>`,
+        title: 'Active Round — Courts & Scores',
+        desc:  'Once started, each court card shows the two teams. Tap any player name to record the score for that court — a score entry dialog opens. Sitting-out players appear below the courts. The lock icon on the round title pins the pairings so no accidental reshuffling occurs.',
+      },
+
+      /* ── Slide 6: Summary page ── */
+      {
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="sheet-header" style="position:relative;top:0;">
+              <div class="sheet-header-spacer"></div>
+              <span class="sheet-title">📊 Summary</span>
+              <div class="sheet-header-spacer"></div>
+            </div>
+            <div id="reportContainer" style="pointer-events:none;padding:0 4px;">
+              <div class="report-header">
+                <div class="header-strip"></div>
+                <div class="header-rank">Rank</div>
+                <div class="header-name">Name</div>
+                <div class="header-wins">W</div>
+                <div class="header-played">P</div>
+                <div class="header-rested">R</div>
+              </div>
+              <div class="player-card top-1" style="--strip-color:#f5a623;pointer-events:none;">
+                <div class="rating-strip"></div>
+                <div class="rank">#1</div>
+                <div class="name">Ali</div>
+                <div class="stat wins">5</div>
+                <div class="stat played">6</div>
+                <div class="stat rest">1</div>
+                <span class="rating-badge"></span>
+                <div class="stat-label lbl-wins">W</div>
+                <div class="stat-label lbl-played">P</div>
+                <div class="stat-label lbl-rest">R</div>
+              </div>
+              <div class="player-card top-2" style="--strip-color:#9b9b9b;pointer-events:none;">
+                <div class="rating-strip"></div>
+                <div class="rank">#2</div>
+                <div class="name">Sam</div>
+                <div class="stat wins">4</div>
+                <div class="stat played">6</div>
+                <div class="stat rest">0</div>
+                <span class="rating-badge"></span>
+                <div class="stat-label lbl-wins">W</div>
+                <div class="stat-label lbl-played">P</div>
+                <div class="stat-label lbl-rest">R</div>
+              </div>
+            </div>
+          </div>`,
+        title: 'Summary — End of Session',
+        desc:  'After all rounds are done, go to the Summary page to review the full leaderboard and every round\'s matchups. Tap the 📄 export button to download an HTML report. When ready, tap "End" in the top bar to close the session and update player ratings.',
+      },
+
+      /* ── Slide 7: Done ── */
+      {
+        visual: `
+          <div class="demo-visual-scene">
+            <div style="font-size:2.8rem;margin-bottom:10px;">🏅</div>
+            <div class="demo-scene-title">Session complete!</div>
+            <div class="demo-scene-sub" style="max-width:280px;">Club → Players → Rounds → Score → Summary → End</div>
+          </div>`,
         title: 'Organiser — All Done!',
-        desc:  'When all rounds are finished, go to the Summary page to review results, then close the session. Player ratings update automatically and the session is stored in your club history.',
+        desc:  'That covers the full Organiser workflow: connect your club, mark players active, generate rounds, record scores, review the summary, and end the session. Ratings update automatically. Try another role or close to return to Help.',
       },
     ],
   },
@@ -299,92 +475,228 @@ var DEMO_ROLES = [
   {
     key:   'vault',
     label: 'Vault',
-    icon:  '🔒',
+    icon:  '🔑',
     color: 'rgba(245,166,35,0.15)',
     border:'rgba(245,166,35,0.4)',
     slides: [
+
+      /* ── Slide 1: Mode select overlay ── */
       {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-pill" style="background:rgba(245,166,35,0.2);color:#f5a623;">🔒 Vault Mode</div>
-          <div class="demo-scene-title">Full admin control</div>
-          <div class="demo-scene-sub">Clubs · Members · Settings · Subscription</div>
-        </div>`,
-        title: 'What is Vault Mode?',
-        desc:  'Vault mode is the admin layer of the app. As Vault manager you create and configure clubs, manage the full member roster, control court settings, and handle subscription and app-wide preferences.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-card" style="margin-bottom:8px;">
-            <div class="demo-scene-label">Club Name</div>
-            <div class="demo-input-mock">Tokyo Badminton Club</div>
-          </div>
-          <div class="demo-scene-card" style="margin-bottom:8px;">
-            <div class="demo-scene-label">Courts Available</div>
-            <div class="demo-input-mock">4 ▾</div>
-          </div>
-          <div class="demo-btn-mock">＋ Create Club</div>
-        </div>`,
-        title: 'Create a Club',
-        desc:  'In Vault, tap "Create Club" and fill in the club name and number of courts. A unique club code is generated automatically — share this with members so they can join as Viewer or Organiser.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-label" style="margin-bottom:8px;">Member Roster</div>
-          <div class="demo-player-list">
-            <div class="demo-player-row"><span class="demo-avatar" style="background:#6c8cff;">A</span><span>Ali</span><span class="demo-tag" style="background:rgba(108,140,255,0.2);color:#6c8cff;">★ 1450</span></div>
-            <div class="demo-player-row"><span class="demo-avatar" style="background:#2dce89;">S</span><span>Sam</span><span class="demo-tag" style="background:rgba(45,206,137,0.2);color:#2dce89;">★ 1380</span></div>
-            <div class="demo-player-row"><span class="demo-avatar" style="background:#ff6584;">Z</span><span>Zoe</span><span class="demo-tag" style="background:rgba(255,101,132,0.2);color:#ff6584;">★ 1310</span></div>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px;">
-            <div class="demo-btn-mock" style="flex:1;font-size:0.75rem;">＋ Add</div>
-            <div class="demo-btn-mock" style="flex:1;font-size:0.75rem;background:var(--surface3);">✏ Edit</div>
-          </div>
-        </div>`,
-        title: 'Manage Club Members',
-        desc:  'The Members page shows every registered player with their club rating. You can add new members, edit nicknames and gender, adjust ratings, and remove players from the roster.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-label" style="margin-bottom:8px;">Court Settings</div>
-          <div class="demo-scene-card" style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-size:0.85rem;">Number of Courts</span>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div class="demo-btn-mock" style="padding:4px 12px;font-size:1rem;">−</div>
-              <span style="font-weight:700;font-size:1.1rem;">4</span>
-              <div class="demo-btn-mock" style="padding:4px 12px;font-size:1rem;">＋</div>
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="ml-inner" style="padding:16px 0 8px;align-items:center;display:flex;flex-direction:column;gap:6px;">
+              <div class="ml-logo" style="font-size:2rem;margin-bottom:4px;">🏸</div>
+              <div class="ml-title" style="font-size:1rem;margin-bottom:2px;">Choose Mode</div>
+              <div class="ml-modes" style="gap:8px;margin-bottom:0;width:100%;">
+                <button class="ml-mode viewer" style="pointer-events:none;padding:10px 14px;">
+                  <div class="ml-mode-icon" style="font-size:1.2rem;background:rgba(108,140,255,0.12);width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;">👁</div>
+                  <div class="ml-mode-info">
+                    <div class="ml-mode-name" style="color:#6c8cff;">Viewer</div>
+                    <div class="ml-mode-desc">Watch live rounds &amp; scores</div>
+                  </div>
+                  <span class="ml-arr">›</span>
+                </button>
+                <button class="ml-mode organiser" style="pointer-events:none;padding:10px 14px;">
+                  <div class="ml-mode-icon" style="font-size:1.2rem;background:rgba(45,206,137,0.12);width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;">🏆</div>
+                  <div class="ml-mode-info">
+                    <div class="ml-mode-name" style="color:#2dce89;">Round Organiser</div>
+                    <div class="ml-mode-desc">Run session, score games</div>
+                  </div>
+                  <span class="ml-arr">›</span>
+                </button>
+                <button class="ml-mode vault" style="pointer-events:none;padding:10px 14px;">
+                  <div class="ml-mode-icon" style="font-size:1.2rem;background:rgba(245,166,35,0.12);width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;">🔑</div>
+                  <div class="ml-mode-info">
+                    <div class="ml-mode-name" style="color:#f5a623;">Vault Manager</div>
+                    <div class="ml-mode-desc">Club admin — players, requests</div>
+                  </div>
+                  <span class="ml-arr">›</span>
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="demo-scene-card" style="display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-size:0.85rem;">Session Password</span>
-            <div class="demo-input-mock" style="width:80px;">••••</div>
-          </div>
-        </div>`,
-        title: 'Configure Courts & Access',
-        desc:  'In Settings you can change how many courts are active for a session and set or clear the session password. Only Vault managers can change these — Organisers use whatever is configured here.',
+          </div>`,
+        title: 'What is Vault Manager Mode?',
+        desc:  'Vault Manager is the admin layer of the app. On the mode selection screen, tap "Vault Manager" to enter. You will need your admin password. From Vault you create clubs, manage all members, approve join requests, and control club-level settings.',
       },
+
+      /* ── Slide 2: Vault home grid ── */
       {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-card" style="margin-bottom:8px;text-align:center;">
-            <div style="font-size:1.6rem;margin-bottom:4px;">⚡</div>
-            <div style="font-weight:700;font-size:0.9rem;">Pro Plan</div>
-            <div style="color:var(--text-dim);font-size:0.75rem;margin-top:4px;">Unlimited sessions · All modes · Priority support</div>
-          </div>
-          <div class="demo-btn-mock">Manage Subscription</div>
-        </div>`,
-        title: 'Subscription & App Settings',
-        desc:  'The Subscription page shows your current plan and lets you upgrade. From Settings you can also change the app language, theme (dark/light), tile style, and other preferences.',
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="vault-club-tile" style="margin:0 0 10px;cursor:default;">
+              <div class="vct-dot"></div>
+              <div class="vct-info">
+                <div class="vct-name">Tokyo Badminton Club</div>
+                <span class="vct-badge">ADMIN</span>
+              </div>
+              <button style="background:none;border:1px solid var(--red,#e63757);color:var(--red,#e63757);border-radius:8px;padding:5px 10px;font-size:0.7rem;font-weight:700;cursor:default;">Leave</button>
+              <span style="color:var(--muted,#aaa);font-size:1rem;margin-left:6px;">›</span>
+            </div>
+            <div class="vault-tile-grid" style="pointer-events:none;">
+              <div class="vault-tile vt-register" data-tile-color="1">
+                <div class="vt-icon">📋</div>
+                <div class="vt-stat">12</div>
+                <div class="vt-name">Register</div>
+                <div class="vt-sub">players in club</div>
+              </div>
+              <div class="vault-tile vt-modify" data-tile-color="2">
+                <div class="vt-icon">✏️</div>
+                <div class="vt-stat">12</div>
+                <div class="vt-name">Modify</div>
+                <div class="vt-sub">tap to edit</div>
+              </div>
+              <div class="vault-tile vt-requests" data-tile-color="3">
+                <div class="vt-badge" style="display:block;">NEW</div>
+                <div class="vt-icon">🔔</div>
+                <div class="vt-stat">2</div>
+                <div class="vt-name">Requests</div>
+                <div class="vt-sub">pending approval</div>
+              </div>
+              <div class="vault-tile vt-requests" data-tile-color="4">
+                <div class="vt-icon">🗑️</div>
+                <div class="vt-name">Delete</div>
+                <div class="vt-sub">remove club</div>
+              </div>
+            </div>
+          </div>`,
+        title: 'Vault Home — Four Admin Tiles',
+        desc:  'The Vault home shows your connected club at the top with an ADMIN badge. Below are four tiles: Register (add new members), Modify (edit existing members), Requests (approve join requests — NEW badge appears when pending), and Delete (remove the club).',
       },
+
+      /* ── Slide 3: Register page ── */
       {
-        visual: `<div class="demo-visual-scene">
-          <div style="font-size:2.8rem;margin-bottom:10px;">🔐</div>
-          <div class="demo-scene-title">Vault mastered!</div>
-          <div class="demo-scene-sub">You now control the full club experience</div>
-        </div>`,
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="sheet-header" style="position:relative;top:0;">
+              <div class="sheet-header-spacer"></div>
+              <span class="sheet-title">📋 Register Players</span>
+              <div class="sheet-header-spacer"></div>
+            </div>
+            <div class="vault-wrap" style="padding:10px 4px 0;">
+              <div class="vm-search-wrap" style="margin-bottom:8px;">
+                <span class="vm-search-icon">🔍</span>
+                <input class="vm-search-input" placeholder="Search or add new player…" style="pointer-events:none;">
+              </div>
+              <div class="vm-player-list" style="pointer-events:none;">
+                <div class="vm-player-row male">
+                  <div class="vm-avatar male">A</div>
+                  <div class="vm-player-info">
+                    <div class="vm-player-name-row">
+                      <span class="vm-player-name">Ali</span>
+                      <span class="vm-userid-chip">@ali_kbrr</span>
+                    </div>
+                    <div class="vm-player-meta">Male · Rating 1450</div>
+                  </div>
+                  <div class="vm-row-actions">
+                    <button class="vm-edit-btn">✏️</button>
+                  </div>
+                </div>
+                <div class="vm-player-row female">
+                  <div class="vm-avatar female">S</div>
+                  <div class="vm-player-info">
+                    <div class="vm-player-name-row">
+                      <span class="vm-player-name">Sam</span>
+                      <span class="vm-userid-chip vm-unlinked">unlinked</span>
+                    </div>
+                    <div class="vm-player-meta">Female · Rating 1380</div>
+                  </div>
+                  <div class="vm-row-actions">
+                    <button class="vm-edit-btn">✏️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`,
+        title: 'Register — Add New Members',
+        desc:  'The Register page shows all club members. Each row displays an avatar initial, player name, linked user account chip (@userId), gender, and rating. Tap ✏️ to edit a player. An "unlinked" chip means the player has no app account linked yet — they can still be added to sessions.',
+      },
+
+      /* ── Slide 4: Requests page ── */
+      {
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="sheet-header" style="position:relative;top:0;">
+              <div class="sheet-header-spacer"></div>
+              <span class="sheet-title">🔔 Join Requests</span>
+              <div class="sheet-header-spacer"></div>
+            </div>
+            <div class="vault-requests-list" style="pointer-events:none;">
+              <div class="vault-request-card">
+                <div class="vault-request-info">
+                  <div class="vault-request-name">Leo Tanaka</div>
+                  <div class="vault-request-id">@leo_t · Requested 2h ago</div>
+                </div>
+                <div class="vault-request-actions">
+                  <button class="vault-request-accept">✓ Accept</button>
+                  <button class="vault-request-reject">✕</button>
+                </div>
+              </div>
+              <div class="vault-request-card">
+                <div class="vault-request-info">
+                  <div class="vault-request-name">Zoe Kim</div>
+                  <div class="vault-request-id">@zoe_k · Requested 5h ago</div>
+                </div>
+                <div class="vault-request-actions">
+                  <button class="vault-request-accept">✓ Accept</button>
+                  <button class="vault-request-reject">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>`,
+        title: 'Requests — Approve New Members',
+        desc:  'When players request to join your club, they appear on the Requests page. Each card shows the player name, their @userId, and when they requested. Tap "Accept" to approve and add them to the club roster, or ✕ to reject. The NEW badge on the home tile clears once all requests are handled.',
+      },
+
+      /* ── Slide 5: Create club panel ── */
+      {
+        visual: `
+          <div style="width:100%;padding:0 2px;">
+            <div class="sheet-header" style="position:relative;top:0;">
+              <div class="sheet-header-spacer"></div>
+              <span class="sheet-title">🗑️ Delete Club</span>
+              <div class="sheet-header-spacer"></div>
+            </div>
+            <div style="padding:8px 4px 0;">
+              <div class="vault-tile-grid" style="pointer-events:none;margin:0 0 10px;">
+                <div class="vault-tile vt-register" data-tile-color="1" style="min-height:80px;">
+                  <div class="vt-icon">🔗</div>
+                  <div class="vt-name">Connect</div>
+                  <div class="vt-sub">join a club</div>
+                </div>
+                <div class="vault-tile vt-modify" data-tile-color="2" style="min-height:80px;">
+                  <div class="vt-icon">➕</div>
+                  <div class="vt-name">Create</div>
+                  <div class="vt-sub">new club</div>
+                </div>
+              </div>
+              <div class="settings-card" style="padding:14px;pointer-events:none;">
+                <div class="manage-section-title">Create New Club</div>
+                <input class="club-input" style="width:100%;margin-bottom:6px;" placeholder="Club name" readonly>
+                <input class="club-input" style="width:100%;margin-bottom:6px;" placeholder="Member password" readonly>
+                <input class="club-input" style="width:100%;margin-bottom:8px;" placeholder="Admin password" readonly>
+                <button class="btn-save" style="width:100%;pointer-events:none;">Create Club</button>
+              </div>
+            </div>
+          </div>`,
+        title: 'Club Management — Create or Connect',
+        desc:  'In the Club Management page, tap "Create" to set up a brand-new club — enter a club name, a member password (share this with players to let them join), and an admin password (keep this private). Tap "Connect" to link to an existing club using its admin password.',
+      },
+
+      /* ── Slide 6: Done ── */
+      {
+        visual: `
+          <div class="demo-visual-scene">
+            <div style="font-size:2.8rem;margin-bottom:10px;">🔐</div>
+            <div class="demo-scene-title">Vault mastered!</div>
+            <div class="demo-scene-sub" style="max-width:280px;">Mode Select → Vault Home → Register · Modify · Requests → Club Mgmt</div>
+          </div>`,
         title: 'Vault — All Done!',
-        desc:  'You now know how to set up and administer a club from top to bottom. Vault gives you full control so your Organisers and Viewers can have a smooth, well-managed session every time.',
+        desc:  'You now know how to administer a club from top to bottom — create and connect clubs, register and modify members, approve join requests, and manage club settings. Vault keeps everything organised so Organisers and Viewers have a smooth experience every session.',
       },
     ],
   },
+
+
 ];
 
 /* ── State ───────────────────────────────────────────────────── */

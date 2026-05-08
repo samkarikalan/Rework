@@ -104,6 +104,7 @@
       </div>
       <div class="ml-footer">
         <button class="ml-settings-btn" onclick="closeModeSheet();homeGo('settingsPage','tabBtnSettings')">⚙️ <span data-i18n="settings">Settings</span></button>
+        <button class="ml-settings-btn" onclick="openDemo()">❓ <span data-i18n="helpGuide">Help</span></button>
         <div class="ml-lang-row" id="mlLangRow">
           <span class="ml-lang-current" id="mlLangCurrent" onclick="mlToggleLang()">🇺🇸 English ▾</span>
           <div class="ml-lang-picker" id="mlLangPicker" style="display:none;" onclick="event.stopPropagation()">
@@ -135,6 +136,7 @@
   <div class="auth-welcome-btns">
     <button class="auth-btn-primary" onclick="authShowScreen('login')" data-i18n="login">Login</button>
     <button class="auth-btn-secondary" onclick="authShowScreen('signup')" data-i18n="createAccount">Create Account</button>
+    <button class="auth-btn-help" onclick="openDemo()">❓ How to use this app</button>
 
   <div class="ml-lang-row" style="margin-top:24px;justify-content:center;">
     <span class="ml-lang-current" id="authLangCurrent" onclick="authToggleLang()" style="font-size:0.9rem;">🇺🇸 English ▾</span>
