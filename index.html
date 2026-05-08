@@ -59,6 +59,7 @@
 
   <link rel="stylesheet" href="ui.css">
   <link rel="stylesheet" href="rounds.css">
+  <link rel="stylesheet" href="demo.css">
 </head>
 <body>
 
@@ -1532,6 +1533,9 @@
     oninput="helpSearch(this.value)">
 </div>
 
+<!-- Watch Demo button -->
+<button class="help-demo-btn" onclick="openDemo()">🎬 Watch Demo — Step-by-step Guide</button>
+
 <!-- Section navigation -->
 
 <div id="helpNav" class="help-nav"></div>
@@ -1885,5 +1889,19 @@ style="display:none;font-size:0.72rem;color:var(--accent);word-break:break-all;m
   }, { passive: false });
 })();
 </script>
+  <!-- ============================= -->
+  <!--         DEMO OVERLAY          -->
+  <!-- ============================= -->
+  <div id="demoOverlay">
+    <div class="demo-header">
+      <button id="demoBackBtn" style="display:none;" onclick="_demoBackFromSlide()">‹</button>
+      <span id="demoHeaderTitle">App Demo</span>
+      <button class="demo-header-close" onclick="closeDemo()">✕</button>
+    </div>
+    <div id="demoBody"></div>
+    <div id="demoNav"></div>
+  </div>
+
+  <script src="demo.js" defer></script>
 </body>
 </html>
