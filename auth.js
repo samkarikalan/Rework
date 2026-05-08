@@ -114,6 +114,10 @@ async function authVerifySession() {
     localStorage.removeItem('kbrr_my_club_name');
     localStorage.removeItem('kbrr_my_player');
     localStorage.removeItem('kbrr_app_mode');
+  localStorage.removeItem('scs_organiser_verified');
+  localStorage.removeItem('scs_vault_verified');
+  sessionStorage.removeItem('scs_organiser_verified');
+  sessionStorage.removeItem('scs_vault_verified');
     _stopSessionWatch();
     if (typeof authShowScreen === 'function') authShowScreen('welcome');
     _showDisplacedNotice();
@@ -130,6 +134,10 @@ async function authVerifySession() {
     localStorage.removeItem('kbrr_my_club_name');
     localStorage.removeItem('kbrr_my_player');
     localStorage.removeItem('kbrr_app_mode');
+  localStorage.removeItem('scs_organiser_verified');
+  localStorage.removeItem('scs_vault_verified');
+  sessionStorage.removeItem('scs_organiser_verified');
+  sessionStorage.removeItem('scs_vault_verified');
     _stopSessionWatch();
     if (typeof authShowScreen === 'function') authShowScreen('welcome');
     _showDisplacedNotice();
@@ -452,6 +460,10 @@ function authLogout() {
   localStorage.removeItem('kbrr_my_club_name');
   localStorage.removeItem('kbrr_my_player');
   localStorage.removeItem('kbrr_app_mode');
+  localStorage.removeItem('scs_organiser_verified');
+  localStorage.removeItem('scs_vault_verified');
+  sessionStorage.removeItem('scs_organiser_verified');
+  sessionStorage.removeItem('scs_vault_verified');
   if (typeof clearSubscription === 'function') clearSubscription();
   if (typeof authShowScreen === 'function') authShowScreen('welcome');
 }

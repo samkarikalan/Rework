@@ -122,7 +122,8 @@ function switchMode(mode) {
     if (typeof showModeUpgradePrompt === 'function') showModeUpgradePrompt(mode);
     return;
   }
-  // Viewer needs no club -- hide overlay and proceed
+
+  // Viewer -- no login or club needed
   if (mode === 'viewer') {
     const overlay = document.getElementById('modeSelectOverlay');
     if (overlay) overlay.style.display = 'none';
@@ -135,38 +136,32 @@ function switchMode(mode) {
     return;
   }
 
-  // Organiser / Vault -- check club first
-  // Keep modeSelectOverlay visible so Cancel returns to it
-  var club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (!club || !club.id) {
-    _showClubSetupSheet(mode);
+  // Organiser -- independent session flag, user password
+  if (mode === 'organiser') {
+    if (sessionStorage.getItem('scs_organiser_verified') === '1' ||
+        localStorage.getItem('scs_organiser_verified') === '1') {
+      // Restore sessionStorage flag for this session
+      sessionStorage.setItem('scs_organiser_verified', '1');
+      const overlay = document.getElementById('modeSelectOverlay');
+      if (overlay) overlay.style.display = 'none';
+      appMode = 'organiser';
+      sessionStorage.setItem('appMode', 'organiser');
+      localStorage.setItem('kbrr_app_mode', 'organiser');
+      applyMode('organiser');
+      updateModePill('organiser');
+      if (typeof showHomeScreen === 'function') showHomeScreen();
+      return;
+    }
+    // Not verified -- must go through club setup sheet
+    _showClubSetupSheet('organiser');
     return;
   }
 
-  // Organiser -- must be authenticated to the club
-  if (mode === 'organiser') {
-    var clubMode = (typeof getClubMode === 'function') ? getClubMode() : null;
-    if (!clubMode) {
-      _showClubSetupSheet(mode);
-      return;
-    }
-  }
-
-  // Vault -- needs admin auth
+  // Vault -- independent session flag, admin password only
   if (mode === 'vault') {
     requestVaultMode();
     return;
   }
-
-  // All checks passed -- now hide overlay and proceed
-  const overlay = document.getElementById('modeSelectOverlay');
-  if (overlay) overlay.style.display = 'none';
-  appMode = mode;
-  sessionStorage.setItem('appMode', mode);
-  localStorage.setItem('kbrr_app_mode', mode);
-  applyMode(mode);
-  updateModePill(mode);
-  if (typeof showHomeScreen === 'function') showHomeScreen();
 }
 
 function updateModePill(mode) {
@@ -701,10 +696,10 @@ function showPage(pageID, el) {
 
   if (pageID === "vaultClubMgmtPage") {
     if (typeof clubLoginRefresh === 'function') clubLoginRefresh();
-    // All panels hidden on open -- user taps a tile to open one
+    // Always show delete panel only
     ['Connect','Create','Delete'].forEach(function(p) {
       var el = document.getElementById('clubMgmt' + p + 'Panel');
-      if (el) el.style.display = 'none';
+      if (el) el.style.display = p === 'Delete' ? 'block' : 'none';
     });
   }
 
@@ -878,28 +873,27 @@ function requestVaultMode() {
     if (typeof showModeUpgradePrompt === 'function') showModeUpgradePrompt('vault');
     return;
   }
-  // No club — show Join Club sheet (keep mode select visible behind it)
-  var club = (typeof getMyClub === 'function') ? getMyClub() : null;
-  if (!club || !club.id) {
-    _showClubSetupSheet('vault');
-    return;
+
+  // Already verified as admin this session — go straight in
+  if (sessionStorage.getItem('scs_vault_verified') === '1' ||
+      localStorage.getItem('scs_vault_verified') === '1') {
+    // Restore sessionStorage flag for this session
+    sessionStorage.setItem('scs_vault_verified', '1');
+    var club = (typeof getMyClub === 'function') ? getMyClub() : null;
+    if (club && club.id) {
+      const overlay = document.getElementById('modeSelectOverlay');
+      if (overlay) overlay.style.display = 'none';
+      appMode = 'vault';
+      sessionStorage.setItem('appMode', 'vault');
+      localStorage.setItem('kbrr_app_mode', 'vault');
+      applyMode('vault');
+      updateModePill('vault');
+      if (typeof showHomeScreen === 'function') showHomeScreen();
+      return;
+    }
   }
 
-  // Already authenticated this session — go straight to vault
-  var clubMode = (typeof getClubMode === 'function') ? getClubMode() : null;
-  if (clubMode === 'admin' || clubMode === 'user') {
-    const overlay = document.getElementById('modeSelectOverlay');
-    if (overlay) overlay.style.display = 'none';
-    appMode = 'vault';
-    sessionStorage.setItem('appMode', 'vault');
-    localStorage.setItem('kbrr_app_mode', 'vault');
-    applyMode('vault');
-    updateModePill('vault');
-    if (typeof showHomeScreen === 'function') showHomeScreen();
-    return;
-  }
-
-  // Has club but not authenticated — show Join Club sheet
+  // Not vault-verified — always show club setup sheet to demand admin password
   _showClubSetupSheet('vault');
 }
 
@@ -936,9 +930,9 @@ function _showClubSetupSheet(targetMode) {
 
       <!-- JOIN PANEL -->
       <div id="clubSetupPanelJoin" style="margin-top:14px">
-        <select id="csJoinClubSelect" class="auth-input" style="margin-bottom:10px">
-          <option value="">-- Loading clubs... --</option>
-        </select>
+        <input type="text" id="csJoinSearch" class="auth-input" placeholder="🔍 Search club name..." style="margin-bottom:6px" oninput="_clubSetupSearch(this.value)">
+        <div id="csJoinResults" style="display:none;max-height:160px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:8px;background:var(--surface2)"></div>
+        <div id="csJoinSelected" style="display:none;padding:8px 12px;border-radius:8px;background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.3);margin-bottom:8px;font-size:0.85rem;color:var(--text)"></div>
         <input type="password" id="csJoinPassword" class="auth-input" placeholder="${t('clubPasswordPh')}" style="margin-bottom:10px">
         <div id="csJoinFeedback" style="font-size:0.82rem;color:var(--red);min-height:18px;margin-bottom:10px"></div>
         <div style="display:flex;gap:10px">
@@ -981,43 +975,92 @@ function _clubSetupShowTab(tab) {
   }
 }
 
-async function _clubSetupLoadClubs() {
-  const select = document.getElementById('csJoinClubSelect');
-  if (!select) return;
-  try {
-    const clubs = await sbGet('clubs', 'select=id,name&order=name.asc');
-    select.innerHTML = '<option value="">-- Select club --</option>';
-    clubs.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id; opt.textContent = c.name;
-      select.appendChild(opt);
-    });
-  } catch(e) {
-    select.innerHTML = '<option value="">-- Could not load clubs --</option>';
+var _clubSetupSelectedId   = null;
+var _clubSetupSelectedName = null;
+var _clubSetupSearchTimer  = null;
+
+function _clubSetupSearch(query) {
+  var resultsEl = document.getElementById('csJoinResults');
+  var selectedEl = document.getElementById('csJoinSelected');
+  // Clear selection when user types again
+  _clubSetupSelectedId = null;
+  _clubSetupSelectedName = null;
+  if (selectedEl) selectedEl.style.display = 'none';
+
+  if (!query || query.trim().length < 2) {
+    if (resultsEl) resultsEl.style.display = 'none';
+    return;
   }
+  if (resultsEl) {
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = '<div style="padding:10px 12px;font-size:0.82rem;color:var(--muted)">Searching...</div>';
+  }
+  clearTimeout(_clubSetupSearchTimer);
+  _clubSetupSearchTimer = setTimeout(async function() {
+    try {
+      var rows = await sbGet('clubs', 'name=ilike.' + encodeURIComponent('%' + query.trim() + '%') + '&select=id,name&order=name.asc&limit=15');
+      if (!rows || !rows.length) {
+        if (resultsEl) resultsEl.innerHTML = '<div style="padding:10px 12px;font-size:0.82rem;color:var(--muted)">No clubs found</div>';
+        return;
+      }
+      if (resultsEl) {
+        resultsEl.innerHTML = rows.map(function(c) {
+          return '<div onclick="_clubSetupSelectClub(\'' + c.id + '\',\'' + c.name.replace(/'/g,"\\'") + '\')" ' +
+            'style="padding:10px 14px;cursor:pointer;font-size:0.88rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">' +
+            '<span style="font-size:1rem">🏢</span><span>' + c.name + '</span></div>';
+        }).join('');
+      }
+    } catch(e) {
+      if (resultsEl) resultsEl.innerHTML = '<div style="padding:10px 12px;font-size:0.82rem;color:var(--red)">Search failed</div>';
+    }
+  }, 350);
+}
+
+function _clubSetupSelectClub(id, name) {
+  _clubSetupSelectedId   = id;
+  _clubSetupSelectedName = name;
+  var resultsEl  = document.getElementById('csJoinResults');
+  var selectedEl = document.getElementById('csJoinSelected');
+  var searchEl   = document.getElementById('csJoinSearch');
+  if (resultsEl)  resultsEl.style.display = 'none';
+  if (searchEl)   searchEl.value = name;
+  if (selectedEl) { selectedEl.textContent = '✅ ' + name; selectedEl.style.display = 'block'; }
+  // Focus password field
+  var pw = document.getElementById('csJoinPassword');
+  if (pw) pw.focus();
+}
+
+async function _clubSetupLoadClubs() {
+  // No-op — replaced by search
 }
 
 async function _clubSetupJoin() {
-  const select = document.getElementById('csJoinClubSelect');
   const pwInput = document.getElementById('csJoinPassword');
   const fb = document.getElementById('csJoinFeedback');
   const setFb = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-  if (!select || !select.value) { setFb(t('pleaseSelectClubDot'), false); return; }
+  if (!_clubSetupSelectedId) { setFb(t('pleaseSelectClubDot'), false); return; }
   const pw = pwInput ? pwInput.value.trim() : '';
   if (!pw) { setFb(t('enterClubPassword'), false); return; }
 
   setFb(t('checkingDot'), true);
   try {
-    // Use server-side filter -- avoids RLS blocking password column reads
     const encodedPw = encodeURIComponent(pw);
-    const asAdmin = await sbGet('clubs', `id=eq.${select.value}&admin_password=eq.${encodedPw}&select=id,name`);
-    const asUser  = await sbGet('clubs', `id=eq.${select.value}&select_password=eq.${encodedPw}&select=id,name`);
+    const asAdmin = await sbGet('clubs', `id=eq.${_clubSetupSelectedId}&admin_password=eq.${encodedPw}&select=id,name`);
+    const asUser  = await sbGet('clubs', `id=eq.${_clubSetupSelectedId}&select_password=eq.${encodedPw}&select=id,name`);
 
     if (!asAdmin.length && !asUser.length) throw new Error(t('wrongPasswordDot'));
 
     let role = asAdmin.length ? 'admin' : 'user';
     const clubs = asAdmin.length ? asAdmin : asUser;
+
+    // Enforce mode-specific password rules before proceeding
+    if (_clubSetupTargetMode === 'organiser' && role === 'admin') {
+      throw new Error('Organiser requires the member password, not the admin password.');
+    }
+    if (_clubSetupTargetMode === 'vault' && role === 'user') {
+      throw new Error('Vault requires the admin password, not the member password.');
+    }
 
     if (typeof setMyClub === 'function') setMyClub(clubs[0].id, clubs[0].name);
     localStorage.setItem('kbrr_club_mode', role);
@@ -1035,23 +1078,23 @@ async function _clubSetupJoin() {
 
       const mode = _clubSetupTargetMode;
       if (mode === 'vault') {
-        // Vault: if admin just joined as admin, go straight in; else ask for admin pw
-        if (role === 'admin') {
-          appMode = 'vault';
-          sessionStorage.setItem('appMode', 'vault');
-          localStorage.setItem('kbrr_app_mode', 'vault');
-          applyMode('vault');
-          updateModePill('vault');
-          if (typeof showHomeScreen === 'function') showHomeScreen();
-        } else {
-          _showVaultPasswordPrompt();
-        }
-      } else {
-        appMode = mode;
-        sessionStorage.setItem('appMode', mode);
-        localStorage.setItem('kbrr_app_mode', mode);
-        applyMode(mode);
-        updateModePill(mode);
+        sessionStorage.setItem('scs_vault_verified', '1');
+        localStorage.setItem('scs_vault_verified', '1');
+        appMode = 'vault';
+        sessionStorage.setItem('appMode', 'vault');
+        localStorage.setItem('kbrr_app_mode', 'vault');
+        applyMode('vault');
+        updateModePill('vault');
+        if (typeof showHomeScreen === 'function') showHomeScreen();
+      } else if (mode === 'organiser') {
+        // Organiser accepts user or admin password
+        sessionStorage.setItem('scs_organiser_verified', '1');
+        localStorage.setItem('scs_organiser_verified', '1');
+        appMode = 'organiser';
+        sessionStorage.setItem('appMode', 'organiser');
+        localStorage.setItem('kbrr_app_mode', 'organiser');
+        applyMode('organiser');
+        updateModePill('organiser');
         if (typeof showHomeScreen === 'function') showHomeScreen();
       }
     }, 700);
@@ -1090,7 +1133,9 @@ async function _clubSetupCreateDirect() {
       if (typeof syncToLocal === 'function') syncToLocal();
 
       const mode = _clubSetupTargetMode;
-      // Creator is always admin -- go straight into requested mode
+      // Creator is always admin
+      if (mode === 'vault') { sessionStorage.setItem('scs_vault_verified', '1'); localStorage.setItem('scs_vault_verified', '1'); }
+      if (mode === 'organiser') { sessionStorage.setItem('scs_organiser_verified', '1'); localStorage.setItem('scs_organiser_verified', '1'); }
       appMode = mode;
       sessionStorage.setItem('appMode', mode);
       localStorage.setItem('kbrr_app_mode', mode);
@@ -1155,6 +1200,7 @@ async function verifyVaultPassword() {
     localStorage.setItem('kbrr_club_mode', role);
     const ov = document.getElementById('vaultPromptOverlay');
     if (ov) ov.remove();
+    localStorage.setItem('scs_vault_verified', '1');
     switchMode('vault');
   } catch(e) {
     if (errEl) errEl.textContent = t('errorPrefix') + e.message;
@@ -1605,6 +1651,6 @@ function setTileStyle(style) {
 }
 
 function loadHomeStyle() {
-  var style = localStorage.getItem('kbrr_tile_style') || 'flat';
+  var style = localStorage.getItem('kbrr_tile_style') || 'color';
   setTileStyle(style);
 }

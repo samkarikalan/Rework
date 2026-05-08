@@ -1128,7 +1128,35 @@ setFb('❌ ' + e.message, false);
 /* ── Vault -- Leave/Logout Club ── */
 function vaultLogoutClub() {
 if (!confirm(t('leaveVaultConfirm'))) return;
-if (typeof sbClearClub === 'function') sbClearClub();
+// Clear only vault-specific state
+localStorage.removeItem('kbrr_vault_club_id');
+localStorage.removeItem('kbrr_vault_club_name');
+localStorage.removeItem('kbrr_club_mode');
+localStorage.removeItem('kbrr_club_trusted');
+sessionStorage.removeItem('scs_vault_verified');
+localStorage.removeItem('scs_vault_verified');
+// If current active club was vault's club, also clear shared club
+var vaultId = localStorage.getItem('kbrr_vault_club_id');
+if (!vaultId) {
+  // already removed above, clear shared if it was vault's
+  if (typeof clearMyClub === 'function') clearMyClub();
+}
+if (typeof vaultSyncStatus === 'function') vaultSyncStatus();
+// Go to mode selector front page
+var overlay = document.getElementById('modeSelectOverlay');
+if (overlay) {
+if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
+overlay.style.display = 'flex';
+}
+}
+
+function organiserLogoutClub() {
+if (!confirm(t('leaveOrganiserConfirm'))) return;
+// Clear only organiser-specific state
+localStorage.removeItem('kbrr_org_club_id');
+localStorage.removeItem('kbrr_org_club_name');
+sessionStorage.removeItem('scs_organiser_verified');
+localStorage.removeItem('scs_organiser_verified');
 // Go to mode selector front page
 var overlay = document.getElementById('modeSelectOverlay');
 if (overlay) {

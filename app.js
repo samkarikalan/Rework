@@ -524,12 +524,7 @@ setLanguage("en");
 
 function initTheme() {
   const saved = localStorage.getItem('app-theme');
-  if (saved) {
-    applyTheme(saved);
-  } else {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyTheme(prefersDark ? 'dark' : 'light');
-  }
+  applyTheme(saved || 'light');
 }
 
 function initFontSize() {

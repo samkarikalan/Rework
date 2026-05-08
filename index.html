@@ -324,7 +324,7 @@
 <!-- Top bar -->
 
 <div class="home-topbar">
-  <div class="home-topbar-spacer"></div>
+  <button class="home-topbar-close home-topbar-power" onclick="appMode==='vault'?vaultLogoutClub():appMode==='organiser'?organiserLogoutClub():authDoLogout()" style="color:#e63757;border-color:rgba(230,55,87,0.3);">⏻</button>
   <button class="home-mode-title" id="modePillBtn" onclick="openModeSwitcher()">
     <span id="modePillIcon">🏸</span>
     <span id="modePillLabel">Organiser</span>
@@ -407,7 +407,7 @@
 
 <div id="homeOrgGrid" style="display:none;">
   <div class="home-grid">
-    <div class="home-tile" data-tile-color="1" onclick="homeGo('orgClubMgmtPage',null)">
+    <div class="home-tile" data-tile-color="1" onclick="homeGo('orgClubMgmtPage',null)" style="display:none;">
       <div class="home-tile-icon tile-pairs" id="orgTileIcon">🏢</div>
       <div class="home-tile-name" id="orgVctName">Club</div>
       <div class="home-tile-sub" id="orgVctBadge">Tap to connect</div>
@@ -442,9 +442,8 @@
 
 <div id="homeVaultGrid" style="display:none;">
 
-  <!-- Club status tile — clickable, with logout -->
-
-  <div class="vault-club-tile" id="vaultClubStatusTile" style="display:none;">
+  <!-- Club status tile — hidden -->
+  <div class="vault-club-tile" id="vaultClubStatusTile" style="display:none;height:0;overflow:hidden;margin:0;padding:0;">
     <div class="vct-dot" id="vctDot" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;"></div>
     <div class="vct-info" onclick="homeGo('vaultClubMgmtPage',null)" style="cursor:pointer;flex:1;">
       <div class="vct-name" id="vctName">No club selected</div>
@@ -495,7 +494,11 @@
   <div class="vt-sub" data-i18n="pendingApproval">pending approval</div>
 </div>
 
-
+<div class="vault-tile vt-requests" data-tile-color="4" onclick="vaultOpenDeleteOnly()">
+  <div class="vt-icon">🗑️</div>
+  <div class="vt-name" data-i18n="deleteClub">Delete</div>
+  <div class="vt-sub" data-i18n="removeClub">remove club</div>
+</div>
 
   </div><!-- end vaultTileGrid -->
 </div><!-- end homeVaultGrid -->
@@ -557,7 +560,7 @@
   <!-- ============================= -->
 
   <div class="top-bar">
-    <div class="home-topbar-spacer"></div>
+    <button class="home-topbar-close home-topbar-power" onclick="appMode==='vault'?vaultLogoutClub():appMode==='organiser'?organiserLogoutClub():authDoLogout()" style="color:#e63757;border-color:rgba(230,55,87,0.3);">⏻</button>
     <button class="home-mode-title" id="modePillBtn2" onclick="openModeSwitcher()">
       <span id="modePillIcon2">🏸</span>
       <span id="modePillLabel2">Organiser</span>
@@ -997,14 +1000,14 @@
   <div id="vaultClubMgmtPage" class="page" style="display:none;">
     <div class="sheet-header">
       <button class="sheet-close-btn" onclick="showHomeScreen()">✕</button>
-      <span class="sheet-title" data-i18n="clubManagement">🏢 Club Management</span>
+      <span class="sheet-title" data-i18n="deleteClub">🗑️ Delete Club</span>
       <div class="sheet-header-spacer"></div>
     </div>
     <div class="vault-wrap">
 
-  <!-- 3 action tiles -->
+  <!-- action tiles — hidden -->
 
-  <div class="vault-tile-grid" style="margin-bottom:14px;">
+  <div class="vault-tile-grid" style="margin-bottom:14px;display:none;">
     <div class="vault-tile vt-register" data-tile-color="1" onclick="clubMgmtShowPanel('connect')" style="min-height:90px;">
       <div class="vt-icon">🔗</div>
       <div class="vt-name" data-i18n="connectClub">Connect</div>
@@ -1015,7 +1018,7 @@
       <div class="vt-name" data-i18n="createClub">Create</div>
       <div class="vt-sub" data-i18n="newClub">new club</div>
     </div>
-    <div class="vault-tile vt-requests" data-tile-color="3" onclick="clubMgmtShowPanel('delete')" style="min-height:90px;">
+    <div class="vault-tile vt-requests" data-tile-color="3" onclick="clubMgmtShowPanel('delete')" style="min-height:90px;display:none;">
       <div class="vt-icon">🗑️</div>
       <div class="vt-name" data-i18n="deleteClub">Delete</div>
       <div class="vt-sub" data-i18n="removeClub">remove club</div>
@@ -1081,14 +1084,13 @@
 
   <!-- DELETE PANEL -->
 
-  <div id="clubMgmtDeletePanel" style="display:none;">
+  <div id="clubMgmtDeletePanel" style="display:block;">
     <div class="settings-card" style="padding:14px;">
       <div class="manage-section-title manage-section-danger" data-i18n="deleteClub">Delete Club</div>
-      <div class="club-row">
-        <select id="sbDeleteClubSelect" class="club-select">
-          <option value="">— Select club to delete —</option>
-        </select>
-      </div>
+      <!-- Club selector hidden — uses currently connected club -->
+      <select id="sbDeleteClubSelect" style="display:none;">
+        <option value="">— Select club to delete —</option>
+      </select>
       <div class="club-row" style="margin-top:8px">
         <input type="password" id="sbDeleteAdminPw" class="club-input"
                placeholder="Admin password"

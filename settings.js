@@ -154,7 +154,7 @@ var _appearPending = { theme: null, font: null, tile: null };
 
 function appearSyncFromSaved() {
   // Sync pill active states from saved prefs when settings page opens
-  const theme = localStorage.getItem('app-theme') || 'dark';
+  const theme = localStorage.getItem('app-theme') || 'light';
   const font  = localStorage.getItem('appFontSize') || 'medium';
   const tile  = localStorage.getItem('kbrr_tile_style') || 'flat';
 
@@ -279,7 +279,7 @@ function appearSelect(type, value, btn) {
   _appearPending[type] = value;
 
   // Get current effective values (pending overrides saved)
-  const theme = _appearPending.theme || localStorage.getItem('app-theme') || 'dark';
+  const theme = _appearPending.theme || localStorage.getItem('app-theme') || 'light';
   const style = _appearPending.tile  || localStorage.getItem('kbrr_tile_style') || 'flat';
   const font  = _appearPending.font  || localStorage.getItem('appFontSize') || 'medium';
 
@@ -955,32 +955,47 @@ async function clubCreateResend() { /* no longer needed */ }
 async function clubCreateVerify() { /* no longer needed */ }
 
 /* ── DELETE CLUB -- Admin password check ── */
+function vaultOpenDeleteOnly() {
+  // Clear previous feedback and password
+  const pw = document.getElementById('sbDeleteAdminPw');
+  const fb = document.getElementById('clubDeleteFeedback');
+  if (pw) pw.value = '';
+  if (fb) fb.textContent = '';
+  if (typeof homeGo === 'function') homeGo('vaultClubMgmtPage', null);
+}
+
 async function clubDeleteWithPassword() {
-const select  = document.getElementById('sbDeleteClubSelect');
 const pwInput = document.getElementById('sbDeleteAdminPw');
 const fb      = document.getElementById('clubDeleteFeedback');
 const setFb   = (msg, ok) => { if (fb) { fb.textContent = msg; fb.style.color = ok ? '#2dce89' : '#e63757'; } };
 
-if (!select || !select.value) { setFb(t('selectClubToDelete'), false); return; }
+const myClub = (typeof getMyClub === 'function') ? getMyClub() : null;
+if (!myClub || !myClub.id) { setFb(t('selectClubToDelete'), false); return; }
+
 const pw = pwInput?.value.trim();
 if (!pw) { setFb(t('enterAdminPw'), false); return; }
 
 setFb(t('verifyingDot'), true);
 try {
-const clubs = await sbGet('clubs', `id=eq.${select.value}&select=id,name,admin_password`);
+const clubs = await sbGet('clubs', `id=eq.${myClub.id}&select=id,name,admin_password`);
 if (!clubs || !clubs.length) { setFb(t('clubNotFound'), false); return; }
 if (clubs[0].admin_password !== pw) { setFb(t('wrongAdminPassword'), false); return; }
 
 const clubName = clubs[0].name || '';
-await dbDeleteClub(select.value);
+await dbDeleteClub(myClub.id);
+sbClearClub();
 
-const myClub = getMyClub();
-if (myClub.id === select.value) sbClearClub();
-
-select.value = '';
 if (pwInput) pwInput.value = '';
-await sbPopulateDeleteDropdown();
 setFb('✅ Club "' + clubName + '" deleted.', true);
+
+// Return to mode select after short delay
+setTimeout(function() {
+  var overlay = document.getElementById('modeSelectOverlay');
+  if (overlay) {
+    if (typeof mlSyncLangDisplay === 'function') mlSyncLangDisplay();
+    overlay.style.display = 'flex';
+  }
+}, 1500);
 
 } catch (e) { setFb('❌ ' + e.message, false); }
 }
@@ -1272,7 +1287,6 @@ localStorage.setItem('kbrr_app_mode', 'viewer');
 sessionStorage.setItem('appMode', 'viewer');
 if (typeof appMode !== 'undefined') appMode = 'viewer';
 if (typeof updateModePill === 'function') updateModePill('viewer');
-if (typeof showHomeScreen === 'function') showHomeScreen();
 }
 
 // sbDeleteClub replaced by clubDeleteSendOtp/clubDeleteVerify (OTP flow)
