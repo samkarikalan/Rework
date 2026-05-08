@@ -7307,17 +7307,19 @@ body.tile-style-color:not(.app-light) .home-help-btn {
 
 /* ── COLOR style — light mode ── */
 body.tile-style-color.app-light .vcl-tile {
-  background: #e8eaff !important;
-  border: 1px solid #c5caff !important;
-  box-shadow: 0 2px 12px rgba(108,99,255,0.12) !important;
+  background: #f5a623 !important;
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(245,166,35,0.25) !important;
 }
 body.tile-style-color.app-light .vcl-tile .vcl-row {
-  background: rgba(108,99,255,0.06) !important;
+  background: rgba(255,255,255,0.2) !important;
 }
 body.tile-style-color.app-light .vcl-tile .home-tile-name,
-body.tile-style-color.app-light .vcl-tile .vcl-row-name { color: #2a2a4a !important; }
+body.tile-style-color.app-light .vcl-tile .vcl-row-name { color: #fff !important; }
 body.tile-style-color.app-light .vcl-tile .home-tile-sub,
-body.tile-style-color.app-light .vcl-tile .vcl-row-nick { color: #5a5a8a !important; }
+body.tile-style-color.app-light .vcl-tile .vcl-row-nick,
+body.tile-style-color.app-light .vcl-tile .vcl-arr { color: rgba(255,255,255,0.75) !important; }
+body.tile-style-color.app-light .vcl-tile .home-tile-icon { background: rgba(255,255,255,0.25) !important; }
 body.tile-style-color.app-light .home-help-btn {
   background: #e6f9f2 !important;
   border: 1px solid #a8e6cf !important;
@@ -7607,7 +7609,7 @@ body.tile-style-color:not(.app-light) .rounds-nav-tile[data-tile-color="1"] { ba
 body.tile-style-color:not(.app-light) .rounds-nav-tile[data-tile-color="2"] { background: #f5a623 !important; }
 body.tile-style-color:not(.app-light) .home-tile .home-tile-icon,
 body.tile-style-color:not(.app-light) .vault-tile .vt-icon,
-body.tile-style-color:not(.app-light) .rounds-nav-tile .rounds-nav-icon { background: rgba(255,255,255,0.18) !important; }
+body.tile-style-color:not(.app-light) .rounds-nav-tile .rounds-nav-icon { background: none !important; }
 body.tile-style-color:not(.app-light) .home-tile .home-tile-name,
 body.tile-style-color:not(.app-light) .home-tile .home-tile-sub,
 body.tile-style-color:not(.app-light) .vault-tile .vt-name,
@@ -7643,7 +7645,7 @@ body.tile-style-color.app-light .rounds-nav-tile[data-tile-color="1"] { backgrou
 body.tile-style-color.app-light .rounds-nav-tile[data-tile-color="2"] { background: #f5a623 !important; }
 body.tile-style-color.app-light .home-tile .home-tile-icon,
 body.tile-style-color.app-light .vault-tile .vt-icon,
-body.tile-style-color.app-light .rounds-nav-tile .rounds-nav-icon { background: rgba(255,255,255,0.25) !important; }
+body.tile-style-color.app-light .rounds-nav-tile .rounds-nav-icon { background: none !important; }
 body.tile-style-color.app-light .home-tile .home-tile-name,
 body.tile-style-color.app-light .home-tile .home-tile-sub,
 body.tile-style-color.app-light .vault-tile .vt-name,
@@ -7675,3 +7677,55 @@ body.tile-style-color .ml-mode .ml-arr       { color: rgba(255,255,255,0.6) !imp
 body.tile-style-color .ml-mode .ml-mode-icon { background: rgba(255,255,255,0.2) !important; }
 
 
+
+/* ═══════════════════════════════════════════
+   COLOR STYLE — My Clubs page (jc-club-row)
+   Light + dark mode
+═══════════════════════════════════════════ */
+
+/* Dark mode */
+body.tile-style-color:not(.app-light) .jc-club-row {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+}
+body.tile-style-color:not(.app-light) .jc-club-name { color: var(--text) !important; }
+body.tile-style-color:not(.app-light) .jc-club-nick { color: var(--muted) !important; }
+body.tile-style-color:not(.app-light) .jc-section-title { color: var(--muted) !important; }
+
+/* Light mode */
+body.tile-style-color.app-light .jc-club-row {
+  background: #fff !important;
+  border: 1px solid #e8e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+body.tile-style-color.app-light .jc-club-name { color: #1a1a2e !important; }
+body.tile-style-color.app-light .jc-club-nick { color: #8888aa !important; }
+body.tile-style-color.app-light .jc-section-title { color: #8888aa !important; letter-spacing: 0.08em; }
+
+/* Active row — green accent */
+body.tile-style-color .jc-club-row.jc-club-item [style*="#1db954"],
+body.tile-style-color .jc-club-badge[style*="#1db954"] {
+  background: #1db954 !important;
+  color: #fff !important;
+}
+
+/* Member badge */
+body.tile-style-color.app-light .jc-club-badge {
+  background: rgba(108,140,255,0.12) !important;
+  color: #4a6aee !important;
+}
+
+/* Pending badge */
+body.tile-style-color.app-light .jc-club-pending {
+  background: rgba(245,166,35,0.15) !important;
+  color: #c47f00 !important;
+}
+
+/* Search input */
+body.tile-style-color.app-light #joinClubPageSearch {
+  background: #fff !important;
+  border: 1px solid #e0e0ee !important;
+  color: #1a1a2e !important;
+}
