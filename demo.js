@@ -17,69 +17,140 @@ var DEMO_ROLES = [
     slides: [
       {
         visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-pill" style="background:rgba(108,140,255,0.2);color:#6c8cff;">👁 Viewer Mode</div>
+          <div class="demo-scene-pill" style="background:rgba(108,140,255,0.15);color:#6c8cff;">👁 Viewer Mode</div>
           <div class="demo-scene-title">Watch live sessions</div>
-          <div class="demo-scene-sub">No account needed — just a club code</div>
-        </div>`,
-        title: 'What is Viewer Mode?',
-        desc:  'Viewer mode lets anyone follow a live badminton session in real time — seeing courts, scores, and who is up next — without needing an account or login.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-card" style="margin-bottom:10px;">
-            <div class="demo-scene-label">Club Code</div>
-            <div class="demo-input-mock">KBRR<span class="demo-cursor">|</span></div>
-          </div>
-          <div class="demo-scene-card">
-            <div class="demo-scene-label">Password (if set)</div>
-            <div class="demo-input-mock">••••••</div>
-          </div>
-          <div class="demo-btn-mock" style="margin-top:10px;">Join Session</div>
-        </div>`,
-        title: 'Enter a Club Code',
-        desc:  'On the home screen, tap "Viewer" and enter the club code shared by your organiser. If the session is password-protected, enter the password too, then tap Join.',
-      },
-      {
-        visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-label" style="margin-bottom:8px;">Live Courts</div>
-          <div class="demo-court-row">
-            <div class="demo-court-card">
-              <div class="demo-court-num">Court 1</div>
-              <div class="demo-court-match">Ali &amp; Sam<br><span style="color:var(--text-dim);font-size:0.7rem;">vs</span><br>Jay &amp; Kim</div>
-              <div class="demo-score-row"><span class="demo-score">15</span><span style="color:var(--text-dim)">–</span><span class="demo-score">12</span></div>
+          <div class="demo-scene-sub">Follow any club session in real time</div>
+          <div style="display:flex;gap:10px;margin-top:12px;width:100%;">
+            <div class="demo-vhome-tile">
+              <div style="font-size:1.3rem;">👤</div>
+              <div class="demo-vhome-name">My Card</div>
             </div>
-            <div class="demo-court-card">
-              <div class="demo-court-num">Court 2</div>
-              <div class="demo-court-match">Mia &amp; Leo<br><span style="color:var(--text-dim);font-size:0.7rem;">vs</span><br>Zoe &amp; Max</div>
-              <div class="demo-score-row"><span class="demo-score">8</span><span style="color:var(--text-dim)">–</span><span class="demo-score">8</span></div>
+            <div class="demo-vhome-tile">
+              <div style="font-size:1.3rem;">📡</div>
+              <div class="demo-vhome-name">Dashboard</div>
             </div>
           </div>
         </div>`,
-        title: 'Watch the Live Scoreboard',
-        desc:  'Once joined, you see all active courts with live scores. Scores update in real time as the organiser enters results — no need to refresh.',
+        title: 'Viewer Home Screen',
+        desc:  'When you log in as a Viewer you see two main tiles — "My Card" to view your player profile and club rating, and "Dashboard" to find and watch live sessions. A "My Clubs" expandable tile below lets you connect to clubs.',
       },
       {
         visual: `<div class="demo-visual-scene">
-          <div class="demo-scene-label" style="margin-bottom:8px;">Up Next — Round 4</div>
-          <div class="demo-queue-row">
-            <div class="demo-queue-chip">🏸 Ali</div>
-            <div class="demo-queue-chip">🏸 Sam</div>
-            <div class="demo-queue-chip" style="opacity:0.45;">💤 Leo</div>
-            <div class="demo-queue-chip" style="opacity:0.45;">💤 Zoe</div>
+          <div class="demo-scene-label" style="margin-bottom:6px;align-self:flex-start;">🏢 My Clubs</div>
+          <div class="demo-vclub-tile">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;">
+              <div class="demo-vclub-dot"></div>
+              <div>
+                <div style="font-size:0.88rem;font-weight:700;color:var(--text);">Tokyo Badminton Club</div>
+                <div style="margin-top:3px;">
+                  <span class="demo-role-badge">SESSION</span>
+                </div>
+              </div>
+            </div>
+            <div class="demo-btn-mock" style="font-size:0.72rem;padding:5px 12px;">Change</div>
           </div>
-          <div class="demo-scene-sub" style="margin-top:10px;">Active players highlighted — resting shown dimmed</div>
+          <div class="demo-scene-sub" style="margin-top:10px;">Select your club from the list and enter the member password, then tap Join</div>
         </div>`,
-        title: 'See Who Plays Next',
-        desc:  'The viewer also shows the upcoming round — who is playing on which court and who is sitting out. Active players are highlighted; resting players appear dimmed.',
+        title: 'Connect to Your Club',
+        desc:  'Tap the "My Clubs" tile on the home screen. Select your club from the dropdown, enter the member password provided by your organiser, and tap Join. Your connected club appears with a SESSION badge.',
+      },
+      {
+        visual: `<div class="demo-visual-scene">
+          <div class="demo-scene-label" style="margin-bottom:6px;align-self:flex-start;">📡 Dashboard</div>
+          <div class="demo-vdash-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div style="font-size:0.85rem;font-weight:700;color:var(--text);">Tokyo Badminton Club</div>
+              <div class="demo-live-badge"><div class="demo-live-dot"></div>LIVE</div>
+            </div>
+            <div style="display:flex;gap:12px;font-size:0.75rem;color:var(--text-dim);margin-bottom:8px;">
+              <span>👥 8 players</span>
+              <span>🔄 3 rounds</span>
+              <span>▶ Kari</span>
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              <div class="demo-pchip">Ali</div>
+              <div class="demo-pchip">Sam</div>
+              <div class="demo-pchip demo-pchip-me">Kari ★</div>
+              <div class="demo-pchip">Jay</div>
+              <div class="demo-pchip demo-pchip-more">+4</div>
+            </div>
+          </div>
+          <div class="demo-scene-sub" style="margin-top:8px;">Tap a LIVE card to open that session</div>
+        </div>`,
+        title: 'Find a Live Session',
+        desc:  'Tap the "Dashboard" tile to see all sessions for your club. Live sessions show a pulsing LIVE badge along with the organiser name, player count, and how many rounds have been played. Tap the card to enter the viewer.',
+      },
+      {
+        visual: `<div class="demo-visual-scene" style="gap:5px;">
+          <div style="display:flex;width:100%;border-bottom:1px solid var(--border);margin-bottom:6px;">
+            <div class="demo-vtab active">🏸 Live</div>
+            <div class="demo-vtab">📊 Summary</div>
+          </div>
+          <div class="demo-vinfo-bar">
+            <div class="demo-vinfo-dot"></div>
+            <span><strong>Tokyo Badminton Club</strong> · Kari · 32m</span>
+          </div>
+          <div class="demo-vround-hdr">Round 3</div>
+          <div class="demo-vcourtcard">
+            <div class="demo-vcourtname">Court 1</div>
+            <div class="demo-vteams">
+              <div class="demo-vteam">Ali<br>Sam</div>
+              <div class="demo-vvs">VS</div>
+              <div class="demo-vteam">Jay<br>Kim</div>
+            </div>
+          </div>
+          <div class="demo-vcourtcard">
+            <div class="demo-vcourtname">Court 2</div>
+            <div class="demo-vteams">
+              <div class="demo-vteam">Mia<br>Leo</div>
+              <div class="demo-vvs">VS</div>
+              <div class="demo-vteam">Zoe<br>Max</div>
+            </div>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text-dim);padding:2px 4px;">Sitting out: Kari</div>
+        </div>`,
+        title: 'Live Tab — Current Round',
+        desc:  'The Live tab shows the current round with all courts and their matchups. The info bar at the top shows the club name, who started the session, and elapsed time. The view polls automatically every 5 seconds for updates — no manual refresh needed.',
+      },
+      {
+        visual: `<div class="demo-visual-scene" style="gap:5px;">
+          <div style="display:flex;width:100%;border-bottom:1px solid var(--border);margin-bottom:6px;">
+            <div class="demo-vtab">🏸 Live</div>
+            <div class="demo-vtab active">📊 Summary</div>
+          </div>
+          <div class="demo-vreport-hdr">
+            <span></span><span>Rank</span><span>Name</span><span>W</span><span>P</span><span>R</span>
+          </div>
+          <div class="demo-vplayer-row" style="--strip:#f5a623;">
+            <div class="demo-vstrip"></div>
+            <span style="color:#f5a623;font-weight:800;">#1</span>
+            <span style="font-weight:700;">Ali</span>
+            <span style="color:#2dce89;font-weight:700;">5</span><span>6</span><span style="color:var(--text-dim);">1</span>
+          </div>
+          <div class="demo-vplayer-row" style="--strip:#9b9b9b;">
+            <div class="demo-vstrip"></div>
+            <span style="color:#9b9b9b;font-weight:700;">#2</span>
+            <span style="font-weight:700;">Sam</span>
+            <span style="color:#2dce89;font-weight:700;">4</span><span>6</span><span style="color:var(--text-dim);">0</span>
+          </div>
+          <div class="demo-vplayer-row" style="--strip:#cd7f32;">
+            <div class="demo-vstrip"></div>
+            <span style="color:#cd7f32;font-weight:700;">#3</span>
+            <span style="font-weight:700;">Jay</span>
+            <span style="color:#2dce89;font-weight:700;">3</span><span>5</span><span style="color:var(--text-dim);">2</span>
+          </div>
+        </div>`,
+        title: 'Summary Tab — Leaderboard & History',
+        desc:  'Switch to the Summary tab to see the session leaderboard sorted by Wins (W), with Games Played (P) and Resting (R) shown alongside. All previous rounds are listed below the leaderboard so you can review every matchup from the session.',
       },
       {
         visual: `<div class="demo-visual-scene">
           <div style="font-size:2.8rem;margin-bottom:10px;">✅</div>
-          <div class="demo-scene-title">You are ready!</div>
-          <div class="demo-scene-sub">Follow any live session with just a code</div>
+          <div class="demo-scene-title">You are all set!</div>
+          <div class="demo-scene-sub" style="max-width:260px;">Home → My Clubs → Dashboard → Live tab → Summary tab</div>
         </div>`,
         title: 'Viewer — All Done!',
-        desc:  'That is everything for Viewer mode. You can now follow any live session your organiser shares. Try another role below or close to return to Help.',
+        desc:  'That covers the full Viewer journey: connect to a club via My Clubs, open Dashboard to find the live session, watch courts on the Live tab, and check standings on the Summary tab. Try another role or close to return to Help.',
       },
     ],
   },
